@@ -6,8 +6,6 @@ import { Role } from '../entity/role.entity';
 import { Agency } from '../../gestionContracts/entity/agency.entity';
 import { Subscriber } from '../../gestionContracts/entity/subscriber.entity';
 import { SystemSetting } from '../entity/system-setting.entity';
-import { Group } from '../entity/group.entity';
-import { NatureCredit } from '../../gestionContracts/entity/nature-credit.entity';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
@@ -25,10 +23,6 @@ export class UserSeedService implements OnModuleInit {
     private subscriberRepository: Repository<Subscriber>,
     @InjectRepository(SystemSetting)
     private settingRepository: Repository<SystemSetting>,
-    @InjectRepository(Group)
-    private groupRepository: Repository<Group>,
-    @InjectRepository(NatureCredit)
-    private natureCreditRepository: Repository<NatureCredit>,
   ) {}
 
   async onModuleInit() {
@@ -38,7 +32,6 @@ export class UserSeedService implements OnModuleInit {
     await this.seedAgencies();
     await this.seedUsers();
     await this.seedSettings();
-    await this.seedDefaultGroup();
   }
 
   private async seedSettings() {
@@ -70,49 +63,6 @@ export class UserSeedService implements OnModuleInit {
       console.log('✅ Seed: Paramètres système vérifiés avec succès.');
     } catch (error) {
       console.error('❌ Seed: Erreur lors de l\'initialisation des paramètres système:', error);
-    }
-  }
-
-  private async seedDefaultGroup() {
-    try {
-      console.log('🌱 Seed: Vérification du groupe par défaut AMORT...');
-      let amortNature = await this.natureCreditRepository.findOne({
-        where: [{ code: 'AMORT' }, { code: 'AMORTISSABLE' }]
-      });
-
-      if (!amortNature) {
-        amortNature = await this.natureCreditRepository.save(
-          this.natureCreditRepository.create({
-            libelle: 'AMORTISSABLE',
-            code: 'AMORT',
-            description: 'Crédit amortissable standard',
-            isActive: true
-          })
-        );
-      }
-
-      let defaultGroup = await this.groupRepository.findOne({
-        where: { code: 'G_AMORT' },
-        relations: ['natureCredits']
-      });
-
-      if (!defaultGroup) {
-        console.log('🌱 Création du groupe par défaut "Groupe Amortissable"...');
-        defaultGroup = this.groupRepository.create({
-          libelle: 'Groupe Amortissable (Par Défaut)',
-          code: 'G_AMORT',
-          description: 'Groupe par défaut accordant l\'accès aux crédits Amortissables (AMORT)',
-          isActive: true,
-          natureCredits: amortNature ? [amortNature] : []
-        });
-        await this.groupRepository.save(defaultGroup);
-        console.log('✅ Groupe par défaut "Groupe Amortissable" créé avec succès.');
-      } else if (amortNature && (!defaultGroup.natureCredits || !defaultGroup.natureCredits.some(n => n.id === amortNature!.id))) {
-        defaultGroup.natureCredits = [...(defaultGroup.natureCredits || []), amortNature];
-        await this.groupRepository.save(defaultGroup);
-      }
-    } catch (error) {
-      console.error('❌ Erreur lors du seed du groupe par défaut:', error);
     }
   }
 

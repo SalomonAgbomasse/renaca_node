@@ -1,9 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, In, DeepPartial } from 'typeorm';
+import { Repository, Like, DeepPartial } from 'typeorm';
 import { User } from '../entity/user.entity';
 import { Role } from '../entity/role.entity';
-import { Group } from '../entity/group.entity';
 import { Agency } from '../../gestionContracts/entity/agency.entity';
 import { Contract } from '../../gestionContracts/entity/contract.entity';
 import { Cotation } from '../../gestionContracts/entity/cotation.entity';
@@ -20,8 +19,6 @@ export class UserService {
     private userRepository: Repository<User>,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
-    @InjectRepository(Group)
-    private groupRepository: Repository<Group>,
     @InjectRepository(Agency)
     private agencyRepository: Repository<Agency>,
     @InjectRepository(Contract)
@@ -50,8 +47,7 @@ export class UserService {
     
     const queryBuilder = this.userRepository.createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('user.agency', 'agency')
-      .leftJoinAndSelect('user.groups', 'groups');
+      .leftJoinAndSelect('user.agency', 'agency');
     
     if (idRole === 1 || idRole === 5) {
       console.log('👑 Utilisateur admin (idRole:', idRole, ') - tous les utilisateurs');
@@ -135,7 +131,7 @@ export class UserService {
     includeAgency?: boolean;
     includePermissions?: boolean;
   }): Promise<User | null> {
-    const relations: string[] = ['groups'];
+    const relations: string[] = [];
     if (options?.includeRole !== false) {
       relations.push('role');
     }
@@ -150,28 +146,28 @@ export class UserService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
+    return this.userRepository.findOne({
       where: { email },
-      relations: ['role', 'agency', 'groups']
+      relations: ['role', 'agency']
     });
   }
 
   async findByRole(idRole: number): Promise<User[]> {
-    return this.userRepository.find({ 
+    return this.userRepository.find({
       where: { idRole },
-      relations: ['role', 'agency', 'groups']
+      relations: ['role', 'agency']
     });
   }
 
   async findByAgency(idAgency: number): Promise<User[]> {
-    return this.userRepository.find({ 
+    return this.userRepository.find({
       where: { idAgency },
-      relations: ['role', 'agency', 'groups']
+      relations: ['role', 'agency']
     });
   }
 
-  async create(userData: Partial<User> & { groupIds?: number[] }): Promise<User> {
-    const { groupIds, ...userFields } = userData as any;
+  async create(userData: Partial<User>): Promise<User> {
+    const userFields = userData as any;
 
     // ✅ Vérification préventive des doublons email et téléphone
     if (userFields.email) {
@@ -213,21 +209,10 @@ export class UserService {
       }
     }
 
-    let groups: Group[] = [];
-    if (groupIds && Array.isArray(groupIds) && groupIds.length > 0) {
-      groups = await this.groupRepository.findBy({ id: In(groupIds) });
-    } else if (userFields.idRole !== 1 && userFields.idRole !== 2 && userFields.idRole !== 5) {
-      const defaultGroup = await this.groupRepository.findOne({ where: { code: 'G_AMORT' } });
-      if (defaultGroup) {
-        groups = [defaultGroup];
-      }
-    }
-    
     const userPayload: DeepPartial<User> = {
       ...userFields,
       salt,
-      password: hashedPassword,
-      groups
+      password: hashedPassword
     };
     
     const user = this.userRepository.create(userPayload);
@@ -244,8 +229,8 @@ export class UserService {
     return savedUser;
   }
 
-  async update(id: number, userData: Partial<User> & { groupIds?: number[] }): Promise<User | null> {
-    const { groupIds, ...userFields } = userData as any;
+  async update(id: number, userData: Partial<User>): Promise<User | null> {
+    const userFields = userData as any;
 
     if (userFields.email) {
       const existingByEmail = await this.userRepository.findOne({
@@ -272,16 +257,6 @@ export class UserService {
 
     if (Object.keys(userFields).length > 0) {
       await this.userRepository.update(id, userFields);
-    }
-
-    const user = await this.findOne(id);
-    if (user && groupIds !== undefined) {
-      if (Array.isArray(groupIds) && groupIds.length > 0) {
-        user.groups = await this.groupRepository.findBy({ id: In(groupIds) });
-      } else {
-        user.groups = [];
-      }
-      await this.userRepository.save(user);
     }
 
     return this.findOne(id);
