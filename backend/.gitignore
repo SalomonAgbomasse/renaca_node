@@ -180,3 +180,6 @@ uploads/
 
 # Dumps de base de données contenant des données personnelles réelles
 Sql/
+
+# Sauvegardes ponctuelles avant migrations destructives (ne pas versionner)
+migrations/backups/
