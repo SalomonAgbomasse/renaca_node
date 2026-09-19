@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposition – Simulation de Cotation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: sans-serif;
+      font-size: 15px;
+      font-weight: normal;
+      line-height: 1.4;
+      color: #000;
+      background: white;
+      padding: 8px 15px;
+    }
+
+    /* ---- Section titles ---- */
+    .section-title {
+      background: #4CAF50;
+      color: white;
+      padding: 2px 5px;
+      font-size: 15px;
+      font-weight: bold;
+      margin: 6px 0 2px 0;
+      text-transform: uppercase;
+      width: auto;
+      display: inline-block;
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 2px 0 4px 0;
+    }
+
+    /* ---- Data rows ---- */
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px dotted #ccc;
+      padding: 2px 0;
+      font-size: 15px;
+      flex-wrap: wrap;
+    }
+    .data-row span { flex: 1; min-width: 120px; }
+
+    /* ---- Reference banner ---- */
+    .ref-banner {
+      display: flex;
+      justify-content: space-between;
+      margin-top: -10px;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+
+    /* ---- Primes grid table ---- */
+    .primes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 5px 0;
+      font-size: 15px;
+    }
+    .primes-table th {
+      background: #4CAF50;
+      color: white;
+      padding: 3px 6px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .primes-table td {
+      padding: 3px 6px;
+      border: 1px solid #ddd;
+      text-align: right;
+    }
+    .primes-table td.label-col { text-align: left; }
+    .primes-table tr.total-row td {
+      background: #f1b434;
+      font-weight: bold;
+    }
+
+    /* ---- OBA members table ---- */
+    .members-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 5px 0;
+      font-size: 15px;
+    }
+    .members-table th {
+      background: #4CAF50;
+      color: white;
+      padding: 3px 5px;
+      border: 1px solid #ddd;
+    }
+    .members-table td {
+      padding: 3px 5px;
+      border: 1px solid #ddd;
+    }
+    .members-table td.right { text-align: right; }
+    .members-table td.center { text-align: center; }
+
+    /* ---- Signature ---- */
+    .signatures {
+      margin-top: 12px;
+    }
+    .sig-table { width: 100%; border-collapse: collapse; }
+    .sig-table td { vertical-align: top; padding-top: 4px; }
+    .sig-line {
+      border-bottom: 1px solid #333;
+      height: 30px;
+      margin-bottom: 3px;
+    }
+    .sig-label { font-size: 13px; text-align: center; }
+
+    /* ---- Notice ---- */
+    .notice {
+      font-size: 9px;
+      color: #555;
+      border: 1px solid #ccc;
+      padding: 5px 8px;
+      margin-top: 10px;
+      border-radius: 3px;
+    }
+
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <%
+    /* ---------- helpers ---------- */
+    function fmt(n) {
+      return new Intl.NumberFormat('fr-FR').format(Number(n) || 0);
+    }
+    function fmtDate(d) {
+      if (!d) return '-';
+      try { return new Date(d).toLocaleDateString('fr-FR'); } catch(e) { return d; }
+    }
+
+    /* ---------- client data (fallback cotation fields) ---------- */
+    var cNom      = (customer && customer.lastname)  || cotation.lastname  || '-';
+    var cPrenom   = (customer && customer.firstname) || cotation.firstname || '-';
+    var cBirth    = (customer && customer.birthdate) || cotation.birthdate || null;
+    var cPhone    = (customer && customer.phone)     || '-';
+    var cEmail    = (customer && customer.email)     || '-';
+    var cAddress  = (customer && customer.address)   || '-';
+    var cGender   = (customer && customer.gender)    ? (customer.gender === 'M' ? 'Masculin' : 'Féminin') : '-';
+    var cOccup    = (customer && customer.occupation) || '-';
+    var cPob      = (customer && customer.placeOfBirth) || '-';
+    var cNum      = (customer && customer.numCustomer) || null;
+
+    /* ---------- agency / user ---------- */
+    var agName    = (agency && agency.name)    || '-';
+    var agPhone   = (agency && agency.phone)   || '';
+    var agAddress = (agency && agency.address) || '-';
+    var gestName  = (userLastname && userFirstname) ? userLastname + ' ' + userFirstname : '-';
+  %>
+
+  <!-- === REFERENCE / AGENCY BANNER === -->
+  <div class="ref-banner">
+    <div>Réf. Cotation : <strong><%= cotation.reference || '-' %></strong></div>
+    <div>Date : <strong><%= dateSimulation %></strong></div>
+  </div>
+
+  <div class="data-row">
+    <span>Agence : <strong><%= agName %></strong></span>
+    <span>Gestionnaire : <strong><%= gestName %></strong></span>
+  </div>
+  <div class="data-row">
+    <span>Type de crédit : <strong><%= creditTypeLabel %></strong></span>
+    <span>Type d'assurance : <strong><%= cotation.typeAss || '-' %></strong></span>
+  </div>
+  <% if (agPhone) { %>
+  <div class="data-row">
+    <span>Tél. Agence : <strong>(00229) <%= agPhone %></strong></span>
+    <span>Adresse : <strong><%= agAddress %></strong></span>
+  </div>
+  <% } %>
+
+  <!-- === INFORMATIONS DU PROSPECT / CLIENT === -->
+  <div class="section-title">INFORMATIONS DU PROSPECT / CLIENT</div>
+  <% if (cNum) { %>
+    <span style="float:right;margin-top:-16px;font-size:11px;">Matricule : <b><%= cNum %></b></span>
+  <% } %>
+  <div class="section-divider"></div>
+
+  <div class="data-row">
+    <span>Assuré(e) : <strong><%= cNom %> <%= cPrenom %></strong></span>
+  </div>
+  <div class="data-row">
+    <span>Date de naissance : <strong><%= fmtDate(cBirth) %></strong></span>
+    <span>Lieu de naissance : <strong><%= cPob %></strong></span>
+  </div>
+  <div class="data-row">
+    <span>Profession : <strong><%= cOccup %></strong></span>
+    <span>Sexe : <strong><%= cGender %></strong></span>
+  </div>
+  <div class="data-row">
+    <span>Téléphone : <strong><%= cPhone %></strong></span>
+    <span>Email : <strong><%= cEmail %></strong></span>
+  </div>
+  <div class="data-row">
+    <span>Adresse : <strong><%= cAddress %></strong></span>
+    <% if (cotation.etablissement) { %>
+    <span>Établissement : <strong><%= cotation.etablissement %></strong></span>
+    <% } %>
+  </div>
+
+  <!-- === PARAMÈTRES DE LA SIMULATION === -->
+  <div class="section-title">PARAMÈTRES DE LA SIMULATION</div>
+  <div class="section-divider"></div>
+
+  <div class="data-row">
+    <span>Capital assuré : <strong><%= fmt(cotation.capital) %> FCFA</strong></span>
+    <span>Durée : <strong><%= cotation.duration || '-' %> mois</strong></span>
+  </div>
+  <% if (cotation.differe) { %>
+  <div class="data-row">
+    <span>Différé : <strong><%= cotation.differe %> mois</strong></span>
+  </div>
+  <% } %>
+  <div class="data-row">
+    <span>Garantie complémentaire (perte d'emploi) : <strong><%= (cotation.garantieCompl === 'OUI' || cotation.garantieCompl === 'oui') ? 'Oui' : 'Non' %></strong></span>
+  </div>
+  <% if (cotation.capitalInteret) { %>
+  <div class="data-row">
+    <span>Capital + Intérêts : <strong><%= fmt(cotation.capitalInteret) %> FCFA</strong></span>
+  </div>
+  <% } %>
+
+  <!-- === DÉTAIL DES PRIMES === -->
+  <div class="section-title">DÉTAIL DES PRIMES CALCULÉES</div>
+  <div class="section-divider"></div>
+
+  <table class="primes-table">
+    <thead>
+      <tr>
+        <th style="text-align:left;">Garantie</th>
+        <th>Montant (FCFA)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (cotation.pd) { %>
+      <tr>
+        <td class="label-col">Prime Décès / Invalidité</td>
+        <td><%= fmt(cotation.pd) %></td>
+      </tr>
+      <% } %>
+      <% if (cotation.pc) { %>
+      <tr>
+        <td class="label-col">Prime Capital</td>
+        <td><%= fmt(cotation.pc) %></td>
+      </tr>
+      <% } %>
+      <% if (cotation.acc) { %>
+      <tr>
+        <td class="label-col">Accessoires</td>
+        <td><%= fmt(cotation.acc) %></td>
+      </tr>
+      <% } %>
+      <% if (cotation.surp) { %>
+      <tr>
+        <td class="label-col">Surprime</td>
+        <td><%= fmt(cotation.surp) %></td>
+      </tr>
+      <% } %>
+      <% if (cotation.fm) { %>
+      <tr>
+        <td class="label-col">Frais Médicaux</td>
+        <td><%= fmt(cotation.fm) %></td>
+      </tr>
+      <% } %>
+      <tr class="total-row">
+        <td class="label-col"><strong>PRIME TOTALE TTC</strong></td>
+        <td><strong><%= fmt(cotation.puttc) %></strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <% if (creditType === 'OBA' && cotation.garantieCompl === 'OUI') { %>
+  <div class="data-row" style="font-size:13px;font-weight:bold;">
+    <span>Plafond Perte d'Emploi : <strong>5 000 000 FCFA</strong></span>
+  </div>
+  <% } %>
+
+  <!-- === MEMBRES COUVERTS (OBA uniquement) === -->
+  <% if (creditType === 'OBA' && obaMembers && obaMembers.length > 0) { %>
+  <div class="section-title">MEMBRES DE LA COUVERTURE OBA</div>
+  <div class="section-divider"></div>
+
+  <table class="members-table">
+    <thead>
+      <tr>
+        <th style="text-align:left;">Qualité</th>
+        <th style="text-align:left;">Nom &amp; Prénoms</th>
+        <th class="center">Date de naissance</th>
+        <th class="right">Capital Garanti</th>
+        <th class="right">Prime Individuelle</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Assuré principal -->
+      <tr>
+        <td style="font-weight:bold;">Assuré Principal</td>
+        <td><%= cNom %> <%= cPrenom %></td>
+        <td class="center"><%= fmtDate(cBirth) %></td>
+        <td class="right">500 000 FCFA</td>
+        <td class="right">2 000 FCFA</td>
+      </tr>
+      <!-- Membres secondaires -->
+      <% obaMembers.forEach(function(m) { %>
+      <tr>
+        <td style="font-weight:bold;"><%= m.roleLabel %></td>
+        <td><%= (m.lastname || '') + ' ' + (m.firstname || '') %></td>
+        <td class="center"><%= m.birthdate ? fmtDate(m.birthdate) : '-' %></td>
+        <td class="right"><%= m.capitalAssure ? fmt(m.capitalAssure) + ' FCFA' : '-' %></td>
+        <td class="right"><%= m.prime ? fmt(m.prime) + ' FCFA' : '-' %></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+
+  <!-- === SIGNATURES === -->
+  <div class="section-divider" style="margin-top:15px;"></div>
+  <div class="signatures">
+    <table class="sig-table">
+      <tr>
+        <td width="33%">
+          <div class="sig-line"></div>
+          <div class="sig-label"><b><u>L'ASSURÉ(E)</u></b><br><small>Précéder de "Lu et Approuvé"</small></div>
+        </td>
+        <td width="33%" style="text-align:center;">
+          <div class="sig-line"></div>
+          <div class="sig-label"><b><u>PADME / FNDA</u></b></div>
+        </td>
+        <td width="33%" style="text-align:right;">
+          <div class="sig-line"></div>
+          <div class="sig-label"><b><u>L'AFRICAINE VIE BENIN</u></b></div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Notice -->
+  <div class="notice">
+    <strong>IMPORTANT :</strong> Ce document est une <em>simulation</em> de cotation à titre indicatif.
+    Les primes indiquées peuvent varier en fonction des conditions d'acceptation médicale et commerciale.
+    Ce document ne constitue pas un engagement contractuel de L'Africaine Vie Bénin.
+  </div>
+
+  <!-- Le footer Puppeteer apparaîtra automatiquement ici -->
+</body>
+</html>

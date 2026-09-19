@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des Utilisateurs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10px;
+            color: #231f20;
+            background: #ffffff;
+            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 25px;
+            border-bottom: 2px solid #33b04a;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #33b04a;
+            text-transform: uppercase;
+        }
+
+        .header-meta {
+            font-size: 9px;
+            color: #666666;
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #33b04a;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 8px;
+            font-weight: bold;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .badge-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-suspended {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-role {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        .footer {
+            margin-top: 30px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+            font-size: 8px;
+            color: #666666;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <h1>Liste des Utilisateurs</h1>
+            <div style="font-size: 10px; color: #666666; margin-top: 3px;">
+                FNDA - Simulateur Web
+            </div>
+        </div>
+        <div class="header-meta">
+            Généré le <%= generatedAt %> à <%= generatedTime %><br>
+            Par <%= generatedBy %>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 18%;">Nom & Prénom</th>
+                <th style="width: 8%; text-align: center;">Genre</th>
+                <th style="width: 24%;">Contact</th>
+                <th style="width: 16%;">Fonction</th>
+                <th style="width: 12%;">Rôle</th>
+                <th style="width: 14%;">Agence</th>
+                <th style="width: 8%; text-align: center;">Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (users.length === 0) { %>
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #666666; padding: 20px;">
+                        Aucun utilisateur trouvé
+                    </td>
+                </tr>
+            <% } else { %>
+                <% users.forEach(user => { %>
+                    <tr>
+                        <td style="font-weight: bold;">
+                            <%= user.lastname %> <%= user.firstname %>
+                        </td>
+                        <td style="text-align: center;">
+                            <%= user.gender === 'M' ? 'M' : 'F' %>
+                        </td>
+                        <td>
+                            Tel : <%= user.phone || '-' %><br>
+                            Email : <%= user.email || '-' %>
+                        </td>
+                        <td>
+                            <%= user.fonction || '-' %>
+                        </td>
+                        <td>
+                            <span class="badge badge-role">
+                                <%= user.role?.libelle || 'Rôle #' + user.idRole %>
+                            </span>
+                        </td>
+                        <td>
+                            <%= user.agency?.name || user.agency?.libelle || '-' %>
+                        </td>
+                        <td style="text-align: center;">
+                            <% if (user.status === 'ACTIVE') { %>
+                                <span class="badge badge-active">Actif</span>
+                            <% } else if (user.status === 'INACTIVE' || user.status === 'DESACTIVE') { %>
+                                <span class="badge badge-inactive">Inactif</span>
+                            <% } else { %>
+                                <span class="badge badge-suspended"><%= user.status %></span>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } %>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div>PADME SA - Simulateur FNDA</div>
+        <div>Généré via la plateforme</div>
+    </div>
+</body>
+</html>

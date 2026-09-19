@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Analyse BI - Performance Commerciale</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Futura', Arial, sans-serif;
+            font-size: 10px;
+            color: #231f20;
+            background: #ffffff;
+            padding: 15px;
+        }
+        .header {
+            margin-bottom: 25px;
+            border-bottom: 2px solid #f1b434;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 16px;
+            font-weight: bold;
+            color: #f1b434;
+        }
+        .period {
+            font-size: 10px;
+            color: #666666;
+            margin-top: 4px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #231f20;
+            border-left: 3px solid #f1b434;
+            padding-left: 8px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1b434;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .rank-badge {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            font-weight: bold;
+            background: #e9ecef;
+            color: #495057;
+            font-size: 8px;
+        }
+        .rank-1 {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .rank-2 {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        .rank-3 {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <%
+        // Safe getters
+        const safeAgences = locals.agences || [];
+        const safeNature = locals.nature || [];
+        const safeConseillers = locals.conseillers || [];
+        const safePeriod = locals.period || { startDate: 'Début', endDate: 'Fin' };
+    %>
+
+    <div class="header">
+        <h1>PERFORMANCE COMMERCIALE</h1>
+        <div class="period">Période du <%= safePeriod.startDate %> au <%= safePeriod.endDate %></div>
+    </div>
+
+    <div class="section-title">Performance des Agences</div>
+    <table>
+        <thead>
+            <tr>
+                <th class="text-center" width="5%">Rang</th>
+                <th>Agence</th>
+                <th class="text-right">Contrats</th>
+                <th class="text-right">Primes (FCFA)</th>
+                <th class="text-right">Capital (FCFA)</th>
+                <th class="text-right">Prime Moy. (FCFA)</th>
+                <th class="text-right">Part de marché</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% safeAgences.forEach((a, idx) => { %>
+            <tr>
+                <td class="text-center">
+                    <span class="rank-badge <%= idx < 3 ? 'rank-' + (idx + 1) : '' %>"><%= idx + 1 %></span>
+                </td>
+                <td style="font-weight: bold;"><%= a.agenceName || 'Non assignée' %></td>
+                <td class="text-right"><%= (a.contrats || 0).toLocaleString('fr-FR') %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(a.primes || 0) %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(a.capital || 0) %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(a.primeMoyenne || 0) %></td>
+                <td class="text-right" style="font-weight: bold; color: #b58315;"><%= a.partMarche %>%</td>
+            </tr>
+            <% }) %>
+            <% if (!safeAgences.length) { %>
+            <tr>
+                <td colspan="7" class="text-center text-muted">Aucune donnée disponible</td>
+            </tr>
+            <% } %>
+        </tbody>
+    </table>
+
+    <div class="section-title">Performance par Nature de Crédit</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Nature de Crédit</th>
+                <th class="text-right">Contrats</th>
+                <th class="text-right">Primes (FCFA)</th>
+                <th class="text-right">Capital (FCFA)</th>
+                <th class="text-right">Prime Moy. (FCFA)</th>
+                <th class="text-right">Durée Moy. (mois)</th>
+                <th class="text-right">Part</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% safeNature.forEach(n => { %>
+            <tr>
+                <td style="font-weight: bold;"><%= n.libelle || 'Non défini' %></td>
+                <td class="text-right"><%= (n.contrats || 0).toLocaleString('fr-FR') %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(n.primes || 0) %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(n.capital || 0) %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(n.primeMoyenne || 0) %></td>
+                <td class="text-right"><%= n.dureeMoyenne %> mois</td>
+                <td class="text-right" style="font-weight: bold; color: #b58315;"><%= n.partMarche %>%</td>
+            </tr>
+            <% }) %>
+            <% if (!safeNature.length) { %>
+            <tr>
+                <td colspan="7" class="text-center text-muted">Aucune donnée disponible</td>
+            </tr>
+            <% } %>
+        </tbody>
+    </table>
+
+    <div class="section-title">Performance des Conseillers (Top 25)</div>
+    <table>
+        <thead>
+            <tr>
+                <th class="text-center" width="5%">Rang</th>
+                <th>Conseiller</th>
+                <th>Agence</th>
+                <th class="text-right">Contrats</th>
+                <th class="text-right">Cotations</th>
+                <th class="text-right">Conv. (%)</th>
+                <th class="text-right">Primes (FCFA)</th>
+                <th class="text-right">Part</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% safeConseillers.slice(0, 25).forEach((c, idx) => { %>
+            <tr>
+                <td class="text-center">
+                    <span class="rank-badge <%= idx < 3 ? 'rank-' + (idx + 1) : '' %>"><%= idx + 1 %></span>
+                </td>
+                <td style="font-weight: bold;"><%= c.nom || 'Inconnu' %></td>
+                <td><%= c.agenceName || 'Non assignée' %></td>
+                <td class="text-right"><%= (c.contrats || 0).toLocaleString('fr-FR') %></td>
+                <td class="text-right"><%= (c.cotations || 0).toLocaleString('fr-FR') %></td>
+                <td class="text-right" style="font-weight: bold;"><%= c.tauxTransformation %>%</td>
+                <td class="text-right" style="font-weight: bold;"><%= new Intl.NumberFormat('fr-FR').format(c.primes || 0) %></td>
+                <td class="text-right" style="color: #b58315;"><%= c.partMarche %>%</td>
+            </tr>
+            <% }) %>
+            <% if (!safeConseillers.length) { %>
+            <tr>
+                <td colspan="8" class="text-center text-muted">Aucune donnée disponible</td>
+            </tr>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>

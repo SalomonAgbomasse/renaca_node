@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "class": "text-primary",
+    "icon": "flaticon-sterile-box",
+    "title": "Arrièrer",
+    "sign": "",
+    "currentValue": "15 209 000",
+    "previousValue": "Francs CFA",
+    "classTwo": "text-success",
+    "percent": "",
+    "iconUpDown": "flaticon-up-arrow"
+  },
+  {
+    "id": 2,
+    "class": "text-danger",
+    "icon": "flaticon-trolley-cart",
+    "title": "Total impayé",
+    "sign": "",
+    "currentValue": "1 204 000",
+    "previousValue": "Francs CFA",
+    "classTwo": "text-success",
+    "percent": "",
+    "iconUpDown": "flaticon-up-arrow"
+  },
+  {
+    "id": 3,
+    "class": "text-info",
+    "icon": "flaticon-card",
+    "title": "Chiffre d'affaire",
+    "sign": "",
+    "currentValue": "105 000 000",
+    "previousValue": "Francs CFA",
+    "classTwo": "text-danger",
+    "percent": "",
+    "iconUpDown": "flaticon-down-arrow"
+  },
+  {
+    "id": 4,
+    "class": "text-success",
+    "icon": "flaticon-sugar-cubes",
+    "title": "Nombre de Boite",
+    "sign": "",
+    "currentValue": "12 345 000",
+    "previousValue": "Francs CFA",
+    "classTwo": "text-success",
+    "percent": "",
+    "iconUpDown": "flaticon-up-arrow"
+  }
+]

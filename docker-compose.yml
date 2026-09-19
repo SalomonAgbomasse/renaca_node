@@ -1,0 +1,63 @@
+services:
+  # Backend NestJS
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_ID}-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./logs/backend:/app/logs
+    networks:
+      proxy:
+        aliases:
+          - padme_backend
+          - ${PROJECT_ID}-backend
+      databases:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_ID}-backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${PROJECT_ID}-backend.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_ID}-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_ID}-backend-http.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${PROJECT_ID}-backend-http.entrypoints=web"
+      - "traefik.http.routers.${PROJECT_ID}-backend-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.services.${PROJECT_ID}-backend.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.${PROJECT_ID}-buffering.buffering.maxRequestBodyBytes=52428800"
+      - "traefik.http.middlewares.${PROJECT_ID}-buffering.buffering.maxResponseBodyBytes=52428800"
+      - "traefik.http.routers.${PROJECT_ID}-backend.middlewares=${PROJECT_ID}-buffering@docker"
+      - "traefik.http.routers.${PROJECT_ID}-backend-http.middlewares=${PROJECT_ID}-buffering@docker,redirect-to-https@docker"
+      - "traefik.docker.network=proxy"
+
+  # Frontend Vue.js
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_ID}-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_ID}-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${PROJECT_ID}-frontend.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_ID}-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_ID}-frontend-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${PROJECT_ID}-frontend-http.entrypoints=web"
+      - "traefik.http.routers.${PROJECT_ID}-frontend-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.services.${PROJECT_ID}-frontend.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
+  databases:
+    external: true

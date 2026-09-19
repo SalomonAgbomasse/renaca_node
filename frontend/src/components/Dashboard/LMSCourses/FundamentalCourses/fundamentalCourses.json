@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1,
+    "bgClass": "todays-event-box",
+    "bgClassImage": "bg-primary",
+    "image": "flaticon-credit-cards",
+    "title": "Renouvellez votre abonnement",
+    "shortDesc": "Disposer de nos services en permanence",
+    "lessons": "Réabonnez-vous"
+  },
+  {
+    "id": 2,
+    "bgClass": "bg2",
+    "bgClassImage": "bg-success",
+    "image": "flaticon-customer-service",
+    "title": "Faites une demande",
+    "shortDesc": "Pour vos différents services extra",
+    "lessons": "Faire une demande"
+    
+  }
+]

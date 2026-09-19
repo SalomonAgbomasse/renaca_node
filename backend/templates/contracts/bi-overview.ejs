@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport BI - Vue d'ensemble</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Futura', Arial, sans-serif;
+            font-size: 10px;
+            color: #231f20;
+            background: #ffffff;
+            padding: 15px;
+        }
+        .header {
+            margin-bottom: 25px;
+            border-bottom: 2px solid #f1b434;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 16px;
+            font-weight: bold;
+            color: #f1b434;
+        }
+        .period {
+            font-size: 10px;
+            color: #666666;
+            margin-top: 4px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #231f20;
+            border-left: 3px solid #f1b434;
+            padding-left: 8px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .kpi-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 8px;
+        }
+        .kpi-card {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        .kpi-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #f1b434;
+            margin: 4px 0;
+        }
+        .kpi-label {
+            font-size: 9px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .kpi-prev {
+            font-size: 8px;
+            color: #888888;
+        }
+        .kpi-pct {
+            font-size: 8px;
+            font-weight: bold;
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-top: 3px;
+        }
+        .pct-up {
+            background: #fdfaf0;
+            color: #b58315;
+        }
+        .pct-down {
+            background: #ffebee;
+            color: #c62828;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1b434;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .row-grid {
+            display: flex;
+            gap: 15px;
+        }
+        .col-6 {
+            flex: 1;
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+    <%
+        // Safe getters
+        const safeKpis = locals.kpis || {
+            contrats: { current: 0, previous: 0, pct: 0 },
+            cotations: { current: 0, previous: 0, pct: 0 },
+            primes: { current: 0, previous: 0, pct: 0 },
+            capital: { current: 0, previous: 0, pct: 0 },
+            tauxTransformation: { current: 0, previous: 0, pct: 0 }
+        };
+        const safeEvolution = locals.evolution || { labels: [], contrats: [], primes: [], cotations: [] };
+        const safeNatureData = locals.natureData || [];
+        const safeAgencesData = locals.agencesData || [];
+        const safePeriod = locals.period || { startDate: 'Début', endDate: 'Fin' };
+    %>
+
+    <div class="header">
+        <div>
+            <h1>TABLEAU DE BORD BI - VUE D'ENSEMBLE</h1>
+            <div class="period">Période du <%= safePeriod.startDate %> au <%= safePeriod.endDate %></div>
+        </div>
+    </div>
+
+    <div class="section-title">Indicateurs clés de performance</div>
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div class="kpi-label">Contrats Actifs</div>
+            <div class="kpi-value"><%= (safeKpis.contrats.current || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-prev">Préc : <%= (safeKpis.contrats.previous || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-pct <%= (safeKpis.contrats.pct || 0) >= 0 ? 'pct-up' : 'pct-down' %>">
+                <%= (safeKpis.contrats.pct || 0) >= 0 ? '+' : '' %><%= safeKpis.contrats.pct %>%
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Simulations</div>
+            <div class="kpi-value"><%= (safeKpis.cotations.current || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-prev">Préc : <%= (safeKpis.cotations.previous || 0).toLocaleString('fr-FR') %></div>
+            <div class="kpi-pct <%= (safeKpis.cotations.pct || 0) >= 0 ? 'pct-up' : 'pct-down' %>">
+                <%= (safeKpis.cotations.pct || 0) >= 0 ? '+' : '' %><%= safeKpis.cotations.pct %>%
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Taux Transformation</div>
+            <div class="kpi-value"><%= safeKpis.tauxTransformation.current %>%</div>
+            <div class="kpi-prev">Préc : <%= safeKpis.tauxTransformation.previous %>%</div>
+            <div class="kpi-pct <%= (safeKpis.tauxTransformation.pct || 0) >= 0 ? 'pct-up' : 'pct-down' %>">
+                <%= (safeKpis.tauxTransformation.pct || 0) >= 0 ? '+' : '' %><%= safeKpis.tauxTransformation.pct %>%
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Primes Encaissées</div>
+            <div class="kpi-value"><%= new Intl.NumberFormat('fr-FR').format(safeKpis.primes.current || 0) %> FCFA</div>
+            <div class="kpi-prev">Préc : <%= new Intl.NumberFormat('fr-FR').format(safeKpis.primes.previous || 0) %></div>
+            <div class="kpi-pct <%= (safeKpis.primes.pct || 0) >= 0 ? 'pct-up' : 'pct-down' %>">
+                <%= (safeKpis.primes.pct || 0) >= 0 ? '+' : '' %><%= safeKpis.primes.pct %>%
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Capital Assuré</div>
+            <div class="kpi-value"><%= new Intl.NumberFormat('fr-FR').format(safeKpis.capital.current || 0) %> FCFA</div>
+            <div class="kpi-prev">Préc : <%= new Intl.NumberFormat('fr-FR').format(safeKpis.capital.previous || 0) %></div>
+            <div class="kpi-pct <%= (safeKpis.capital.pct || 0) >= 0 ? 'pct-up' : 'pct-down' %>">
+                <%= (safeKpis.capital.pct || 0) >= 0 ? '+' : '' %><%= safeKpis.capital.pct %>%
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">Évolution mensuelle</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Mois</th>
+                <th class="text-right">Contrats</th>
+                <th class="text-right">Primes (FCFA)</th>
+                <th class="text-right">Simulations</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% safeEvolution.labels.forEach((label, idx) => { %>
+            <tr>
+                <td><%= label %></td>
+                <td class="text-right"><%= (safeEvolution.contrats[idx] || 0).toLocaleString('fr-FR') %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(safeEvolution.primes[idx] || 0) %></td>
+                <td class="text-right"><%= (safeEvolution.cotations[idx] || 0).toLocaleString('fr-FR') %></td>
+            </tr>
+            <% }) %>
+            <% if (!safeEvolution.labels.length) { %>
+            <tr>
+                <td colspan="4" class="text-center text-muted">Aucune donnée disponible</td>
+            </tr>
+            <% } %>
+        </tbody>
+    </table>
+
+    <div class="row-grid">
+        <div class="col-6">
+            <div class="section-title">Par nature de crédit</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nature</th>
+                        <th class="text-right">Contrats</th>
+                        <th class="text-right">Primes (FCFA)</th>
+                        <th class="text-right">Part (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% safeNatureData.forEach(n => { %>
+                    <tr>
+                        <td><%= n.libelle || 'Non défini' %></td>
+                        <td class="text-right"><%= (n.contrats || 0).toLocaleString('fr-FR') %></td>
+                        <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(n.primes || 0) %></td>
+                        <td class="text-right"><%= n.partMarche %>%</td>
+                    </tr>
+                    <% }) %>
+                    <% if (!safeNatureData.length) { %>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Aucune donnée disponible</td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="col-6">
+            <div class="section-title">Performance des agences</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Agence</th>
+                        <th class="text-right">Contrats</th>
+                        <th class="text-right">Primes (FCFA)</th>
+                        <th class="text-right">Part (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% safeAgencesData.slice(0, 10).forEach(a => { %>
+                    <tr>
+                        <td><%= a.agenceName || 'Non assignée' %></td>
+                        <td class="text-right"><%= (a.contrats || 0).toLocaleString('fr-FR') %></td>
+                        <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(a.primes || 0) %></td>
+                        <td class="text-right"><%= a.partMarche %>%</td>
+                    </tr>
+                    <% }) %>
+                    <% if (!safeAgencesData.length) { %>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Aucune donnée disponible</td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDITIONS PARTICULIÈRES - PADME PROTECTION PADME S.A</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Futura', 'Century Gothic', AppleGothic, Arial, sans-serif;
+            font-size: 11px;
+            font-weight: normal;
+            line-height: 1.3;
+            color: #000;
+            background: white;
+            padding: 15px;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .logo-left,
+        .logo-right {
+            width: 80px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+        }
+
+        .center-title {
+            text-align: center;
+            flex: 1;
+            margin: 0 20px;
+        }
+
+        .center-title h1 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .center-title .product-info {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+
+        .police-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .section-title {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 5px;
+            font-size: 13px;
+            font-weight: bolder;
+            margin: 10px 0 6px 0;
+            text-transform: uppercase;
+            width: 35%;
+        }
+
+        .guarantee-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 3px;
+            padding: 3px 0;
+            border-bottom: 1px dotted #ccc;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .info-label {
+            font-weight: bold;
+        }
+
+        .guarantees-section {
+            margin: 10px 0;
+            font-size: 15px;
+        }
+
+        .conditions-section {
+            margin: 10px 0;
+        }
+
+        .questionnaire {
+            border: 1px solid #000;
+            padding: 10px;
+            margin: 12px 0;
+            font-size: 9px;
+        }
+
+        .questionnaire-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .question {
+            margin: 3px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox {
+            width: 8px;
+            height: 8px;
+            border: 1px solid #000;
+            margin: 0 3px;
+            display: inline-block;
+        }
+
+        .signatures-section {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 150px;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .footer-info {
+            font-size: 8px;
+            text-align: center;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+            margin-top: 12px;
+        }
+
+        .company-info {
+            background: #f0f0f0;
+            padding: 5px;
+            font-size: 7px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        .contract-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .contract-info h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            color: #2c5aa0;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .customer-info,
+        .contract-details,
+        .financial-details {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        .financial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .financial-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .financial-item .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .financial-item .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+        }
+
+        .signature-box {
+            width: 200px;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #333;
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        .signature-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+        }
+
+        .total-amount {
+            background: #2c5aa0;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .total-amount .label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .total-amount .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- L'en-tête est maintenant géré par Puppeteer headerTemplate -->
+
+    <!-- Ligne de séparation après l'en-tête -->
+    <div style="border-bottom: 1px solid #000; margin-top: -15px; margin-bottom: 15px; width: calc(100% + 30px);"></div>
+
+    <!-- Informations police et référence -->
+    <div class="guarantee-row" style="margin-top: -15px;">
+        <div>Police : <strong>
+                <%= contract.police %>
+            </strong></div>
+        <div>Réf Dossier : <strong>
+                <%= contract.reference %>
+            </strong></div>
+        <div>Agence : <strong>
+                <%= agency.name || '-' %>
+            </strong></div>
+    </div>
+
+    <div class="guarantee-row">
+        <div>Souscripteur : <strong>PADME S.A</strong></div>
+        <div>Téléphone : <strong>(00229) <%= agency.phone || contract.user.phone %></strong></div>
+    </div>
+
+    <div class="guarantee-row">
+        <div>Bureau : <strong><%= agency.name || '-' %></strong></div>
+        <div></div>
+    </div>
+
+    <div class="guarantee-row">
+        <div>Adresse : <strong>
+                <%= agency.address %>
+            </strong></div>
+        <div></div>
+    </div>
+
+    <div class="guarantee-row">
+        <div>Effet : <strong>
+                <%= new Date(contract.dateEff).toLocaleDateString('fr-FR') %>
+            </strong></div>
+        <div>Durée : <strong>
+                <%= contract.duration %> mois
+            </strong></div>
+        <div>Échéance : <strong>
+                <%= new Date(contract.dateEch).toLocaleDateString('fr-FR') %>
+            </strong></div>
+    </div>
+
+    <!-- Section Informations de l'assuré -->
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px 0; margin-top: -6px;">
+        <div class="section-title" style="margin: 0; width: auto;">INFORMATIONS DE L'ASSURÉ(E)</div>
+        <% if(contract.numeroCompte){ %>
+            <div style="font-size: 14px;">
+                N° de compte (<%= contract.compteBancaire || 'Courant' %>) : <strong>
+                        <%= contract.numeroCompte %>
+                    </strong>
+            </div>
+            <% } %>
+    </div>
+    <div style="border-bottom: 1px solid #ccc; margin-top: -6px; width: 100%;"></div>
+
+    <div class="guarantee-row">
+        <span style="flex: 1;">Assuré(e) : <strong>
+                <%= customer.lastname %>
+                    <%= customer.firstname %>
+            </strong></span>
+    </div>
+    <div class="guarantee-row">
+        <span>Date de naissance : <strong>
+                <%= new Date(customer.birthdate).toLocaleDateString('fr-FR') %>
+            </strong></span>
+        <span><strong>Lieu de naissance : <%= customer.placeOfBirth || 'PORTO-NOVO' %></strong></span>
+    </div>
+    <div class="guarantee-row">
+        <span>Profession : <strong>
+                <%= customer.occupation || 'REVENDEUSE' %>
+            </strong></span>
+        <span>Téléphone : <strong>
+                <%= customer.phone %>
+            </strong></span>
+    </div>
+    <div class="guarantee-row">
+        <span>Adresse : <strong>
+                <%= customer.address %>
+            </strong></span>
+        <span>Société : <strong>
+                <%= contract.etablissement %>
+            </strong></span>
+    </div>
+    <div class="guarantee-row">
+        <span>Email : <strong>
+                <%= customer.email || '-' %>
+            </strong></span>
+        <span>Sexe : <strong>
+                <%= customer.gender==='M' ? 'Masculin' : 'Féminin' %>
+            </strong></span>
+    </div>
+
+    <!-- Section Garanties et Primes -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px 0;">
+        <div class="section-title" style="margin: 0; width: auto;">GARANTIES ET PRIMES</div>
+        <div style="font-size: 12px; font-weight: bold;">
+            RENOUVELLEMENT AUTO : <strong>
+                <%= contract.renouvellementAuto ? 'OUI' : 'NON' %>
+            </strong>
+        </div>
+    </div>
+    <div style="border-bottom: 1px solid #ccc; margin-top: -6px; width: 100%;"></div>
+
+    <div class="guarantees-section" style="margin-top: -6px;">
+        <div class="guarantee-row" style="width: 100%;">
+            <span style="flex: 1.5; white-space: nowrap;">Capital assuré : <strong>
+                    <%= new Intl.NumberFormat('fr-FR').format(contract.capital) %>
+                </strong></span>
+            <span style="flex: 1.2; text-align: right; white-space: nowrap;">Prime TTC : <strong>
+                    <%= new Intl.NumberFormat('fr-FR').format(contract.puttc) %> FCFA
+                </strong></span>
+        </div>
+        <div class="guarantee-row" style="width: 100%;">
+            <span style="flex: 1.2; white-space: nowrap;"></span>
+            <span style="flex: 1.5; text-align: right; white-space: nowrap;">Type de Produit : <strong>
+                    <%= contract.natureCredit.libelle %>
+                </strong></span>
+        </div>
+    </div>
+
+    <!-- Bénéficiaires -->
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px 0; margin-top: -6px;">
+        <div class="section-title" style="margin: 0; width: auto;">BENEFICIAIRES</div>
+    </div>
+    <div style="border-bottom: 1px solid #ccc; margin-top: -6px; width: 100%;"></div>
+
+    <div style="font-size: 14px; margin: 6px 0;">
+        En cas de décès, versement du capital à :
+        <strong>(voir liste des bénéficiaires en page 2)</strong>
+    </div>
+
+    <!-- Questionnaire de santé -->
+    <div style="font-size: 14px; margin: 6px 0;">
+        <img src="<%= questionnaireImage %>" alt="Questionnaire de santé" style="width: 100%; height: auto;">
+    </div>
+    <div style="border-bottom: 1px solid #ccc; margin-top: 5px; width: calc(100%+50px);"></div>
+
+    <div style="padding-top:5px;">
+        <table border="0" width="100%" style="font-size: 9pt;  border-collapse: collapse;">
+            <tr>
+                <td width="33%"><b><u>L'ASSURE(E)</u></b><br><small>Préceder de "Lu et Approuvé"</small></td>
+                <td width="33%" style="text-align: center;"><b><u>PADME S.A</u></b></td>
+                <td width="33%" style="text-align: right;"><b><u>L'AFRICAINE VIE BENIN</u></b></td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="padding-top:-3cm;">
+        <table border="0" width="100%" style="font-size: 9pt;  border-collapse: collapse;">
+            <tr>
+                <td width="100%" style="text-align: right;"><img src="<%= signatureImage %>" alt="L'Africaine vie Bénin"
+                        width="150" height="60" border="0" /></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Deuxième page pour la liste des bénéficiaires -->
+    <% if (contract.beneficiaries && contract.beneficiaries.length> 0) { %>
+        <div style="page-break-before: always;"></div>
+
+        <div class="section-title" style="white-space: nowrap;">LISTE DÉTAILLÉE DES BÉNÉFICIAIRES</div>
+        <div style="border-bottom: 1px solid #ccc; margin-top: -6px; margin-bottom: 15px; width: 100%;"></div>
+
+        <table border="1" width="100%" style="border-collapse: collapse; font-size: 10pt;">
+            <thead>
+                <tr style="background-color: #f2f2f2; font-weight: bold;">
+                    <th style="padding: 8px; text-align: center;">N°</th>
+                    <th style="padding: 8px;">Nom et Prénoms</th>
+                    <th style="padding: 8px;">Lien de Parenté</th>
+                    <th style="padding: 8px; text-align: center;">Pourcentage (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% contract.beneficiaries.forEach((benef, bIndex)=> { %>
+                    <tr>
+                        <td style="padding: 8px; text-align: center;">
+                            <%= bIndex + 1 %>
+                        </td>
+                        <td style="padding: 8px;">
+                            <%= benef.nomPrenoms %>
+                        </td>
+                        <td style="padding: 8px;">
+                            <%= benef.lienParente || '-' %>
+                        </td>
+                        <td style="padding: 8px; text-align: center;">
+                            <%= benef.pourcentage || '0' %> %
+                        </td>
+                    </tr>
+                    <% }); %>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px; font-size: 11px;">
+            <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+                <div>Fait à ................................., le <%= generatedAt %>
+                </div>
+                <div style="font-weight: bold; text-decoration: underline;">Signature de l'Assuré(e)</div>
+            </div>
+        </div>
+        <% } %>
+
+            <!-- Le footer Puppeteer apparaîtra automatiquement ici -->
+</body>
+
+</html>

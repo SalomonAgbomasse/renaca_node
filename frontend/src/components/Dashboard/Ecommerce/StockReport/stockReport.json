@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "demandeur": "ATAGAN Luc",
+    "code": "#DEM000016",
+    "type": "Abonnement",
+    "cout": "9 Aug, 2023",
+    "status": "En attente",
+    "class": "text-outline-danger",
+    "quantity": "50"
+  },
+  {
+    "id": 2,
+    "demandeur": "ATROKPO Luc",
+    "code": "#DEM000015",
+    "type": "Cession",
+    "cout": "8 Aug, 2023",
+    "status": "En cours",
+    "class": "text-outline-warning",
+    "quantity": "0"
+  },
+  {
+    "id": 3,
+    "demandeur": "TIRO François",
+    "code": "#DEM000005",
+    "type": "Transfert",
+    "cout": "7 Aug, 2023",
+    "status": "En cours",
+    "class": "text-outline-warning",
+    "quantity": "150"
+  },
+  {
+    "id": 4,
+    "demandeur": "YALO Pacome",
+    "code": "#DEM000006",
+    "type": "Cession",
+    "cout": "6 Aug, 2023",
+    "status": "Accordé",
+    "class": "text-outline-primary",
+    "quantity": "510"
+  },
+  {
+    "id": 5,
+    "demandeur": "Espédit François",
+    "code": "#DEM000007",
+    "type": "2150",
+    "cout": "5 Aug, 2023",
+    "status": "Low Stock",
+    "class": "text-outline-danger-emphasis",
+    "quantity": "5"
+  },
+  {
+    "id": 6,
+    "demandeur": "DJOSSOU Lalo",
+    "code": "#DEM000008",
+    "type": "Abonnement",
+    "cout": "4 Aug, 2023",
+    "status": "Accordé",
+    "class": "text-outline-success",
+    "quantity": "24"
+  },
+  {
+    "id": 7,
+    "demandeur": "ZINSOU Brillant",
+    "code": "#DEM00010",
+    "type": "Transfert",
+    "cout": "3 Aug, 2023",
+    "status": "En cours",
+    "class": "text-outline-warning",
+    "quantity": "0"
+  },
+  {
+    "id": 8,
+    "demandeur": "DOKO Phillip",
+    "code": "#DEM00009",
+    "type": "Résiliation",
+    "cout": "2 Aug, 2023",
+    "status": "En attente",
+    "class": "text-outline-info",
+    "quantity": "42"
+  }
+]

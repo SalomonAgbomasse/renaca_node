@@ -1,0 +1,312 @@
+@import './fonts/flaticon.css';
+@import './fonts/bold/style.css';
+@import './fonts/duotone/style.css';
+@import './fonts/fill/style.css';
+@import './fonts/light/style.css';
+@import './fonts/regular/style.css';
+@import './fonts/thin/style.css';
+@import './fonts/custom/fonts.css';
+
+@import './css/style.css';
+
+/* =====================================================
+   Police globale Futura pour tout le projet + Variables Dynamiques
+   ===================================================== */
+:root {
+  --bs-font-sans-serif: 'Futura', sans-serif !important;
+  --bs-body-font-family: 'Futura', sans-serif !important;
+  --app-font-size: 16px;
+  --bs-body-font-size: var(--app-font-size) !important;
+}
+
+html, body, #app {
+  font-size: var(--app-font-size) !important;
+  line-height: 1.65;
+}
+
+html, body, #app, button, input, select, textarea, optgroup,
+h1, h2, h3, h4, h5, h6, p, a, span, label, td, th, div, table, .card, .btn, .dropdown-menu {
+  font-family: 'Futura', 'Red Hat Display', sans-serif !important;
+}
+
+/* Base dynamique pour les éléments interactifs et formulaires */
+input, button, select, optgroup, textarea, .form-control, .form-select {
+  font-size: calc(var(--app-font-size) * 0.95) !important;
+}
+
+/* Tableaux et données */
+.table, table {
+  font-size: calc(var(--app-font-size) * 0.95) !important;
+
+  th {
+    font-size: calc(var(--app-font-size) * 0.9) !important;
+    letter-spacing: 0.04em;
+    padding-top: calc(var(--app-font-size) * 0.75) !important;
+    padding-bottom: calc(var(--app-font-size) * 0.75) !important;
+  }
+
+  td {
+    font-size: calc(var(--app-font-size) * 0.95) !important;
+    padding-top: calc(var(--app-font-size) * 0.75) !important;
+    padding-bottom: calc(var(--app-font-size) * 0.75) !important;
+  }
+}
+
+/* Classes utilitaires de taille de police dynamiques */
+.fs-10 { font-size: calc(var(--app-font-size) * 0.75) !important; }
+.fs-11 { font-size: calc(var(--app-font-size) * 0.8) !important; }
+.fs-12 { font-size: calc(var(--app-font-size) * 0.85) !important; }
+.fs-13 { font-size: calc(var(--app-font-size) * 0.9) !important; }
+.fs-14 { font-size: calc(var(--app-font-size) * 0.95) !important; }
+.fs-15 { font-size: calc(var(--app-font-size) * 1.05) !important; }
+.fs-16 { font-size: calc(var(--app-font-size) * 1.15) !important; }
+
+/* Sidebar & Navigation */
+.sidebar-area {
+  .sidebar-nav-link .title {
+    font-size: var(--app-font-size) !important;
+  }
+  .sidebar-sub-menu-link {
+    font-size: calc(var(--app-font-size) * 0.92) !important;
+  }
+  .sub-title span {
+    font-size: calc(var(--app-font-size) * 0.85) !important;
+  }
+  .accordion-button .title {
+    font-size: var(--app-font-size) !important;
+  }
+}
+
+/* Badges & Boutons */
+.badge {
+  font-size: calc(var(--app-font-size) * 0.85) !important;
+}
+
+.btn {
+  font-size: calc(var(--app-font-size) * 0.95) !important;
+}
+
+.btn-sm {
+  font-size: calc(var(--app-font-size) * 0.85) !important;
+}
+
+/* =====================================================
+   Styles des Modales et Champs de Formulaire (Bange Bank Design System + Futura)
+   ===================================================== */
+
+.modal-content {
+  font-family: 'Futura', sans-serif !important;
+  border-radius: 10px !important;
+  border: none !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #33b04a 0%, #2d9a41 100%) !important;
+  border-bottom: 2px solid #ede947 !important;
+  padding: 0.85rem 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  
+  &::before {
+    display: none !important;
+  }
+}
+
+.modal-inline-logo {
+  height: 26px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  background-color: #ffffff !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+}
+
+.modal-header .modal-title,
+.modal-header h4.modal-title,
+.modal-header h5.modal-title,
+.modal-header h6.modal-title {
+  font-family: 'Futura', sans-serif !important;
+  color: #ede947 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.modal-header .modal-title i,
+.modal-title i {
+  display: none !important;
+}
+
+.modal-header .modal-title span {
+  color: #ede947 !important;
+  font-weight: 700 !important;
+}
+
+.modal-header .btn-close,
+.modal-header .btn-close-modal {
+  position: relative !important;
+  z-index: 1 !important;
+  filter: brightness(0) invert(1) !important;
+}
+
+.modal-body {
+  padding: 1.5rem !important;
+}
+
+.modal-footer {
+  background-color: #f8f9fa !important;
+  border-top: 1px solid #dee2e6 !important;
+  padding: 0.85rem 1.25rem !important;
+}
+
+/* Form Controls & Form Selects (Ref: simulateur_bange_bank) */
+.modal-body .form-control,
+.modal-body .form-select,
+.form-control.bange-input,
+.form-select.bange-input,
+.form-control,
+.form-select {
+  font-family: 'Futura', sans-serif !important;
+  line-height: 1.4 !important;
+  font-size: 16.5px !important;
+  border-radius: 6px !important;
+  padding: 10px 15px !important;
+  border: 2px solid #dedee4 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.modal-body .form-control::placeholder,
+.form-control::placeholder {
+  color: #8c8f9a !important;
+  font-style: italic !important;
+  opacity: 0.7 !important;
+}
+
+.modal-body .form-control:hover:not(:disabled):not([readonly]),
+.modal-body .form-select:hover:not(:disabled):not([readonly]),
+.form-control:hover:not(:disabled):not([readonly]),
+.form-select:hover:not(:disabled):not([readonly]) {
+  border-color: #adb5bd !important;
+  box-shadow: 0 0 0 2px rgba(173, 181, 189, 0.1) !important;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus,
+.form-control:focus,
+.form-select:focus {
+  background-color: #ffffff !important;
+  border-color: #33b04a !important;
+  box-shadow: 0 0 0 3px rgba(51, 176, 74, 0.25) !important;
+  outline: none !important;
+}
+
+.modal-body .form-control:disabled,
+.modal-body .form-select:disabled,
+.form-control:disabled,
+.form-select:disabled {
+  background-color: #e9ecef !important;
+  border-color: #ced4da !important;
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+}
+
+.modal-body .form-control[readonly],
+.form-control[readonly] {
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+}
+
+.modal-body label.form-label,
+.modal-body label,
+label.form-label,
+label {
+  font-family: 'Futura', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  color: #333333 !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.modal-body label .text-danger,
+label .text-danger {
+  font-weight: bold !important;
+}
+
+.modal-body .form-check-input,
+.form-check-input {
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 4px;
+  border: 2px solid #dedee4;
+  transition: all 0.2s ease-in-out;
+}
+
+.modal-body .form-check-input:checked,
+.form-check-input:checked {
+  background-color: #33b04a !important;
+  border-color: #33b04a !important;
+}
+
+.modal-body .form-check-input:focus,
+.form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(51, 176, 74, 0.25) !important;
+  border-color: #33b04a !important;
+}
+
+/* =====================
+   Skeleton Loader (Global)
+   ===================== */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.skeleton-row td {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  vertical-align: middle;
+}
+
+.skeleton-line,
+.skeleton-badge,
+.skeleton-circle,
+.skeleton-btn {
+  background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
+  background-size: 600px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+  border-radius: 4px;
+}
+
+.skeleton-line {
+  height: 14px;
+  width: 100%;
+}
+
+.skeleton-badge {
+  height: 22px;
+  width: 72px;
+  border-radius: 12px;
+}
+
+.skeleton-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+}

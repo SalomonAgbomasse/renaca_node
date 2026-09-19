@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Production</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #000;
+            background: white;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .header .period {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .summary {
+            background: #f5f5f5;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .summary h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-item .label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .summary-item .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 9px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>RAPPORT DE PRODUCTION</h1>
+        <div class="period">
+            Période : du <%= period.startDate %> au <%= period.endDate %>
+        </div>
+    </div>
+
+    <div class="summary">
+        <h2>Résumé</h2>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="label">Total Contrats</div>
+                <div class="value"><%= summary.totalContracts %></div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Capital Total</div>
+                <div class="value"><%= new Intl.NumberFormat('fr-FR').format(summary.totalCapital) %> FCFA</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Prime TTC Totale</div>
+                <div class="value"><%= new Intl.NumberFormat('fr-FR').format(summary.totalPrimeTTC) %> FCFA</div>
+            </div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Référence</th>
+                <th>Client</th>
+                <th>Agence</th>
+                <th>Gestionnaire</th>
+                <th class="text-right">Capital</th>
+                <th class="text-right">Prime TTC</th>
+                <th>Date Effet</th>
+                <th>Date Échéance</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% contracts.forEach((contract, index) => { %>
+            <tr>
+                <td class="text-center"><%= index + 1 %></td>
+                <td><%= contract.reference || contract.police || 'N/A' %></td>
+                <td>
+                    <% 
+                    let customerName = 'N/A';
+                    if (contract.customer) {
+                        if (contract.customer.firstname && contract.customer.lastname) {
+                            customerName = contract.customer.firstname + ' ' + contract.customer.lastname;
+                        } else if (contract.customer.lastname) {
+                            customerName = contract.customer.lastname;
+                        }
+                    }
+                    %>
+                    <%= customerName %>
+                </td>
+                <td><%= contract.agency?.name || 'N/A' %></td>
+                <td>
+                    <% 
+                    let userName = 'N/A';
+                    if (contract.user) {
+                        if (contract.user.firstname && contract.user.lastname) {
+                            userName = contract.user.firstname + ' ' + contract.user.lastname;
+                        } else if (contract.user.lastname) {
+                            userName = contract.user.lastname;
+                        }
+                    }
+                    %>
+                    <%= userName %>
+                </td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(Number(contract.capital) || 0) %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(Number(contract.puttc) || 0) %></td>
+                <td class="text-center"><%= contract.dateEff ? new Date(contract.dateEff).toLocaleDateString('fr-FR') : 'N/A' %></td>
+                <td class="text-center"><%= contract.dateEch ? new Date(contract.dateEch).toLocaleDateString('fr-FR') : 'N/A' %></td>
+                <td class="text-center"><%= contract.contractState?.libelle || contract.status || 'N/A' %></td>
+            </tr>
+            <% }); %>
+        </tbody>
+        <tfoot>
+            <tr style="background-color: #e0e0e0; font-weight: bold;">
+                <td colspan="5" class="text-right">TOTAL</td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(summary.totalCapital) %></td>
+                <td class="text-right"><%= new Intl.NumberFormat('fr-FR').format(summary.totalPrimeTTC) %></td>
+                <td colspan="3"></td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>
+
