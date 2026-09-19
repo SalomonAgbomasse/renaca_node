@@ -49,18 +49,6 @@
             <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.libelle }}</option>
           </select>
         </div>
-        <!-- Filtre Groupe (Inline sur grand écran) -->
-        <div class="d-none d-xxl-block" style="min-width: 150px;">
-          <select 
-            v-model="selectedGroupe" 
-            @change="filtrerUtilisateurs" 
-            class="form-select border-gray rounded-1 fs-14 py-2 px-3 shadow-none text-black bg-white"
-          >
-            <option value="">Tous les groupes</option>
-            <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.libelle }}</option>
-          </select>
-        </div>
-
         <!-- Bouton Filtres Offcanvas (Écrans moyens & petits) -->
         <button 
           class="btn btn-outline-secondary d-xxl-none d-flex align-items-center gap-2 py-2 px-3 shadow-none rounded-1 fs-14 bg-white border-gray text-black"
@@ -141,7 +129,6 @@
               <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 180px;">Contact</th>
               <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 120px;">Fonction</th>
               <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 120px;">Rôle</th>
-              <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 130px;">Groupe</th>
               <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 150px;">Agence</th>
               <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 100px;">Naissance</th>
               <th scope="col" class="text-uppercase fw-medium shadow-none text-body-tertiary fs-13 py-3" style="width: 100px;">Statut</th>
@@ -150,7 +137,7 @@
           </thead>
           <tbody>
             <tr v-if="filteredUsers.length === 0">
-              <td colspan="9" class="text-center text-muted py-4">
+              <td colspan="8" class="text-center text-muted py-4">
                 Aucun utilisateur trouvé
               </td>
             </tr>
@@ -204,18 +191,6 @@
               </td>
 
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
-                <div v-if="user.groups && user.groups.length > 0" class="d-flex flex-wrap gap-1">
-                  <span v-for="grp in user.groups" :key="grp.id" class="badge bg-success-subtle text-success">
-                    <i class="ph-bold ph-users-three me-1"></i>
-                    {{ grp.libelle }}
-                  </span>
-                </div>
-                <span v-else class="badge bg-secondary-subtle text-secondary fs-12">
-                  Aucun groupe
-                </span>
-              </td>
-
-              <td class="shadow-none lh-1 fw-medium text-black-emphasis">
                 <div>
                   <strong class="text-info">
                     {{ user.agency?.name || user.agency?.libelle || (user.idAgency ? 'Agence #' + user.idAgency : 'Non assignée') }}
@@ -264,7 +239,7 @@
       <!-- Pagination (hidden when filters are active since all data is loaded client-side) -->
       <div
         class="pagination-area d-md-flex mt-15 mt-sm-20 mt-md-25 justify-content-between align-items-center"
-        v-if="totalElements > 0 && !selectedAgence && !selectedRole && !selectedGroupe"
+        v-if="totalElements > 0 && !selectedAgence && !selectedRole"
       >
         <PaginationComponent 
           :page="page" 
@@ -275,7 +250,7 @@
         />
       </div>
       <!-- Filter active: show count only -->
-      <div v-else-if="(selectedAgence || selectedRole || selectedGroupe) && filteredUsers.length >= 0"
+      <div v-else-if="(selectedAgence || selectedRole) && filteredUsers.length >= 0"
         class="mt-15 mt-sm-20 mt-md-25 d-flex align-items-center gap-2 px-1"
       >
         <span class="badge bg-soft-fnda text-fnda px-3 py-2 rounded-pill fs-13 fw-semibold">
@@ -961,18 +936,6 @@
           </select>
         </div>
 
-        <!-- Groupe -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold text-muted fs-12 mb-1">Groupe</label>
-          <select 
-            v-model="selectedGroupe" 
-            @change="filtrerUtilisateurs" 
-            class="form-select border-gray rounded-1 fs-14 py-2 shadow-none text-black bg-white"
-          >
-            <option value="">Tous les groupes</option>
-            <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.libelle }}</option>
-          </select>
-        </div>
 
         <div class="d-md-none mt-4">
           <hr class="text-black-50">
@@ -1053,12 +1016,6 @@ interface User {
   };
   contracts?: any[];
   userPermissions?: any[];
-  groups?: Array<{
-    id: number;
-    libelle: string;
-    code?: string;
-    description?: string;
-  }>;
 }
 
 // Interface pour les contrats dans le modal
@@ -2718,20 +2675,17 @@ function gererPermissions(user: User) {
       getAllUsers(page.value, limit.value, searchTerm.value);
     };
 
-    // Filtres Agence, Rôle & Groupe
+    // Filtres Agence & Rôle
     const selectedAgence = ref('');
     const selectedRole = ref('');
-    const selectedGroupe = ref('');
     const agences = ref<any[]>([]);
     const roles = ref<any[]>([]);
-    const groups = ref<any[]>([]);
     const showFiltersOffcanvas = ref(false);
 
     const activeFiltersCount = computed(() => {
       let count = 0;
       if (selectedAgence.value) count++;
       if (selectedRole.value) count++;
-      if (selectedGroupe.value) count++;
       return count;
     });
 
@@ -2761,23 +2715,9 @@ function gererPermissions(user: User) {
       } catch { roles.value = []; }
     }
 
-    async function loadGroups() {
-      try {
-        const r = await ApiService.get('/groups');
-        const d = r.data;
-        // Backend: { data: { groups: [...] } }
-        let list: any[] = [];
-        if (Array.isArray(d?.data?.groups)) list = d.data.groups;
-        else if (Array.isArray(d?.data)) list = d.data;
-        else if (Array.isArray(d?.groups)) list = d.groups;
-        else if (Array.isArray(d)) list = d;
-        groups.value = list;
-      } catch { groups.value = []; }
-    }
-
     function filtrerUtilisateurs() {
       // When a filter is active, load ALL users so we don't miss any on other pages
-      const hasFilter = selectedAgence.value || selectedRole.value || selectedGroupe.value;
+      const hasFilter = selectedAgence.value || selectedRole.value;
       if (hasFilter) {
         getAllUsers(1, 1000, searchTerm.value);
       }
@@ -2787,7 +2727,6 @@ function gererPermissions(user: User) {
     function clearAllFilters() {
       selectedAgence.value = '';
       selectedRole.value = '';
-      selectedGroupe.value = '';
       getAllUsers(1, limit.value, searchTerm.value);
     }
 
@@ -2807,12 +2746,6 @@ function gererPermissions(user: User) {
           String(u.role?.id) === rId
         );
       }
-      if (selectedGroupe.value) {
-        const gId = Number(selectedGroupe.value);
-        list = list.filter(u => 
-          u.groups && u.groups.some((g: any) => g.id === gId)
-        );
-      }
       return list;
     });
 
@@ -2826,7 +2759,7 @@ function gererPermissions(user: User) {
     // Lifecycle
     onMounted(async () => {
       try {
-        await Promise.all([loadAgences(), loadRoles(), loadGroups()]);
+        await Promise.all([loadAgences(), loadRoles()]);
         await getAllUsers();
       } catch (err) {
         console.error('❌ Erreur dans onMounted:', err);
@@ -2926,10 +2859,8 @@ function gererPermissions(user: User) {
       handleUsersImported,
       selectedAgence,
       selectedRole,
-      selectedGroupe,
       agences,
       roles,
-      groups,
       showFiltersOffcanvas,
       activeFiltersCount,
       clearAllFilters,
