@@ -292,40 +292,6 @@
           </div>
         </div>
 
-        <div class="row">
-          <!-- Groupe (Optionnel) -->
-          <div class="col-md-12 mb-15 mb-sm-20 mb-md-25">
-            <label class="d-block text-black fw-semibold mb-10">
-              Groupe(s) (Optionnel)
-            </label>
-            <div class="p-3 bg-light rounded border">
-              <div v-if="allGroups.length === 0" class="text-muted small">
-                Aucun groupe disponible. Les utilisateurs sans groupe n'ont pas de restriction particulière par groupe.
-              </div>
-              <div v-else class="row g-2">
-                <div class="col-md-4" v-for="grp in allGroups" :key="grp.id">
-                  <div class="form-check p-2 rounded border bg-white">
-                    <Field name="groupIds" type="checkbox" :value="grp.id" v-slot="{ field }">
-                      <input
-                        v-bind="field"
-                        type="checkbox"
-                        class="form-check-input"
-                        :id="'user-grp-' + grp.id"
-                        :value="grp.id"
-                        @change="isFormDirty = true"
-                      />
-                      <label class="form-check-label ms-2 fw-medium text-dark" :for="'user-grp-' + grp.id">
-                        {{ grp.libelle }}
-                      </label>
-                    </Field>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <small class="text-muted">Si aucun groupe n'est sélectionné, l'utilisateur a la valeur par défaut (NULL).</small>
-          </div>
-        </div>
-
         <div class="row align-items-center">
           <!-- Statut -->
           <div class="col-md-6">
@@ -486,7 +452,6 @@ export default defineComponent({
     const roles = ref<Role[]>([]);
     const agencies = ref<Agency[]>([]);
     const offices = ref<Office[]>([]);
-    const allGroups = ref<any[]>([]);
     const selectedAgencyId = ref<string | number>('');
     const loadingOffices = ref(false);
 
@@ -530,8 +495,7 @@ export default defineComponent({
         idAgency: Yup.number().required('L\'agence est obligatoire'),
         idOffice: Yup.mixed().nullable().optional(),
         status: Yup.string().required('Le statut est obligatoire'),
-        twoFactorEnabled: Yup.boolean().optional(),
-        groupIds: Yup.array().of(Yup.number()).optional()
+        twoFactorEnabled: Yup.boolean().optional()
       });
     });
 
@@ -561,25 +525,14 @@ export default defineComponent({
       }
     };
 
-    // Fonction pour charger les rôles, agences et groupes
+    // Fonction pour charger les rôles et agences
     const loadRolesAndAgencies = async () => {
       try {
-        const [rolesResponse, agenciesResponse, groupsResponse] = await Promise.all([
+        const [rolesResponse, agenciesResponse] = await Promise.all([
           ApiService.get('/roles'),
-          ApiService.get('/agencies?limit=-1'),
-          ApiService.get('/groups')
+          ApiService.get('/agencies?limit=-1')
         ]);
 
-        const rawGroups = groupsResponse.data?.data?.groups || groupsResponse.data?.data || groupsResponse.data?.groups;
-        if (Array.isArray(rawGroups)) {
-          allGroups.value = rawGroups;
-        } else if (rawGroups && Array.isArray(rawGroups.groups)) {
-          allGroups.value = rawGroups.groups;
-        } else {
-          allGroups.value = [];
-        }
-
-        
         // Traitement des rôles
         if (rolesResponse.data?.data?.roles) {
           const rolesData = rolesResponse.data.data.roles;
@@ -725,8 +678,7 @@ export default defineComponent({
             idAgency: userData.idAgency || '',
             idOffice: userData.idOffice || '',
             status: userData.status || 'ACTIVE',
-            twoFactorEnabled: userData.twoFactorEnabled || false,
-            groupIds: userData.groups ? userData.groups.map((g: any) => g.id) : []
+            twoFactorEnabled: userData.twoFactorEnabled || false
           };
           
           
@@ -780,8 +732,7 @@ export default defineComponent({
           idAgency: parseInt(values.idAgency),
           idOffice: values.idOffice ? parseInt(values.idOffice) : undefined,
           status: values.status,
-          twoFactorEnabled: !!values.twoFactorEnabled,
-          groupIds: values.groupIds && Array.isArray(values.groupIds) ? values.groupIds.map((id: any) => parseInt(id)) : []
+          twoFactorEnabled: !!values.twoFactorEnabled
         };
 
 
@@ -897,8 +848,7 @@ export default defineComponent({
           idRole: '',
           idAgency: '',
           idOffice: '',
-          status: 'ACTIVE',
-          groupIds: []
+          status: 'ACTIVE'
         };
       }
     });
@@ -917,7 +867,6 @@ export default defineComponent({
       roles,
       agencies,
       offices,
-      allGroups,
       selectedAgencyId,
       loadingOffices,
       
