@@ -141,10 +141,6 @@ export class Contract {
   agency: Agency;
 
   @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: 'idUser' })
-  createdByUser: User;
-
-  @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'updatedBy' })
   updatedByUser: User;
 
