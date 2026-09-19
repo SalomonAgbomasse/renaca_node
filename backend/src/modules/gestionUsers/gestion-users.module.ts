@@ -7,14 +7,12 @@ import { UserSession } from './entity/user-session.entity';
 import { AuditLog } from './entity/audit-log.entity';
 import { EmailNotification } from './entity/email-notification.entity';
 import { SystemSetting } from './entity/system-setting.entity';
-import { Group } from './entity/group.entity';
 import { Agency } from '../gestionContracts/entity/agency.entity';
 import { Contract } from '../gestionContracts/entity/contract.entity';
 import { Cotation } from '../gestionContracts/entity/cotation.entity';
 import { NatureCredit } from '../gestionContracts/entity/nature-credit.entity';
 import { UserController } from './controller/user.controller';
 import { RoleController } from './controller/role.controller';
-import { GroupController } from './controller/group.controller';
 import { AuthController } from './controller/auth.controller';
 import { UserManagementController } from './controller/user-management.controller';
 import { SessionCleanupController } from './controller/session-cleanup.controller';
@@ -23,7 +21,6 @@ import { EmailNotificationController } from './controller/email-notification.con
 import { SystemSettingController } from './controller/system-setting.controller';
 import { UserService } from './service/user.service';
 import { RoleService } from './service/role.service';
-import { GroupService } from './service/group.service';
 import { AuthService } from './service/auth.service';
 import { UserStatusService } from './service/user-status.service';
 import { SessionCleanupService } from './service/session-cleanup.service';
@@ -47,14 +44,13 @@ import { PdfService } from '../../services/pdf.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Role, Group, UserActivity, UserSession, AuditLog, Agency, EmailNotification, Contract, Cotation, SystemSetting, NatureCredit]),
+    TypeOrmModule.forFeature([User, Role, UserActivity, UserSession, AuditLog, Agency, EmailNotification, Contract, Cotation, SystemSetting, NatureCredit]),
   ],
-  controllers: [UserController, RoleController, GroupController, AuthController, UserManagementController, SessionCleanupController, AuditLogController, EmailNotificationController, SystemSettingController, AuthLoginController, AuthSecurityController],
+  controllers: [UserController, RoleController, AuthController, UserManagementController, SessionCleanupController, AuditLogController, EmailNotificationController, SystemSettingController, AuthLoginController, AuthSecurityController],
   providers: [
-    UserService, 
-    RoleService, 
-    GroupService,
-    AuthService, 
+    UserService,
+    RoleService,
+    AuthService,
     UserStatusService,
     SessionCleanupService,
     AuditLogService,
@@ -76,6 +72,6 @@ import { PdfService } from '../../services/pdf.service';
       useClass: AuditLogInterceptor,
     },
   ],
-  exports: [TypeOrmModule, UserService, RoleService, GroupService, AuthService, JwtAuthGuard, AuditLogService, EmailNotificationService, SystemSettingService],
+  exports: [TypeOrmModule, UserService, RoleService, AuthService, JwtAuthGuard, AuditLogService, EmailNotificationService, SystemSettingService],
 })
 export class GestionUsersModule {}

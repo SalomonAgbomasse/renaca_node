@@ -1,6 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Contract } from './contract.entity';
-import { Group } from '../../gestionUsers/entity/group.entity';
 
 @Entity('nature_credits')
 export class NatureCredit {
@@ -27,7 +26,4 @@ export class NatureCredit {
 
   @OneToMany(() => Contract, contract => contract.natureCredit)
   contracts: Contract[];
-
-  @ManyToMany(() => Group, group => group.natureCredits)
-  groups: Group[];
 }

@@ -1,9 +1,8 @@
 import { Agency } from 'src/modules/gestionContracts/entity/agency.entity';
 import { Customer } from 'src/modules/gestionContracts/entity/customer.entity';
 import { Office } from 'src/modules/gestionContracts/entity/office.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne, ManyToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Role } from './role.entity';
-import { Group } from './group.entity';
 import { UserActivity } from './user-activity.entity';
 import { UserSession } from './user-session.entity';
 
@@ -123,7 +122,4 @@ export class User {
 
   @OneToMany(() => UserSession, (session) => session.user)
   sessions: UserSession[];
-
-  @ManyToMany(() => Group, (group) => group.users)
-  groups: Group[];
 }

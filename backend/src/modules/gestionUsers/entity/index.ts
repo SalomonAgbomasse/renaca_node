@@ -5,4 +5,3 @@ export * from './user-session.entity';
 export * from './audit-log.entity';
 export * from './email-notification.entity';
 export * from './system-setting.entity';
-export * from './group.entity';
