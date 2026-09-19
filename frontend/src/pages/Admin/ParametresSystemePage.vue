@@ -121,13 +121,6 @@
       </div>
     </div>
 
-    <!-- Section 5: Groupes & Natures de Crédit -->
-    <div class="card border-0 rounded-0 bg-white mb-25 shadow-sm">
-      <div class="card-body p-4">
-        <GroupManagement />
-      </div>
-    </div>
-
     <!-- Section 6: Liens de Parenté -->
     <div class="card border-0 rounded-0 bg-white mb-25 shadow-sm">
       <div class="card-body p-4">
@@ -142,7 +135,6 @@ import { defineComponent, ref, onMounted } from 'vue';
 import ApiService from '../../services/ApiService';
 import BreadCrumb from '../../components/Common/BreadCrumb.vue';
 import RoleManagement from '../../components/User/RoleManagement.vue';
-import GroupManagement from '../../components/User/GroupManagement.vue';
 import DailyReportNotification from '../../components/Notification/DailyReportNotification.vue';
 import ListeSubscriber from '../../components/Subscriber/ListeSubscriber.vue';
 import LienParenteManagement from '../../components/Admin/LienParenteManagement.vue';
@@ -152,7 +144,6 @@ export default defineComponent({
   components: {
     BreadCrumb,
     RoleManagement,
-    GroupManagement,
     DailyReportNotification,
     ListeSubscriber,
     LienParenteManagement
