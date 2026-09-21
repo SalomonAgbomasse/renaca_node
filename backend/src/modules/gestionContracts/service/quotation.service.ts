@@ -565,14 +565,23 @@ export class QuotationService {
 
   /**
    * Barème Tarif_PE (Capital Constant) : l'âge est toujours une correspondance
-   * exacte (18 à 70 ans), aucun arrondi nécessaire.
+   * exacte (18 à 70 ans), aucun arrondi nécessaire. Retourne le taux décimal
+   * exact (déjà converti depuis le pourcentage source, ex. 0.720% -> 0.0072).
    */
-  private async findTauxConstant(age: number, dureeMois: number): Promise<RenacaTarifConstant | null> {
-    return this.renacaTarifConstantRepository
+  private async findTauxConstant(age: number, dureeMois: number): Promise<number | null> {
+    const row = await this.renacaTarifConstantRepository
       .createQueryBuilder('t')
       .where('t.age = :age', { age })
-      .andWhere('t.dureeMoisMin <= :duree AND t.dureeMoisMax >= :duree', { duree: dureeMois })
       .getOne();
+
+    if (!row) {
+      return null;
+    }
+
+    // Les colonnes decimal sont renvoyées en string par le driver MySQL (préservation de précision) :
+    // conversion explicite requise, contrairement aux colonnes int du barème Amortissable.
+    const taux = Number((row as any)[`mois${dureeMois}`]);
+    return Number.isFinite(taux) ? taux : null;
   }
 
   /**
@@ -638,13 +647,13 @@ export class QuotationService {
       return eligibiliteError;
     }
 
-    const tauxRow = await this.findTauxConstant(age, dureeMois);
-    if (!tauxRow) {
+    const taux = await this.findTauxConstant(age, dureeMois);
+    if (taux === null) {
       return { error: true, message: `Aucun taux de barème RENACA Tarif_PE ne correspond à l'âge ${age} ans et à la durée ${dureeMois} mois.` };
     }
 
     const accessoires = QuotationService.ACCESSOIRES_RENACA;
-    const pd = Math.round(capital * (tauxRow.tauxPourMille / 1000) * 1.25);
+    const pd = Math.round(capital * taux * 1.25);
     const puttc = pd + accessoires;
 
     return {
