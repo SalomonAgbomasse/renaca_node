@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { Cotation } from '../entity/cotation.entity';
 import { QuotationService } from './quotation.service';
+import { NatureCredit } from '../entity/nature-credit.entity';
 
 @Injectable()
 export class CotationService {
   constructor(
     @InjectRepository(Cotation)
     private cotationRepository: Repository<Cotation>,
+    @InjectRepository(NatureCredit)
+    private natureCreditRepository: Repository<NatureCredit>,
     private quotationService: QuotationService,
   ) {}
 
@@ -356,6 +359,58 @@ export class CotationService {
     }
 
     // Créer la cotation
+    return this.create(cotationDataWithPrimes);
+  }
+
+  /**
+   * Créer une cotation RENACA (Amortissable ou Constant) avec calcul de la prime.
+   * Indépendant de createCotationPADME/createCotationWithPrimes : ne modifie
+   * aucun chemin PADME existant.
+   */
+  async createCotationRenaca(cotationData: any, userId: number, agencyId: number): Promise<Cotation> {
+    const { capital, birthdate, duration, idNatureCredit, perteEmploi, tauxSurprime, beneficiaire, accessoires } = cotationData;
+
+    const natureCredit = await this.natureCreditRepository.findOne({ where: { id: idNatureCredit } });
+    if (!natureCredit) {
+      throw new BadRequestException(`Nature de crédit introuvable (id: ${idNatureCredit}).`);
+    }
+    const typeCapital = natureCredit.code === 'CONST' ? 'CONST' : 'AMORT';
+
+    const primeData = await this.quotationService.primeRENACA(
+      typeCapital,
+      capital,
+      birthdate,
+      duration,
+      perteEmploi,
+      tauxSurprime,
+      accessoires ?? cotationData.acc
+    );
+
+    if (primeData.error) {
+      throw new BadRequestException(primeData.message || 'Erreur lors du calcul de la prime RENACA');
+    }
+
+    const reference = await this.generateReference('RENACA');
+
+    const cotationDataWithPrimes: any = {
+      ...cotationData,
+      typeAss: cotationData.typeAss || typeCapital,
+      idUser: userId,
+      idAgency: agencyId,
+      reference,
+      capital,
+      puttc: primeData.puttc,
+      pd: primeData.pd,
+      pc: 0,
+      acc: primeData.acc,
+      surp: primeData.surp,
+      fm: 0,
+      primePE: primeData.primePE || 0,
+      perteEmploi: !!perteEmploi,
+      tauxSurprime: tauxSurprime || 0,
+      beneficiaire: beneficiaire || null,
+    };
+
     return this.create(cotationDataWithPrimes);
   }
 }

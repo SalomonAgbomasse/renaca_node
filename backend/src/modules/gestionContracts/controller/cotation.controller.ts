@@ -258,6 +258,95 @@ export class CotationController {
     }
   }
 
+  /**
+   * Endpoint pour créer une cotation RENACA (Amortissable ou Constant)
+   */
+  @Post('renaca')
+  @RequirePermissions(ContractPermission.CREATE)
+  async createRenacaCotation(@Body() cotationData: any, @Request() req: any): Promise<any> {
+    console.log('🧮 Création de cotation RENACA:', cotationData);
+
+    const user = req.user;
+
+    if (!cotationData.capital) {
+      return { error: true, message: 'Le capital est obligatoire' };
+    }
+    if (!cotationData.birthdate) {
+      return { error: true, message: 'La date de naissance est obligatoire' };
+    }
+    if (!cotationData.duration) {
+      return { error: true, message: 'La durée est obligatoire' };
+    }
+    if (!cotationData.idNatureCredit) {
+      return { error: true, message: 'Le type de capital (nature de crédit) est obligatoire' };
+    }
+
+    try {
+      const cotation = await this.cotationService.createCotationRenaca(
+        cotationData,
+        user.id,
+        user.idAgency
+      );
+
+      return {
+        error: false,
+        puttc: cotation.puttc,
+        pd: cotation.pd,
+        surp: cotation.surp,
+        acc: cotation.acc,
+        primePE: (cotation as any).primePE,
+        data: cotation
+      };
+    } catch (error) {
+      console.error('Erreur lors de la création de la cotation RENACA:', error);
+      return {
+        error: true,
+        message: error.message || 'Erreur lors de la création de la cotation RENACA'
+      };
+    }
+  }
+
+  /**
+   * Endpoint pour calculer uniquement la prime RENACA sans créer de cotation
+   */
+  @Post('renaca/calculate')
+  @RequirePermissions(ContractPermission.CREATE)
+  async calculateRenacaPrimes(@Body() cotationData: any): Promise<any> {
+    console.log('🧮 Calcul de la prime RENACA (sans insertion):', cotationData);
+
+    if (!cotationData.capital) {
+      return { code: 400, message: 'Le capital est obligatoire', error: true };
+    }
+    if (!cotationData.birthdate) {
+      return { code: 400, message: 'La date de naissance est obligatoire', error: true };
+    }
+    if (!cotationData.duration) {
+      return { code: 400, message: 'La durée est obligatoire', error: true };
+    }
+
+    try {
+      const typeCapital = cotationData.typeCapital || (String(cotationData.idNatureCredit) === '2' ? 'CONST' : 'AMORT');
+      const primeData = await this.quotationService.primeRENACA(
+        typeCapital,
+        cotationData.capital,
+        cotationData.birthdate,
+        cotationData.duration,
+        cotationData.perteEmploi,
+        cotationData.tauxSurprime,
+        cotationData.accessoires
+      );
+
+      if (primeData.error) {
+        return { code: 400, message: primeData.message, error: true };
+      }
+
+      return { code: 200, message: 'Prime calculée avec succès', error: false, data: primeData };
+    } catch (error) {
+      console.error('Erreur lors du calcul de la prime RENACA:', error);
+      return { code: 500, message: error.message || 'Erreur lors du calcul de la prime RENACA', error: true };
+    }
+  }
+
 
   @Get()
   @RequirePermissions(ContractPermission.READ)
