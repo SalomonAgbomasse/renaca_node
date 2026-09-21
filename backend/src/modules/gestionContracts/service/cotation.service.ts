@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { Cotation } from '../entity/cotation.entity';
 import { QuotationService } from './quotation.service';
 import { NatureCredit } from '../entity/nature-credit.entity';
+import { TypeCustomer } from '../entity/type-customer.entity';
 
 @Injectable()
 export class CotationService {
@@ -13,6 +14,8 @@ export class CotationService {
     private cotationRepository: Repository<Cotation>,
     @InjectRepository(NatureCredit)
     private natureCreditRepository: Repository<NatureCredit>,
+    @InjectRepository(TypeCustomer)
+    private typeCustomerRepository: Repository<TypeCustomer>,
     private quotationService: QuotationService,
   ) {}
 
@@ -191,6 +194,14 @@ export class CotationService {
 
     const typeCapital = await this.resolveTypeCapital(idNatureCredit);
 
+    // Résout idTypeCustomer (clé étrangère réelle) et typeAss (libellé) à partir
+    // de l'id de type de client reçu du formulaire (envoyé dans le champ typeAss).
+    const requestedTypeCustomerId = Number(cotationData.typeAss) || Number(cotationData.idTypeCustomer) || 1;
+    const typeCustomerEntity = await this.typeCustomerRepository.findOne({ where: { id: requestedTypeCustomerId } });
+    if (!typeCustomerEntity) {
+      throw new BadRequestException(`Type de client introuvable (id: ${requestedTypeCustomerId}).`);
+    }
+
     const primeData = await this.quotationService.primeRENACA(
       typeCapital,
       capital,
@@ -208,19 +219,19 @@ export class CotationService {
 
     const cotationDataWithPrimes: any = {
       ...cotationData,
-      typeAss: cotationData.typeAss || typeCapital,
+      idTypeCustomer: typeCustomerEntity.id,
+      typeAss: typeCustomerEntity.libelle,
       idUser: userId,
       idAgency: agencyId,
       reference,
       capital,
       puttc: primeData.puttc,
       pd: primeData.pd,
-      pc: 0,
+      pc: primeData.primePE || 0,
       acc: primeData.acc,
       surp: primeData.surp,
       fm: 0,
-      primePE: primeData.primePE || 0,
-      perteEmploi: !!perteEmploi,
+      garantieCompl: perteEmploi ? 'OUI' : 'NON',
       tauxSurprime: tauxSurprime || 0,
       beneficiaire: beneficiaire || null,
     };

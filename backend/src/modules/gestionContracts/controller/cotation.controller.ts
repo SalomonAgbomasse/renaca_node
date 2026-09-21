@@ -53,7 +53,7 @@ export class CotationController {
         pd: cotation.pd,
         surp: cotation.surp,
         acc: cotation.acc,
-        primePE: (cotation as any).primePE,
+        primePE: cotation.pc, // pc stocke la prime Perte d'Emploi pour RENACA
         data: cotation
       };
     } catch (error) {

@@ -54,15 +54,15 @@ export class Cotation {
   @Column({ name: 'differe', type: 'int', default: 0 })
   differe: number;
 
-  @Column({ name: 'garantieCompl', type: 'varchar', length: 3, nullable: true })
+  // Pour RENACA : Perte d'Emploi OUI/NON (réutilise la colonne PADME "garantie
+  // complémentaire perte d'emploi", même signification).
+  @Column({ name: 'garantieCompl', type: 'varchar', length: 3, nullable: true, default: 'NON' })
   garantieCompl: string;
-
-  @Column({ name: 'obaOptions', type: 'json', nullable: true })
-  obaOptions: any;
 
   @Column({ name: 'pd', type: 'int', unsigned: true, nullable: true })
   pd: number;
 
+  // Pour RENACA : stocke la prime Perte d'Emploi (primePE).
   @Column({ name: 'pc', type: 'int', unsigned: true, nullable: true })
   pc: number;
 
@@ -100,17 +100,11 @@ export class Cotation {
   etablissement: string;
 
   // Champs spécifiques RENACA (Assurance Bouclier Emprunteurs)
-  @Column({ name: 'perteEmploi', type: 'boolean', nullable: true, default: false })
-  perteEmploi: boolean;
-
   @Column({ name: 'tauxSurprime', type: 'decimal', precision: 5, scale: 4, nullable: true, default: 0 })
   tauxSurprime: number;
 
   @Column({ name: 'beneficiaire', type: 'varchar', length: 255, nullable: true })
   beneficiaire: string;
-
-  @Column({ name: 'primePE', type: 'int', unsigned: true, nullable: true, default: 0 })
-  primePE: number;
 
   @CreateDateColumn({ name: 'dateSaisie', type: 'datetime' })
   dateSaisie: Date;
