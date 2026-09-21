@@ -210,4 +210,21 @@ export class CreateContractDto {
 
   @IsOptional()
   beneficiaries?: any[];
+
+  // Champs spécifiques RENACA
+  @IsOptional()
+  @IsBoolean()
+  perteEmploi?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  tauxSurprime?: number;
+
+  @IsOptional()
+  @IsString()
+  beneficiaire?: string;
+
+  @IsOptional()
+  @IsNumber()
+  primePE?: number;
 }

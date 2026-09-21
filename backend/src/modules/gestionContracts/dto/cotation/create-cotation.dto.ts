@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsNotEmpty, IsBoolean } from 'class-validator';
 
 export class CreateCotationDto {
 
@@ -101,4 +101,21 @@ export class CreateCotationDto {
   @IsOptional()
   @IsNumber()
   idAgency?: number;
+
+  // Champs spécifiques RENACA
+  @IsOptional()
+  @IsBoolean()
+  perteEmploi?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  tauxSurprime?: number;
+
+  @IsOptional()
+  @IsString()
+  beneficiaire?: string;
+
+  @IsOptional()
+  @IsNumber()
+  primePE?: number;
 }
