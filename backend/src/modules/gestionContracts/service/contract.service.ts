@@ -1164,7 +1164,7 @@ export class ContractService {
    * existant, n'appelle pas validateCPDetails/saveCPBeneficiaries
    * (spécifiques à PADME/CP, non pertinents ici).
    */
-  async createRenacaContract(contractData: Partial<Contract> & { clientData?: any; perteEmploi?: boolean; tauxSurprime?: number; beneficiaire?: string; accessoires?: number }): Promise<Contract> {
+  async createRenacaContract(contractData: Partial<Contract> & { clientData?: any; perteEmploi?: boolean; tauxSurprime?: number; beneficiaire?: string }): Promise<Contract> {
     if (!contractData.capital || !contractData.duration || !contractData.clientData?.birthdate || !contractData.idNatureCredit) {
       throw new BadRequestException('Champs requis manquants pour le contrat RENACA (capital, durée, date de naissance, nature de crédit).');
     }
@@ -1181,15 +1181,13 @@ export class ContractService {
       throw new BadRequestException("La date d'effet ne peut pas être antérieure à la date courante.");
     }
 
-    const accessoires = (contractData as any).accessoires ?? contractData.acc;
     const primeData = await this.quotationService.primeRENACA(
       typeCapital,
       contractData.capital,
       birthdate,
       contractData.duration,
       contractData.perteEmploi,
-      contractData.tauxSurprime,
-      accessoires
+      contractData.tauxSurprime
     );
 
     if (primeData.error) {

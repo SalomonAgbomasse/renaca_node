@@ -513,6 +513,9 @@ export class QuotationService {
   // aucun code partagé, aucune modification du chemin PADME existant.
   // ==========================================================================
 
+  /** Accessoires RENACA : montant fixe, non saisi par l'utilisateur (cf. acc=1500 pour PADME). */
+  private static readonly ACCESSOIRES_RENACA = 1000;
+
   /**
    * Vérifie les règles d'éligibilité communes aux deux produits RENACA :
    * âge >= 18, âge + durée en années <= 70, durée 1-60 mois, capital <= plafond du produit.
@@ -540,17 +543,24 @@ export class QuotationService {
   }
 
   /**
-   * Barème Tarif_1 (Capital Amortissable) : recherche la plus petite tranche de
-   * capital supérieure ou égale au capital demandé (arrondi à la tranche
-   * supérieure quand le capital ne correspond à aucune tranche exacte).
+   * Barème Tarif_1 (Capital Amortissable), format large (une colonne par mois) :
+   * recherche la plus petite tranche de capital supérieure ou égale au capital
+   * demandé (arrondi à la tranche supérieure quand le capital ne correspond à
+   * aucune tranche exacte), puis lit la prime de la colonne mois{N} correspondante.
    */
-  private async findTierAmortissable(capital: number, dureeMois: number): Promise<RenacaTarifAmortissable | null> {
-    return this.renacaTarifAmortissableRepository
+  private async findPrimeAmortissable(capital: number, dureeMois: number): Promise<number | null> {
+    const tier = await this.renacaTarifAmortissableRepository
       .createQueryBuilder('t')
       .where('t.capital >= :capital', { capital })
-      .andWhere('t.dureeMoisMin <= :duree AND t.dureeMoisMax >= :duree', { duree: dureeMois })
       .orderBy('t.capital', 'ASC')
       .getOne();
+
+    if (!tier) {
+      return null;
+    }
+
+    const prime = (tier as any)[`mois${dureeMois}`];
+    return typeof prime === 'number' ? prime : null;
   }
 
   /**
@@ -574,25 +584,20 @@ export class QuotationService {
     datenaiss: string,
     dureeMois: number,
     perteEmploiDemandee: boolean = false,
-    tauxSurprime: number = 0,
-    accessoires?: number
+    tauxSurprime: number = 0
   ): Promise<QuotationResponse> {
-    if (accessoires === undefined || accessoires === null) {
-      return { error: true, message: 'Le montant des accessoires est obligatoire pour le produit RENACA Amortissable.' };
-    }
-
     const age = this.ageFromBirthdate(datenaiss);
     const eligibiliteError = this.eligibiliteRenaca(age, dureeMois, capital, 10000000);
     if (eligibiliteError) {
       return eligibiliteError;
     }
 
-    const tier = await this.findTierAmortissable(capital, dureeMois);
-    if (!tier) {
-      return { error: true, message: `Aucune tranche de barème RENACA Tarif_1 ne correspond au capital ${capital} FCFA et à la durée ${dureeMois} mois.` };
+    const pd = await this.findPrimeAmortissable(capital, dureeMois);
+    if (pd === null) {
+      return { error: true, message: `Aucune prime de barème RENACA Tarif_1 ne correspond au capital ${capital} FCFA et à la durée ${dureeMois} mois.` };
     }
 
-    const pd = tier.primeDeces;
+    const accessoires = QuotationService.ACCESSOIRES_RENACA;
     const primePE = perteEmploiDemandee && age <= 59
       ? Math.round(0.00066 * dureeMois * Math.min(capital, 1000000))
       : 0;
@@ -621,14 +626,10 @@ export class QuotationService {
     capital: number,
     datenaiss: string,
     dureeMois: number,
-    perteEmploiDemandee: boolean = false,
-    accessoires?: number
+    perteEmploiDemandee: boolean = false
   ): Promise<QuotationResponse> {
     if (perteEmploiDemandee) {
       return { error: true, message: "La Perte d'Emploi n'est pas disponible pour le produit RENACA Capital Constant." };
-    }
-    if (accessoires === undefined || accessoires === null) {
-      return { error: true, message: 'Le montant des accessoires est obligatoire pour le produit RENACA Constant.' };
     }
 
     const age = this.ageFromBirthdate(datenaiss);
@@ -642,6 +643,7 @@ export class QuotationService {
       return { error: true, message: `Aucun taux de barème RENACA Tarif_PE ne correspond à l'âge ${age} ans et à la durée ${dureeMois} mois.` };
     }
 
+    const accessoires = QuotationService.ACCESSOIRES_RENACA;
     const pd = Math.round(capital * (tauxRow.tauxPourMille / 1000) * 1.25);
     const puttc = pd + accessoires;
 
@@ -667,13 +669,12 @@ export class QuotationService {
     datenaiss: string,
     dureeMois: number,
     perteEmploiDemandee?: boolean,
-    tauxSurprime?: number,
-    accessoires?: number
+    tauxSurprime?: number
   ): Promise<QuotationResponse> {
     const type = (typeCapital || '').toUpperCase();
     if (type === 'CONST') {
-      return this.primeRenacaConstant(capital, datenaiss, dureeMois, perteEmploiDemandee, accessoires);
+      return this.primeRenacaConstant(capital, datenaiss, dureeMois, perteEmploiDemandee);
     }
-    return this.primeRenacaAmortissable(capital, datenaiss, dureeMois, perteEmploiDemandee, tauxSurprime, accessoires);
+    return this.primeRenacaAmortissable(capital, datenaiss, dureeMois, perteEmploiDemandee, tauxSurprime);
   }
 }

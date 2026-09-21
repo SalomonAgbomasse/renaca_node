@@ -79,7 +79,6 @@ export class QuotationController {
       capital: number;
       perteEmploi?: boolean;
       tauxSurprime?: number;
-      accessoires?: number;
     }
   ): Promise<QuotationResponseDto> {
     return this.quotationService.primeRENACA(
@@ -88,8 +87,7 @@ export class QuotationController {
       body.birthdate,
       body.duration,
       body.perteEmploi,
-      body.tauxSurprime,
-      body.accessoires
+      body.tauxSurprime
     );
   }
 }

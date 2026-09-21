@@ -1,25 +1,17 @@
+import { RenacaTarifAmortissable } from '../../entity/renaca-tarif-amortissable.entity';
+
 /**
  * Barème RENACA "Tarif_1" — Capital Amortissable (primes en FCFA).
- * Source : Tarif_1.md (23 tranches de capital x 10 paliers de durée de 6 mois).
- * Chaque ligne de TIERS reproduit exactement une ligne du barème source ;
- * ce fichier ne fait qu'expanser ces lignes vers les 230 enregistrements
- * (capital, dureeMoisMin, dureeMoisMax, primeDeces) attendus par le seed.
+ * Source : Tarif_1.md (23 tranches de capital x 60 mois de durée).
+ * Chaque ligne de TIERS reproduit exactement une ligne du barème source,
+ * sous la forme compacte (10 valeurs, une par palier de 6 mois) pour éviter
+ * de retaper 6 fois la même valeur ; ce fichier expanse ensuite chaque
+ * ligne vers les 60 colonnes mois1..mois60 attendues par l'entité.
  */
 
-export interface RenacaTarifAmortissableRow {
-  capital: number;
-  dureeMoisMin: number;
-  dureeMoisMax: number;
-  primeDeces: number;
-}
+type RenacaTarifAmortissableRow = Omit<RenacaTarifAmortissable, 'id'>;
 
-/** Paliers de durée de 6 mois, de 1-6 à 55-60. */
-const PALIERS: Array<[number, number]> = [
-  [1, 6], [7, 12], [13, 18], [19, 24], [25, 30],
-  [31, 36], [37, 42], [43, 48], [49, 54], [55, 60],
-];
-
-/** Une ligne = une tranche de capital + ses 10 primes (une par palier), dans l'ordre des PALIERS. */
+/** Une ligne = une tranche de capital + ses 10 primes (une par palier de 6 mois). */
 const TIERS: Array<{ capital: number; primes: number[] }> = [
   { capital: 125000, primes: [1425, 2090, 2927, 3634, 4596, 5344, 6475, 7220, 8010, 8799] },
   { capital: 250000, primes: [1425, 2090, 2927, 3634, 4596, 5344, 6475, 7220, 8010, 8799] },
@@ -46,12 +38,16 @@ const TIERS: Array<{ capital: number; primes: number[] }> = [
   { capital: 20000000, primes: [27360, 53960, 85595, 113858, 150480, 180405, 222015, 253602, 285190, 316778] },
 ];
 
-export const RENACA_TARIF_AMORTISSABLE_DATA: RenacaTarifAmortissableRow[] = TIERS.flatMap(
-  ({ capital, primes }) =>
-    PALIERS.map(([dureeMoisMin, dureeMoisMax], index) => ({
-      capital,
-      dureeMoisMin,
-      dureeMoisMax,
-      primeDeces: primes[index],
-    })),
+/** Chaque palier (index 0-9) couvre 6 mois consécutifs : palier 0 = mois 1-6, palier 1 = mois 7-12, etc. */
+function toWideRow(capital: number, primes: number[]): RenacaTarifAmortissableRow {
+  const row: any = { capital };
+  for (let mois = 1; mois <= 60; mois++) {
+    const palierIndex = Math.floor((mois - 1) / 6);
+    row[`mois${mois}`] = primes[palierIndex];
+  }
+  return row as RenacaTarifAmortissableRow;
+}
+
+export const RENACA_TARIF_AMORTISSABLE_DATA: RenacaTarifAmortissableRow[] = TIERS.map(
+  ({ capital, primes }) => toWideRow(capital, primes),
 );

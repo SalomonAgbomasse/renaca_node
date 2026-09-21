@@ -332,8 +332,7 @@ export class CotationController {
         cotationData.birthdate,
         cotationData.duration,
         cotationData.perteEmploi,
-        cotationData.tauxSurprime,
-        cotationData.accessoires
+        cotationData.tauxSurprime
       );
 
       if (primeData.error) {

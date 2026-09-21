@@ -368,7 +368,7 @@ export class CotationService {
    * aucun chemin PADME existant.
    */
   async createCotationRenaca(cotationData: any, userId: number, agencyId: number): Promise<Cotation> {
-    const { capital, birthdate, duration, idNatureCredit, perteEmploi, tauxSurprime, beneficiaire, accessoires } = cotationData;
+    const { capital, birthdate, duration, idNatureCredit, perteEmploi, tauxSurprime, beneficiaire } = cotationData;
 
     const natureCredit = await this.natureCreditRepository.findOne({ where: { id: idNatureCredit } });
     if (!natureCredit) {
@@ -382,8 +382,7 @@ export class CotationService {
       birthdate,
       duration,
       perteEmploi,
-      tauxSurprime,
-      accessoires ?? cotationData.acc
+      tauxSurprime
     );
 
     if (primeData.error) {
