@@ -752,9 +752,8 @@ export class ContractService {
     // Vérifier la limite de contrats par nature et par période pour le client
     await this.checkContractLimits(contractData, contractData.dateEff);
 
-    const policeTypeCredit = typeCapital === 'CONST' ? 'RC' : 'RA';
-    contractData.police = contractData.police || await this.policyNumberService.generateStandardPolice(contractData.idAgency || 0, policeTypeCredit);
-    contractData.reference = contractData.reference || await this.policyNumberService.generateStandardReference(contractData.idUser || 0, policeTypeCredit);
+    contractData.police = contractData.police || await this.policyNumberService.generateRenacaPolice(contractData.idAgency || 0);
+    contractData.reference = contractData.reference || await this.policyNumberService.generateRenacaReference(contractData.idUser || 0, typeCapital);
 
     const existingContractReference = await this.findByReference(contractData.reference || '');
     if (existingContractReference.length > 0) {
