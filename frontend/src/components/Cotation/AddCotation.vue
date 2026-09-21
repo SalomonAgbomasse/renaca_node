@@ -63,9 +63,8 @@
               @click="selectCreditType(natureCredit.code, natureCredit.libelle)"
             >
               <div class="tab-icon">
-                <i v-if="(natureCredit.code || '').toUpperCase() === 'CP'" class="fas fa-shield-alt"></i>
-                <i v-else-if="(natureCredit.code || '').toUpperCase() === 'OBA'" class="fas fa-hands-helping"></i>
-                <i v-else-if="(natureCredit.code || '').toUpperCase() === 'AMORT'" class="fas fa-chart-line"></i>
+                <i v-if="(natureCredit.code || '').toUpperCase() === 'AMORT'" class="fas fa-chart-line"></i>
+                <i v-else-if="(natureCredit.code || '').toUpperCase() === 'CONST'" class="fas fa-coins"></i>
                 <i v-else class="fas fa-file-invoice-dollar"></i>
               </div>
               <div class="tab-label">
@@ -139,7 +138,7 @@
                       class="form-control shadow-none fs-md-15 text-black bg-light"
                       :disabled="true"
                       placeholder="Durée calculée"
-                      :max="getDurationMaxPADME()"
+                      :max="getDurationMaxRenaca()"
                       maxlength="2"
                     />
                   </Field>
@@ -428,21 +427,19 @@
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Date de naissance <span class="text-danger">*</span>
-                    <span v-if="birthDateValue && isPeriodiciteValid && calculatedAge > 0" 
-                          class="ms-2" 
-                          :class="calculatedAge >= 18 ? 'text-success' : 'text-danger'">
+                    <span v-if="birthDateValue && calculatedAge > 0"
+                          class="ms-2"
+                          :class="calculatedAge >= 18 && calculatedAge <= 69 ? 'text-success' : 'text-danger'">
                       Âge : {{ calculatedAge }} ans
                     </span>
-                    <span v-if="!isPeriodiciteValid" class="text-muted ms-2">(Sélectionnez d'abord la périodicité)</span>
                   </label>
                   <Field name="birthdate" v-slot="{ field }">
                     <input
                       v-bind="field"
                       type="date"
                       class="form-control shadow-none fs-md-15 text-black"
-                      :class="{ 'field-disabled': !isPeriodiciteValid }"
-                      :disabled="!isPeriodiciteValid"
                       :max="maxBirthdate"
+                      :min="minBirthdate"
                       @input="handleBirthDateInput"
                     />
                   </Field>
@@ -503,8 +500,8 @@
                       class="form-control shadow-none fs-md-15 text-black"
                       :class="{ 'field-disabled': !isCapitalValid && isAmortMode, 'bg-light': !isAmortMode }"
                       :disabled="(!isCapitalValid && isAmortMode) || !isAmortMode"
-                      placeholder="60 mois max (18-65 ans) / 12 mois max (65-70 ans)"
-                      :max="getDurationMaxPADME()"
+                      :placeholder="getDurationPlaceholder()"
+                      :max="getDurationMaxRenaca()"
                       maxlength="2"
                       @input="handleDurationInput"
                     />
@@ -513,46 +510,39 @@
                 </div>
               </div>
 
-              <!-- Différée PADME -->
-              <div class="col-md-6">
-                <div class="form-group mb-15 mb-sm-20 mb-md-25">
-                  <label class="d-block text-black fw-semibold mb-10">
-                    Différée (en mois - Laisser à 0 si non) <span class="text-danger">*</span>
+              <!-- Perte d'Emploi (Amortissable uniquement) -->
+              <div class="col-md-6" v-if="isAmortMode">
+                <label class="d-block text-black fw-semibold mb-10">Perte d'Emploi <span class="text-danger">*</span></label>
+                <div class="d-flex gap-3">
+                  <label class="d-flex align-items-center gap-2">
+                    <Field name="perteEmploi" type="radio" value="OUI" v-slot="{ field }">
+                      <input type="radio" v-bind="field" value="OUI" />
+                    </Field>
+                    OUI
                   </label>
-                  <Field name="differe" v-slot="{ field }">
-                    <select
-                      v-bind="field"
-                      class="form-control shadow-none fs-md-15 text-black"
-                    >
-                      <option value="0">0 mois</option>
-                      <option value="1">1 mois</option>
-                      <option value="2">2 mois</option>
-                      <option value="3">3 mois</option>
-                      <option value="4">4 mois</option>
-                      <option value="5">5 mois</option>
-                      <option value="6">6 mois</option>
-                    </select>
-                  </Field>
-                  <ErrorMessage name="differe" class="text-danger"/>
+                  <label class="d-flex align-items-center gap-2">
+                    <Field name="perteEmploi" type="radio" value="NON" v-slot="{ field }">
+                      <input type="radio" v-bind="field" value="NON" />
+                    </Field>
+                    NON
+                  </label>
                 </div>
+                <ErrorMessage name="perteEmploi" class="text-danger" />
               </div>
 
               <!-- Type de client -->
               <div class="col-md-6">
                 <label class="d-block text-black fw-semibold mb-10">Type de client <span class="text-danger">*</span></label>
                 <div class="d-flex gap-3">
-                  <label class="d-flex align-items-center gap-2">
-                    <Field name="typeCustomer" type="radio" value="1" v-slot="{ field }">
-                      <input type="radio" v-bind="field" value="1" />
+                  <label
+                    v-for="tc in typeCustomers"
+                    :key="tc.id"
+                    class="d-flex align-items-center gap-2"
+                  >
+                    <Field name="typeCustomer" type="radio" :value="String(tc.id)" v-slot="{ field }">
+                      <input type="radio" v-bind="field" :value="String(tc.id)" />
                     </Field>
-                    Particulier
-                  </label>
-
-                  <label class="d-flex align-items-center gap-2">
-                    <Field name="typeCustomer" type="radio" value="2" v-slot="{ field }">
-                      <input type="radio" v-bind="field" value="2" />
-                    </Field>
-                    Personnel
+                    {{ tc.libelle }}
                   </label>
                 </div>
                 <ErrorMessage name="typeCustomer" class="text-danger" />
@@ -768,7 +758,9 @@ setup() {
   const selectedCreditType = ref('AMORTISSABLE');
   const periodicites = ref<any[]>([]);
   const loadingPeriodicites = ref(false);
-  
+  const typeCustomers = ref<any[]>([]);
+  const loadingTypeCustomers = ref(false);
+
   // Computed pour vérifier si c'est le mode HOMME CLE (HC)
   const isHommeCleMode = computed(() => false); // Pas de HC pour PADME
   
@@ -784,7 +776,17 @@ setup() {
     const maxDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
     return maxDate.toISOString().split('T')[0];
   });
-  
+
+  // Date de naissance la plus ancienne sélectionnable : un client de 70 ans pile est
+  // toujours inéligible RENACA (âge + CEIL(durée/12) ne peut jamais être <= 70 à partir
+  // de 70 ans), donc la vraie borne utilisable est 69 ans révolus, pas 70.
+  const minBirthdate = computed(() => {
+    const today = new Date();
+    const maxAge = 70;
+    const minDate = new Date(today.getFullYear() - maxAge, today.getMonth(), today.getDate() + 1);
+    return minDate.toISOString().split('T')[0];
+  });
+
   // Variable pour l'âge calculé
   const calculatedAge = ref(0);
   const birthDateValue = ref('');
@@ -804,34 +806,28 @@ setup() {
 
   // Fonction pour obtenir le placeholder de durée selon le type de crédit
   const getDurationPlaceholder = (): string => {
-    return '60 mois max (18-65 ans) / 12 mois max (65-70 ans)';
+    return 'Durée maximale selon votre âge (60 mois max)';
   };
 
-  // Fonction pour obtenir la durée maximale PADME selon l'âge
-  const getDurationMaxPADME = (): number => {
-    if (calculatedAge.value >= 65 && calculatedAge.value <= 70) {
-      return 12; // 65-70 ans: max 12 mois
-    }
-    return 60; // 18-65 ans: max 60 mois
+  // Durée maximale RENACA selon l'âge : âge + CEIL(durée/12) <= 70, donc
+  // durée max = min(60, (70 - âge) x 12). Règle unifiée AMORT/CONST.
+  const getDurationMaxRenaca = (): number => {
+    return Math.min(60, Math.max(0, (70 - calculatedAge.value) * 12));
   };
 
-  // Fonction pour gérer le changement de périodicité
+  // Fonction pour gérer le changement de périodicité (RENACA : purement informatif,
+  // aucun impact sur le calcul ni sur la validité des autres champs)
   const onPeriodiciteChange = (event: Event): void => {
     const target = event.target as HTMLSelectElement;
     idPeriodicite.value = target.value;
-    
+
     // Mettre à jour VeeValidate
     if (contratForm.value) {
       (contratForm.value as any).setFieldValue('idPeriodicite', target.value);
     }
-    
+
     isPeriodiciteValid.value = target.value !== '';
-    if (!isPeriodiciteValid.value) {
-      isBirthDateValid.value = false;
-      isCapitalValid.value = false;
-      isDurationValid.value = false;
-    }
-    
+
     isFormDirty.value = true;
   };
 
@@ -841,7 +837,7 @@ setup() {
     birthDateValue.value = target.value;
     calculatedAge.value = calculateAge(target.value);
     
-    const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 70;
+    const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 69;
     isBirthDateValid.value = birthDateValue.value !== '' && calculatedAge.value >= 18 && calculatedAge.value <= maxAge;
     
     if (!isBirthDateValid.value) {
@@ -884,13 +880,13 @@ setup() {
     isFormDirty.value = true;
   };
 
-  // Fonction pour gérer l'input de la durée (PADME)
+  // Fonction pour gérer l'input de la durée (RENACA)
   const handleDurationInput = (event: Event): void => {
     const target = event.target as HTMLInputElement;
     let digits = (target.value || '').replace(/[^0-9]/g, '');
-    
+
     if (digits) {
-      const maxDuration = getDurationMaxPADME();
+      const maxDuration = getDurationMaxRenaca();
       const num = Math.max(1, Math.min(maxDuration, parseInt(digits, 10)));
       digits = String(num);
     }
@@ -1279,9 +1275,9 @@ setup() {
           if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
           }
-          const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 70;
+          const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 69;
           if (age > maxAge) {
-            return this.createError({ message: `L'âge ne peut pas dépasser ${maxAge} ans (PADME)` });
+            return this.createError({ message: `L'âge ne peut pas dépasser ${maxAge} ans` });
           }
           return true;
         })
@@ -1295,40 +1291,36 @@ setup() {
         .typeError('Le capital doit être un nombre')
         .required('Le capital est obligatoire')
         .min(1, 'Le capital doit être supérieur à 0')
-        .max(10000000, 'Le capital maximal PADME est 10 000 000 FCFA'),
-      
+        .max(10000000, 'Le capital maximal Amortissable est 10 000 000 FCFA'),
+
       duration: Yup.number()
         .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : Number(originalValue))
         .typeError('La durée doit être un nombre')
         .required('La durée en mois est obligatoire')
         .integer('La durée doit être un entier')
         .min(1, 'La durée minimale est 1 mois')
-        .test('max-duration-padme', 'Durée maximale dépassée', function(value) {
+        .test('max-duration-renaca', 'Durée maximale dépassée', function(value) {
           if (!value) return true;
           if (creditType.value === 'CP' || creditType.value === 'OBA') {
             return true;
           }
           const age = calculatedAge.value;
-          const maxDuration = (age >= 65 && age <= 70) ? 12 : 60;
-          const message = (age >= 65 && age <= 70)
-            ? 'La durée maximale pour 65-70 ans est 12 mois'
-            : 'La durée maximale est 60 mois (18-65 ans)';
-          
+          const maxDuration = Math.min(60, Math.max(0, (70 - age) * 12));
+
           if (value > maxDuration) {
-            return this.createError({ message });
+            return this.createError({ message: `La durée maximale pour ${age} ans est ${maxDuration} mois` });
           }
           return true;
         }),
       
-      differe: (creditType.value === 'CP' || creditType.value === 'OBA')
-        ? Yup.number().nullable().optional()
-        : Yup.number()
-            .transform((value, originalValue) => originalValue === '' || originalValue === null ? 0 : Number(originalValue))
-            .typeError('La différée doit être un nombre')
-            .min(0, 'La différée ne peut pas être négative')
-            .max(6, 'La différée maximale est 6 mois')
-            .required('La différée est obligatoire (0 si non applicable)'),
-      
+      differe: Yup.number().nullable().optional(),
+
+      perteEmploi: (creditType.value === 'AMORT')
+        ? Yup.string()
+            .oneOf(['OUI', 'NON'], "Choix invalide pour Perte d'Emploi")
+            .required("Merci d'indiquer si la Perte d'Emploi est souhaitée")
+        : Yup.string().nullable().optional(),
+
       garantieCompl: (creditType.value === 'CP' || creditType.value === 'OBA')
         ? Yup.string().nullable().optional()
         : Yup.string()
@@ -1338,7 +1330,7 @@ setup() {
       typeCustomer: (creditType.value === 'CP' || creditType.value === 'OBA')
         ? Yup.string().nullable().optional()
         : Yup.string()
-            .oneOf(['1', '2'], "Choix invalide pour le type de client")
+            .oneOf(typeCustomers.value.map(tc => String(tc.id)), "Choix invalide pour le type de client")
             .required('Le type de client est obligatoire'),
       
       etablissement: Yup.string()
@@ -1401,22 +1393,20 @@ setup() {
         console.warn('⚠️ Structure de réponse inattendue pour natureCredits, utilisation du fallback');
         natureCredits.value = [
           { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' },
-          { id: 2, libelle: 'PADME PROTECTION', code: 'CP' },
-          { id: 3, libelle: 'OBSEQUES ALAFIA', code: 'OBA' }
+          { id: 2, libelle: 'CONSTANT', code: 'CONST' }
         ];
       }
-      
-      // Filtrer pour ne garder que AMORT, CP et OBA
-      natureCredits.value = natureCredits.value.filter(nc => 
-        nc.code === 'AMORT' || nc.code === 'CP' || nc.code === 'OBA'
+
+      // Filtrer pour ne garder que AMORT et CONST (les seules natures de crédit RENACA)
+      natureCredits.value = natureCredits.value.filter(nc =>
+        nc.code === 'AMORT' || nc.code === 'CONST'
       );
-      
+
     } catch (err: any) {
       console.error('❌ Erreur lors du chargement des natures de crédit, utilisation du fallback:', err);
       natureCredits.value = [
         { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' },
-        { id: 2, libelle: 'PADME PROTECTION', code: 'CP' },
-        { id: 3, libelle: 'OBSEQUES ALAFIA', code: 'OBA' }
+        { id: 2, libelle: 'CONSTANT', code: 'CONST' }
       ];
     } finally {
       loadingNatureCredits.value = false;
@@ -1466,6 +1456,32 @@ setup() {
       error('Erreur lors du chargement des périodicités. Utilisation des valeurs par défaut.');
     } finally {
       loadingPeriodicites.value = false;
+    }
+  };
+
+  const loadTypeCustomers = async () => {
+    try {
+      loadingTypeCustomers.value = true;
+
+      const response = await ApiService.get('/type-customers');
+
+      if (response.data && response.data.data && Array.isArray(response.data.data.typeCustomers)) {
+        typeCustomers.value = response.data.data.typeCustomers;
+      } else {
+        console.warn('⚠️ Structure de réponse inattendue pour typeCustomers, utilisation du fallback');
+        typeCustomers.value = [
+          { id: 1, libelle: 'PARTICULIER' },
+          { id: 2, libelle: 'PERSONNEL RENACA' }
+        ];
+      }
+    } catch (err: any) {
+      console.error('❌ Erreur lors du chargement des types de client, utilisation du fallback:', err);
+      typeCustomers.value = [
+        { id: 1, libelle: 'PARTICULIER' },
+        { id: 2, libelle: 'PERSONNEL RENACA' }
+      ];
+    } finally {
+      loadingTypeCustomers.value = false;
     }
   };
 
@@ -1521,10 +1537,10 @@ setup() {
       if (customerData.birthdate) {
         birthDateValue.value = formatDateForInput(customerData.birthdate);
         calculatedAge.value = calculateAge(birthDateValue.value);
-        const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 70;
+        const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 69;
         isBirthDateValid.value = calculatedAge.value >= 18 && calculatedAge.value <= maxAge;
       }
-      
+
     }
   } catch (err: any) {
     console.error('❌ Erreur lors du chargement du client:', err);
@@ -1629,7 +1645,7 @@ setup() {
         if (customerData.birthdate) {
           birthDateValue.value = formatDateForInput(customerData.birthdate);
           calculatedAge.value = calculateAge(birthDateValue.value);
-          const maxAge = (codeUpper === 'CP' || codeUpper === 'OBA') ? 75 : 70;
+          const maxAge = (codeUpper === 'CP' || codeUpper === 'OBA') ? 75 : 69;
           isBirthDateValid.value = calculatedAge.value >= 18 && calculatedAge.value <= maxAge;
         }
 
@@ -1963,9 +1979,10 @@ setup() {
       const selectedNatureCredit = natureCredits.value.find(nc => nc.code === creditType.value || nc.code === (creditType.value || '').toUpperCase());
       const idNatureCredit = selectedNatureCredit?.id || 1;
 
-      // Préparer les données PADME
+      const isRenacaMode = creditType.value === 'AMORT' || creditType.value === 'CONST';
+
+      // Préparer les données à envoyer
       const formData: any = {
-        // Champs PADME obligatoires
         capital: (creditType.value === 'OBA')
           ? obaMainCapital.value
           : parseInt(values.capital),
@@ -1977,34 +1994,32 @@ setup() {
           : (creditType.value === 'OBA')
             ? 12
             : parseInt(values.duration),
-        idPeriodicite: (creditType.value === 'CP' || creditType.value === 'OBA')
-          ? 1
-          : parseInt(values.idPeriodicite),
-        differe: (creditType.value === 'CP' || creditType.value === 'OBA')
-          ? 0
-          : parseInt(values.differe || 0),
         idNatureCredit: idNatureCredit, // ID de la nature de crédit
-        
+
         // Champs additionnels
         lastname: values.lastname?.toUpperCase() || '',
         firstname: values.firstname?.toUpperCase() || '',
         typeAss: values.typeCustomer, // Type de client
         etablissement: values.etablissement || '',
-        
-        // Fixes pour PADME
-        typeContrat: 'BE',
-        idCreditType: 'A', // Amortissable par défaut
-        obaOptions: creditType.value === 'OBA' ? obaSelectedOptions.value : undefined
       };
 
-      console.log('📤 Données PADME à envoyer:', formData);
-      console.log('📤 Détails validation:', {
-        capital: formData.capital,
-        birthdate: formData.birthdate,
-        duration: formData.duration,
-        idPeriodicite: formData.idPeriodicite,
-        differe: formData.differe
-      });
+      // Périodicité : conservée pour AMORT/CONST à titre informatif uniquement
+      // (aucun impact sur le calcul RENACA, Prime Unique seulement), forcée pour CP/OBA.
+      formData.idPeriodicite = (creditType.value === 'CP' || creditType.value === 'OBA')
+        ? 1
+        : parseInt(values.idPeriodicite);
+
+      if (isRenacaMode) {
+        formData.perteEmploi = values.perteEmploi === 'OUI';
+      } else {
+        // Champs PADME (CP/OBA), branche déjà inatteignable via l'UI mais laissée intacte
+        formData.differe = 0;
+        formData.typeContrat = 'BE';
+        formData.idCreditType = 'A';
+        formData.obaOptions = creditType.value === 'OBA' ? obaSelectedOptions.value : undefined;
+      }
+
+      console.log('📤 Données à envoyer:', formData);
 
       let response;
       if (isEditMode.value && route.params.code) {
@@ -2018,40 +2033,40 @@ setup() {
           success(message);
         }
       } else {
-        // Création - appel endpoint PADME
-        response = await ApiService.post('cotations/padme', formData);
-        
-        console.log('📥 Réponse API PADME:', response.data);
-        
+        // Création - endpoint RENACA pour AMORT/CONST, PADME pour CP/OBA (branche inatteignable via l'UI)
+        response = await ApiService.post(isRenacaMode ? 'cotations/renaca' : 'cotations/padme', formData);
+
+        console.log('📥 Réponse API:', response.data);
+
         // Le ResponseTransformInterceptor encapsule dans { code, message, data, timestamp }
         const responseData = response.data.data || response.data;
-        
-        // Vérifier la réponse PADME
+
         if (responseData.error) {
-          error(responseData.message || 'Erreur lors du calcul de la prime PADME');
+          error(responseData.message || 'Erreur lors du calcul de la prime');
           return;
         }
-        
+
         // Vérifier que les données de prime sont présentes
         if (!responseData.puttc) {
           error('Erreur: Données de prime manquantes dans la réponse');
           console.error('❌ Structure de réponse invalide:', response.data);
           return;
         }
-        
+
         // Succès
         success(`Prime calculée: ${responseData.puttc.toLocaleString()} FCFA`);
-        
-        // Extraire les primes
+
+        // Extraire les primes (la réponse RENACA n'a pas pc/fm, mais primePE — réutilise le slot "pc"
+        // du widget "Perte d'Emploi" déjà existant dans PrimesCalculatedModal.vue)
         calculatedPrimes.value = {
           pd: responseData.pd || 0,
-          pc: responseData.pc || 0,
+          pc: isRenacaMode ? (responseData.primePE || 0) : (responseData.pc || 0),
           surp: responseData.surp || 0,
           acc: responseData.acc || 0,
           fm: responseData.fm || 0,
           puttc: responseData.puttc || 0
         };
-        
+
         showPrimesSection.value = true;
         // Désactiver le scroll de la page
         document.body.classList.add('modal-open');
@@ -2261,7 +2276,7 @@ setup() {
 
     // Contraintes par champ
     if (fieldName === 'duration' && digits) {
-      const maxDuration = getDurationMaxPADME();
+      const maxDuration = getDurationMaxRenaca();
       const num = Math.max(1, Math.min(maxDuration, parseInt(digits, 10)));
       digits = String(num);
     } else if (fieldName === 'capital' && digits) {
@@ -3030,7 +3045,10 @@ watch(() => route.query.clientCode, (newClientCode) => {
 
     // Charger les natures de crédit depuis la base de données
     await loadNatureCredits();
-    
+
+    // Charger les types de client depuis la base de données
+    await loadTypeCustomers();
+
     // Initialiser l'étape selon le mode
     if (isSingleStepMode.value) {
       currentStep.value = 2; // Directement à l'étape contrat
@@ -3084,6 +3102,8 @@ watch(() => route.query.clientCode, (newClientCode) => {
       selectedCreditType,
       periodicites,
       loadingPeriodicites,
+      typeCustomers,
+      loadingTypeCustomers,
       isHommeCleMode,
       isAmortMode,
       obaTypeCustomer,
@@ -3100,6 +3120,7 @@ watch(() => route.query.clientCode, (newClientCode) => {
       calculatedAge,
       birthDateValue,
       maxBirthdate,
+      minBirthdate,
       showPrimesSection,
       isConverting,
       calculatedPrimes,
@@ -3131,7 +3152,7 @@ watch(() => route.query.clientCode, (newClientCode) => {
       handleCapitalInput,
       handleBirthDateInput,
       getCreditTypeLabel,
-      getDurationMaxPADME,
+      getDurationMaxRenaca,
       loadNatureCredits,
       addContrat,
       handleCancel,
