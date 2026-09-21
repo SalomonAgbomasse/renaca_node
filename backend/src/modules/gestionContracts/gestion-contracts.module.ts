@@ -68,6 +68,8 @@ import { UuidInitializerService } from './service/uuid-initializer.service';
 import { LienParente } from './entity/lien-parente.entity';
 import { LienParenteService } from './service/lien-parente.service';
 import { LienParenteController } from './controller/lien-parente.controller';
+import { RenacaTarifAmortissable } from './entity/renaca-tarif-amortissable.entity';
+import { RenacaTarifConstant } from './entity/renaca-tarif-constant.entity';
 
 @Module({
   imports: [
@@ -93,7 +95,9 @@ import { LienParenteController } from './controller/lien-parente.controller';
       AlertThreshold,
       Beneficiary,
       ContractInsuredMember,
-      LienParente
+      LienParente,
+      RenacaTarifAmortissable,
+      RenacaTarifConstant
     ]),
     GestionUsersModule
   ],
