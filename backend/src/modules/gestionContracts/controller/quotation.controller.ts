@@ -59,4 +59,37 @@ export class QuotationController {
     
     return result;
   }
+
+  @Post('calculate-renaca')
+  @ApiOperation({ summary: 'Calculer une prime RENACA (Amortissable ou Constant)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Prime RENACA calculée avec succès',
+    type: QuotationResponseDto
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Erreur dans les paramètres de la quotation'
+  })
+  async calculateRenaca(
+    @Body() body: {
+      typeCapital: 'AMORT' | 'CONST';
+      birthdate: string;
+      duration: number;
+      capital: number;
+      perteEmploi?: boolean;
+      tauxSurprime?: number;
+      accessoires?: number;
+    }
+  ): Promise<QuotationResponseDto> {
+    return this.quotationService.primeRENACA(
+      body.typeCapital,
+      body.capital,
+      body.birthdate,
+      body.duration,
+      body.perteEmploi,
+      body.tauxSurprime,
+      body.accessoires
+    );
+  }
 }
