@@ -70,6 +70,7 @@ import { LienParenteService } from './service/lien-parente.service';
 import { LienParenteController } from './controller/lien-parente.controller';
 import { RenacaTarifAmortissable } from './entity/renaca-tarif-amortissable.entity';
 import { RenacaTarifConstant } from './entity/renaca-tarif-constant.entity';
+import { RenacaTarifSeedService } from './service/renaca-tarif-seed.service';
 
 @Module({
   imports: [
@@ -148,7 +149,8 @@ import { RenacaTarifConstant } from './entity/renaca-tarif-constant.entity';
     PolicyNumberService,
     BiService,
     UuidInitializerService,
-    LienParenteService
+    LienParenteService,
+    RenacaTarifSeedService
   ],
   exports: [ContractService, CustomerService, AgencyService, ContractStateService, CotationService, QuotationService, ProductService, SubscriberService, TypeCustomerService, NatureCreditService, BiService, LienParenteService],
 })
