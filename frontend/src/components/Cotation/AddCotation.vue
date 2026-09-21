@@ -447,29 +447,29 @@
                 </div>
               </div>
 
-              <!-- Capital PADME -->
+              <!-- Capital -->
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Capital <span class="text-danger">*</span>
-                    <span class="ms-2" v-if="isAmortMode">Max 10 000 000</span>
-                    <span v-if="!isBirthDateValid && isAmortMode" class="text-muted ms-2">(Saisissez d'abord la date de naissance)</span>
+                    <span class="ms-2" v-if="isAmortMode || isConstMode">Max {{ capitalMaxForType.toLocaleString('fr-FR') }}</span>
+                    <span v-if="!isBirthDateValid && (isAmortMode || isConstMode)" class="text-muted ms-2">(Saisissez d'abord la date de naissance)</span>
                   </label>
-                  
-                  <!-- Si AMORTISSABLE, saisie libre -->
-                  <Field v-if="isAmortMode" name="capital" v-slot="{ field }">
+
+                  <!-- Si AMORTISSABLE/CONSTANT, saisie libre -->
+                  <Field v-if="isAmortMode || isConstMode" name="capital" v-slot="{ field }">
                     <input
                       v-bind="field"
                       type="tel"
                       class="form-control shadow-none fs-md-15 text-black text-uppercase"
                       :class="{ 'field-disabled': !isBirthDateValid }"
                       :disabled="!isBirthDateValid"
-                      placeholder="Maximum 10 000 000 FCFA (PADME)"
+                      :placeholder="`Maximum ${capitalMaxForType.toLocaleString('fr-FR')} FCFA`"
                       maxlength="8"
                       @input="handleCapitalInput"
                     />
                   </Field>
-                  
+
                   <Field v-else-if="isOBAMode" name="capital" v-slot="{ field }">
                     <select
                       v-bind="field"
@@ -491,15 +491,15 @@
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Durée en mois <span class="text-danger">*</span>
-                    <span v-if="!isCapitalValid && isAmortMode" class="text-muted ms-2">(Saisissez d'abord le capital)</span>
+                    <span v-if="!isCapitalValid" class="text-muted ms-2">(Saisissez d'abord le capital)</span>
                   </label>
                   <Field name="duration" v-slot="{ field }">
                     <input
                       v-bind="field"
                       type="number"
                       class="form-control shadow-none fs-md-15 text-black"
-                      :class="{ 'field-disabled': !isCapitalValid && isAmortMode, 'bg-light': !isAmortMode }"
-                      :disabled="(!isCapitalValid && isAmortMode) || !isAmortMode"
+                      :class="{ 'field-disabled': !isCapitalValid }"
+                      :disabled="!isCapitalValid"
                       :placeholder="getDurationPlaceholder()"
                       :max="60"
                       maxlength="2"
@@ -750,8 +750,10 @@ setup() {
   const idPeriodicite = ref('');
   const creditType = ref('AMORT'); // AMORT par défaut
   const isAmortMode = computed(() => (creditType.value || '').toUpperCase() === 'AMORT');
+  const isConstMode = computed(() => (creditType.value || '').toUpperCase() === 'CONST');
   const isCPMode = computed(() => (creditType.value || '').toUpperCase() === 'CP');
   const isOBAMode = computed(() => (creditType.value || '').toUpperCase() === 'OBA');
+  const capitalMaxForType = computed(() => (isConstMode.value ? 20000000 : 10000000));
   const isTontineMode = computed(() => false); // Plus de mode Tontine
   const natureCredits = ref<any[]>([]);
   const loadingNatureCredits = ref(false);
@@ -855,13 +857,13 @@ setup() {
     isFormDirty.value = true;
   };
 
-  // Fonction pour gérer l'input du capital (PADME: max 10M)
+  // Fonction pour gérer l'input du capital (max 10M Amortissable / 20M Constant)
   const handleCapitalInput = (event: Event): void => {
     const target = event.target as HTMLInputElement;
     let digits = (target.value || '').replace(/[^0-9]/g, '');
-    
+
     if (digits) {
-      const num = Math.max(1, Math.min(10000000, parseInt(digits, 10))); // Max 10M pour PADME
+      const num = Math.max(1, Math.min(capitalMaxForType.value, parseInt(digits, 10)));
       digits = String(num);
     }
     
@@ -1294,7 +1296,7 @@ setup() {
         .typeError('Le capital doit être un nombre')
         .required('Le capital est obligatoire')
         .min(1, 'Le capital doit être supérieur à 0')
-        .max(10000000, 'Le capital maximal Amortissable est 10 000 000 FCFA'),
+        .max(capitalMaxForType.value, `Le capital maximal ${isConstMode.value ? 'Constant' : 'Amortissable'} est ${capitalMaxForType.value.toLocaleString('fr-FR')} FCFA`),
 
       duration: Yup.number()
         .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : Number(originalValue))
@@ -3116,6 +3118,8 @@ watch(() => route.query.clientCode, (newClientCode) => {
       loadingTypeCustomers,
       isHommeCleMode,
       isAmortMode,
+      isConstMode,
+      capitalMaxForType,
       obaTypeCustomer,
       isObaOptionAgeValid,
       isObaAgesValid,
