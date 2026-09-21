@@ -1278,7 +1278,10 @@ setup() {
           }
           const maxAge = (creditType.value === 'CP' || creditType.value === 'OBA') ? 75 : 69;
           if (age > maxAge) {
-            return this.createError({ message: `L'âge ne peut pas dépasser ${maxAge} ans` });
+            const message = (creditType.value === 'CP' || creditType.value === 'OBA')
+              ? `L'âge ne peut pas dépasser ${maxAge} ans`
+              : `Un assuré de 70 ans ou plus n'est jamais éligible RENACA (la règle exige âge + durée ≤ 70 ans, ce qui n'est jamais possible à partir de 70 ans révolus).`;
+            return this.createError({ message });
           }
           return true;
         })
