@@ -224,33 +224,9 @@ export class PdfService {
     const questionnaireImage = this.getImageAsBase64('images/questionnaire.png');
     const signatureImage = this.getImageAsBase64('images/signature.png');
 
-    const creditType = contractData.natureCredit?.code ||
-      (String(contractData.idNatureCredit) === '2' ? 'CONST' : 'AMORT');
-      
-    const productName = contractData.natureCredit?.libelle || 
-      (creditType === 'OBA' 
-        ? 'OBSÈQUES ALAFIA' 
-        : creditType === 'CP'
-          ? 'PADME PROTECTION'
-          : 'BOUCLIER EMPRUNTEUR');
-    
-    const rightLogoHtml = `<img src="${msfpLogo}" alt="PADME" style="max-width: 100px; max-height: 75px; object-fit: contain;" />`;
+    const productName = contractData.natureCredit?.libelle || 'BOUCLIER EMPRUNTEUR';
 
-    // Pour les contrats CP, s'assurer que les bénéficiaires sont présents pour afficher la page 2 (comme en création unitaire)
-    if (creditType === 'CP') {
-      if (!contractData.beneficiaries || !Array.isArray(contractData.beneficiaries) || contractData.beneficiaries.length === 0) {
-        const custName = customerData 
-          ? `${customerData.lastname || ''} ${customerData.firstname || ''}`.trim() 
-          : 'Ayant droit';
-        contractData.beneficiaries = [
-          {
-            nomPrenoms: custName || 'Ayant droit',
-            lienParente: 'AUTRE',
-            pourcentage: 100
-          }
-        ];
-      }
-    }
+    const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 75px; object-fit: contain;" />`;
 
     const templateData = {
       contract: contractData,
@@ -270,11 +246,7 @@ export class PdfService {
       rightLogoHtml: rightLogoHtml
     };
 
-    const templateName = creditType === 'CP' 
-      ? 'contract_cp' 
-      : creditType === 'OBA' 
-        ? 'contract_oba' 
-        : 'contract';
+    const templateName = 'contract';
 
     let createdAtFormatted = 'N/A';
     if (contractData.createdAt) {
@@ -351,42 +323,12 @@ export class PdfService {
 
     const idNature = String(cotationData.idNatureCredit || '');
     const creditType = cotationData.natureCredit?.code || (idNature === '2' ? 'CONST' : 'AMORT');
-    const creditTypeLabel = creditType === 'OBA'
-      ? 'OBSÈQUES ALAFIA'
-      : creditType === 'CP'
-        ? 'PADME PROTECTION'
-        : creditType === 'CONST'
-          ? 'CAPITAL CONSTANT'
-          : 'AMORTISSABLE';
-    const productName = cotationData.natureCredit?.libelle || 
-      (creditType === 'OBA'
-        ? 'OBSÈQUES ALAFIA'
-        : creditType === 'CP'
-          ? 'PADME PROTECTION'
-          : 'BOUCLIER EMPRUNTEUR');
+    const creditTypeLabel = creditType === 'CONST' ? 'CAPITAL CONSTANT' : 'AMORTISSABLE';
+    const productName = cotationData.natureCredit?.libelle || 'BOUCLIER EMPRUNTEUR';
 
-    const rightLogoHtml = `<img src="${msfpLogo}" alt="PADME" style="max-width: 100px; max-height: 75px; object-fit: contain;" />`;
+    const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 75px; object-fit: contain;" />`;
 
-    // Préparer les membres OBA si le produit est OBA
-    let obaMembers: any[] = [];
-    if (creditType === 'OBA' && cotationData.obaOptions) {
-      const opts = typeof cotationData.obaOptions === 'string'
-        ? JSON.parse(cotationData.obaOptions)
-        : cotationData.obaOptions;
-      const roleMap: Record<string, string> = {
-        conjoint:    'Conjoint(e)',
-        ascendant1:  'Ascendant 1',
-        ascendant2:  'Ascendant 2',
-        ascendant3:  'Ascendant 3',
-        ascendant4:  'Ascendant 4',
-      };
-      for (const [key, label] of Object.entries(roleMap)) {
-        const m = opts[key];
-        if (m && m.included) {
-          obaMembers.push({ roleLabel: label, ...m });
-        }
-      }
-    }
+    const obaMembers: any[] = [];
 
     const now = new Date();
     const dateSimulation = cotationData.dateSaisie

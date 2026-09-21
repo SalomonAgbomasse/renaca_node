@@ -156,8 +156,7 @@ export class ContractHistoryService {
       if (field === 'idNatureCredit') {
         const val = Number(value);
         if (val === 1) return 'Crédit Amortissable (AMORT)';
-        if (val === 2) return 'PADME PROTECTION (CP)';
-        if (val === 3) return 'Obsèques Alafia (OBA)';
+        if (val === 2) return 'Capital Constant (CONST)';
         return `Nature #${val}`;
       }
 
