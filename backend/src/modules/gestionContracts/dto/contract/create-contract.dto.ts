@@ -169,9 +169,6 @@ export class CreateContractDto {
   garantieCompl?: string;
 
   @IsOptional()
-  obaOptions?: any;
-
-  @IsOptional()
   @IsNumber()
   idNatureCredit?: number;
 
@@ -223,8 +220,4 @@ export class CreateContractDto {
   @IsOptional()
   @IsString()
   beneficiaire?: string;
-
-  @IsOptional()
-  @IsNumber()
-  primePE?: number;
 }

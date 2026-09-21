@@ -779,18 +779,16 @@ export class ContractService {
 
     // Primes
     contractData.pd = primeData.pd;
-    contractData.pc = 0;
+    contractData.pc = primeData.primePE || 0; // pc stocke la prime Perte d'Emploi pour RENACA
     contractData.acc = primeData.acc;
     contractData.surp = primeData.surp;
     contractData.fm = 0;
     contractData.puttc = primeData.puttc;
-    (contractData as any).primePE = primeData.primePE || 0;
     (contractData as any).prime = contractData.puttc;
     (contractData as any).commission = 0;
 
-    if (!contractData.garantieCompl) {
-      contractData.garantieCompl = 'NON';
-    }
+    // garantieCompl réutilisée pour Perte d'Emploi OUI/NON (RENACA)
+    contractData.garantieCompl = contractData.perteEmploi ? 'OUI' : 'NON';
 
     contractData.contractType = 'RENACA';
 
@@ -1131,14 +1129,16 @@ export class ContractService {
   ): Promise<void> {
     const currentCapital = contractUpdateData.capital !== undefined ? contractUpdateData.capital : existingContract.capital;
     const currentDuration = contractUpdateData.duration !== undefined ? contractUpdateData.duration : existingContract.duration;
-    const currentPerteEmploi = (contractUpdateData as any).perteEmploi !== undefined ? (contractUpdateData as any).perteEmploi : (existingContract as any).perteEmploi;
+    // perteEmploi n'est pas une colonne : dérivé de garantieCompl ('OUI'/'NON') sur le contrat existant.
+    const existingPerteEmploi = existingContract.garantieCompl === 'OUI';
+    const currentPerteEmploi = (contractUpdateData as any).perteEmploi !== undefined ? (contractUpdateData as any).perteEmploi : existingPerteEmploi;
     const currentTauxSurprime = (contractUpdateData as any).tauxSurprime !== undefined ? (contractUpdateData as any).tauxSurprime : (existingContract as any).tauxSurprime;
 
     const capitalChanged = contractUpdateData.capital !== undefined && contractUpdateData.capital !== existingContract.capital;
     const durationChanged = contractUpdateData.duration !== undefined && contractUpdateData.duration !== existingContract.duration;
     const natureChanged = contractUpdateData.idNatureCredit !== undefined && contractUpdateData.idNatureCredit !== existingContract.idNatureCredit;
     const birthdateChanged = !!(originalBirthdate && birthdate !== originalBirthdate);
-    const perteEmploiChanged = (contractUpdateData as any).perteEmploi !== undefined && (contractUpdateData as any).perteEmploi !== (existingContract as any).perteEmploi;
+    const perteEmploiChanged = (contractUpdateData as any).perteEmploi !== undefined && (contractUpdateData as any).perteEmploi !== existingPerteEmploi;
     const tauxSurprimeChanged = (contractUpdateData as any).tauxSurprime !== undefined && (contractUpdateData as any).tauxSurprime !== (existingContract as any).tauxSurprime;
 
     const needsRecalculation =
@@ -1178,7 +1178,8 @@ export class ContractService {
     contractUpdateData.acc = primeData.acc;
     contractUpdateData.surp = primeData.surp;
     contractUpdateData.puttc = primeData.puttc;
-    (contractUpdateData as any).primePE = primeData.primePE || 0;
+    contractUpdateData.pc = primeData.primePE || 0; // pc stocke la prime Perte d'Emploi pour RENACA
+    contractUpdateData.garantieCompl = currentPerteEmploi ? 'OUI' : 'NON';
   }
 
   /**

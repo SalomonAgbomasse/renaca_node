@@ -71,7 +71,7 @@ export class ContractController {
           surp: contract.surp,
           acc: contract.acc,
           puttc: contract.puttc,
-          primePE: (contract as any).primePE
+          primePE: contract.pc // pc stocke la prime Perte d'Emploi pour RENACA
         }
       };
     } catch (error) {
