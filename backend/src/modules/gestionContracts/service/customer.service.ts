@@ -92,8 +92,7 @@ export class CustomerService {
       activeContracts: number;
       totalCapital: number;
       totalPuttc: number;
-      cpCount: number;
-      obaCount: number;
+      constCount: number;
       amortCount: number;
     };
   } | null> {
@@ -154,14 +153,12 @@ export class CustomerService {
     const getNatureCode = (c: any) => {
       if (c.natureCredit?.code) return String(c.natureCredit.code).toUpperCase().trim();
       const nId = Number(c.idNatureCredit || 0);
-      if (nId === 2) return 'CP';
-      if (nId === 3) return 'OBA';
+      if (nId === 2) return 'CONST';
       if (nId === 1) return 'AMORT';
       return '';
     };
 
-    const cpCount = activeContractsList.filter(c => getNatureCode(c) === 'CP').length;
-    const obaCount = activeContractsList.filter(c => getNatureCode(c) === 'OBA').length;
+    const constCount = activeContractsList.filter(c => getNatureCode(c) === 'CONST').length;
     const amortCount = activeContractsList.filter(c => getNatureCode(c) === 'AMORT').length;
 
     return {
@@ -173,8 +170,7 @@ export class CustomerService {
         activeContracts,
         totalCapital,
         totalPuttc,
-        cpCount,
-        obaCount,
+        constCount,
         amortCount,
       }
     };

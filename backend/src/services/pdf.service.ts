@@ -224,8 +224,8 @@ export class PdfService {
     const questionnaireImage = this.getImageAsBase64('images/questionnaire.png');
     const signatureImage = this.getImageAsBase64('images/signature.png');
 
-    const creditType = contractData.natureCredit?.code || 
-      (String(contractData.idNatureCredit) === '2' ? 'CP' : String(contractData.idNatureCredit) === '3' ? 'OBA' : 'AMORT');
+    const creditType = contractData.natureCredit?.code ||
+      (String(contractData.idNatureCredit) === '2' ? 'CONST' : 'AMORT');
       
     const productName = contractData.natureCredit?.libelle || 
       (creditType === 'OBA' 
@@ -350,12 +350,14 @@ export class PdfService {
     const certifLogo = this.getImageAsBase64('images/certif.jpg');
 
     const idNature = String(cotationData.idNatureCredit || '');
-    const creditType = idNature === '2' ? 'CP' : idNature === '3' ? 'OBA' : 'AMORT';
+    const creditType = cotationData.natureCredit?.code || (idNature === '2' ? 'CONST' : 'AMORT');
     const creditTypeLabel = creditType === 'OBA'
       ? 'OBSÈQUES ALAFIA'
       : creditType === 'CP'
         ? 'PADME PROTECTION'
-        : 'AMORTISSABLE';
+        : creditType === 'CONST'
+          ? 'CAPITAL CONSTANT'
+          : 'AMORTISSABLE';
     const productName = cotationData.natureCredit?.libelle || 
       (creditType === 'OBA'
         ? 'OBSÈQUES ALAFIA'

@@ -233,8 +233,7 @@ export class ContractHistoryService {
     } else if (contract.idNatureCredit) {
       const val = Number(contract.idNatureCredit);
       if (val === 1) natureCreditLabel = 'AMORTISSABLE (AMORT)';
-      else if (val === 2) natureCreditLabel = 'PADME PROTECTION (CP)';
-      else if (val === 3) natureCreditLabel = 'OBSÈQUES ALAFIA (OBA)';
+      else if (val === 2) natureCreditLabel = 'CAPITAL CONSTANT (CONST)';
       else natureCreditLabel = `Nature #${val}`;
     }
 

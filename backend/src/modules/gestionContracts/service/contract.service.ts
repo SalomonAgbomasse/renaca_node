@@ -682,469 +682,474 @@ export class ContractService {
     return this.contractRepository.find({ where: { keyCont }, withDeleted: true });
   }
 
-  async create(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
-    // Utiliser la fonction de validation et traitement des données
-    await this.validateAndProcessContractData(contractData, contractData.idUser);
-
-    const { beneficiaries, ...rest } = contractData;
-    const contract = this.contractRepository.create(rest);
-    const savedContract = await this.contractRepository.save(contract);
-
-    const creditType = this.getCreditType(savedContract);
-    if (creditType === 'CP' && beneficiaries) {
-      await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
-    }
-
-    // Enregistrer les membres assurés OBA si présents
-    if (creditType === 'OBA' && contractData.obaOptions) {
-      await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
-    }
-
-    // Créer l'historique de création
-    await this.createHistoryRecord(
-      savedContract, 
-      null, 
-      rest, 
-      ContractHistoryAction.CREATE
-    );
-
-    return savedContract;
-  }
-
-  async createHorsConvention(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
-    const creditType = this.getCreditType(contractData);
-    
-    // Valider les détails CP
-    this.validateCPDetails(contractData, creditType);
-
-    // Utiliser la fonction de validation et traitement des données
-    await this.validateAndProcessContractDataHorsConvention(contractData, contractData.idUser);
-
-    const { beneficiaries, ...rest } = contractData;
-    const contract = this.contractRepository.create(rest);
-    const savedContract = await this.contractRepository.save(contract);
-
-    if (creditType === 'CP' && beneficiaries) {
-      await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
-    }
-
-    // Enregistrer les membres assurés OBA si présents
-    if (creditType === 'OBA' && contractData.obaOptions) {
-      await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
-    }
-
-    // Créer l'historique de création
-    await this.createHistoryRecord(
-      savedContract, 
-      null, 
-      contractData, 
-      ContractHistoryAction.CREATE
-    );
-
-    const fullContract = await this.findOneWithRelations(savedContract.id);
-    return fullContract || savedContract;
-  }
-
-  // Création d'un contrat hors convention avec création du client si nécessaire
-  async createHorsConventionWithCustomer(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
-    // Vérifier les champs requis
-    if (!contractData.capital || !contractData.duration) {
-      throw new Error('Le capital et la durée sont obligatoires pour le contrat hors convention');
-    }
-
-    const creditType = this.getCreditType(contractData);
-
-    // Valider les détails CP
-    this.validateCPDetails(contractData, creditType);
-
-    // Gestion client (création si nécessaire)
-    if (contractData.clientData) {
-      if (contractData.clientData.idCustomer) {
-        // Si l'ID du client est fourni, l'utiliser directement
-        contractData.idCustomer = contractData.clientData.idCustomer;
-      } else {
-        let existingCustomer: Customer | null = null;
-
-        // 1. Vérifier d'abord par numCustomer si fourni
-        if (contractData.clientData.numCustomer && contractData.clientData.numCustomer.trim()) {
-          existingCustomer = await this.customerService.findByNumCustomer(
-            contractData.clientData.numCustomer.trim()
-          );
-          
-          if (existingCustomer) {
-            // Client trouvé par numCustomer, utiliser ce client
-            contractData.idCustomer = existingCustomer.id;
-            console.log(`✅ Client trouvé par numCustomer: ${existingCustomer.numCustomer} (ID: ${existingCustomer.id})`);
-          }
-        }
-
-        // 2. Si pas trouvé par numCustomer, vérifier par nom, prénom et date de naissance
-        if (!existingCustomer && contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
-          existingCustomer = await this.customerService.findByPersonalInfo(
-            contractData.clientData.lastname.trim().toUpperCase(),
-            contractData.clientData.firstname.trim().toUpperCase(),
-            contractData.clientData.birthdate.trim()
-          );
-          
-          if (existingCustomer) {
-            // Client trouvé par informations personnelles, utiliser ce client
-            contractData.idCustomer = existingCustomer.id;
-            console.log(`✅ Client trouvé par informations personnelles: ${existingCustomer.lastname} ${existingCustomer.firstname} (ID: ${existingCustomer.id})`);
-          }
-        }
-
-        // 3. Si aucun client trouvé, créer un nouveau client
-        if (!existingCustomer) {
-          // Vérifier que les informations minimales sont présentes
-          if (!contractData.clientData.lastname || !contractData.clientData.firstname || !contractData.clientData.birthdate) {
-            throw new Error('Les informations du client (nom, prénom, date de naissance) sont obligatoires pour créer un nouveau client');
-          }
-
-          // Vérifier si le numCustomer n'existe pas déjà (double vérification)
-          if (contractData.clientData.numCustomer && contractData.clientData.numCustomer.trim()) {
-            const existingByNum = await this.customerService.findByNumCustomer(
-              contractData.clientData.numCustomer.trim()
-            );
-            if (existingByNum) {
-              throw new Error(`Un client avec le numéro "${contractData.clientData.numCustomer}" existe déjà`);
-            }
-          }
-
-          // Créer un nouveau client
-          const newClient = await this.customerService.create({
-            ...contractData.clientData,
-            idUser: contractData.idUser
-          });
-          contractData.idCustomer = newClient.id;
-          console.log(`✅ Nouveau client créé: ${newClient.lastname} ${newClient.firstname} (ID: ${newClient.id}, numCustomer: ${newClient.numCustomer})`);
-        }
-      }
-    } else if (!contractData.idCustomer) {
-      throw new Error('L\'ID du client ou les données du client sont obligatoires');
-    }
-
-    // Utiliser la fonction de validation et traitement des données
-    await this.validateAndProcessContractDataHorsConvention(contractData, contractData.idUser);
-
-    // S'assurer que les primes sont présentes (elles doivent être fournies manuellement pour hors convention)
-    if (!contractData.pd && contractData.pd !== 0) contractData.pd = 0;
-    if (!contractData.pc && contractData.pc !== 0) contractData.pc = 0;
-    if (!contractData.surp && contractData.surp !== 0) contractData.surp = 0;
-    if (!contractData.acc && contractData.acc !== 0) contractData.acc = 0;
-    if (!contractData.fm && contractData.fm !== 0) contractData.fm = 0;
-    if (!contractData.puttc && contractData.puttc !== 0) {
-      // Calculer PUTTC si non fourni
-      contractData.puttc = (contractData.pd || 0) + (contractData.pc || 0) + (contractData.surp || 0) + (contractData.acc || 0) + (contractData.fm || 0);
-    }
-
-    // Fixer garantieCompl à 'NON' par défaut si non fourni
-    if (!contractData.garantieCompl) {
-      contractData.garantieCompl = 'NON';
-    }
-
-    // Marquer comme contrat hors convention
-    contractData.contractType = ContractType.HORS_CONVENTION;
-
-    const { beneficiaries, ...rest } = contractData;
-    const contract = this.contractRepository.create(rest);
-    const savedContract = await this.contractRepository.save(contract);
-
-    if (creditType === 'CP' && beneficiaries) {
-      await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
-    }
-
-    // Enregistrer les membres assurés OBA si présents
-    if (creditType === 'OBA' && contractData.obaOptions) {
-      await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
-    }
-
-    // Créer l'historique de création
-    await this.createHistoryRecord(
-      savedContract, 
-      null, 
-      contractData, 
-      ContractHistoryAction.CREATE
-    );
-
-    // Charger la relation customer et beneficiaries pour le retour
-    const contractWithRelations = await this.findOneWithRelations(savedContract.id);
-
-    return contractWithRelations || savedContract;
-  }
+  // ==========================================================================
+  // PADME — méthodes retirées (create() générique, hors-convention, import,
+  // createPadmeContract, conversion cotation->contrat, helpers CP/OBA...).
+  // Voir createRenacaContract plus bas pour l'équivalent RENACA actif.
+  // ==========================================================================
+//   async create(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
+//     // Utiliser la fonction de validation et traitement des données
+//     await this.validateAndProcessContractData(contractData, contractData.idUser);
+// 
+//     const { beneficiaries, ...rest } = contractData;
+//     const contract = this.contractRepository.create(rest);
+//     const savedContract = await this.contractRepository.save(contract);
+// 
+//     const creditType = this.getCreditType(savedContract);
+//     if (creditType === 'CP' && beneficiaries) {
+//       await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
+//     }
+// 
+//     // Enregistrer les membres assurés OBA si présents
+//     if (creditType === 'OBA' && contractData.obaOptions) {
+//       await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
+//     }
+// 
+//     // Créer l'historique de création
+//     await this.createHistoryRecord(
+//       savedContract, 
+//       null, 
+//       rest, 
+//       ContractHistoryAction.CREATE
+//     );
+// 
+//     return savedContract;
+//   }
+// 
+//   async createHorsConvention(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
+//     const creditType = this.getCreditType(contractData);
+//     
+//     // Valider les détails CP
+//     this.validateCPDetails(contractData, creditType);
+// 
+//     // Utiliser la fonction de validation et traitement des données
+//     await this.validateAndProcessContractDataHorsConvention(contractData, contractData.idUser);
+// 
+//     const { beneficiaries, ...rest } = contractData;
+//     const contract = this.contractRepository.create(rest);
+//     const savedContract = await this.contractRepository.save(contract);
+// 
+//     if (creditType === 'CP' && beneficiaries) {
+//       await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
+//     }
+// 
+//     // Enregistrer les membres assurés OBA si présents
+//     if (creditType === 'OBA' && contractData.obaOptions) {
+//       await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
+//     }
+// 
+//     // Créer l'historique de création
+//     await this.createHistoryRecord(
+//       savedContract, 
+//       null, 
+//       contractData, 
+//       ContractHistoryAction.CREATE
+//     );
+// 
+//     const fullContract = await this.findOneWithRelations(savedContract.id);
+//     return fullContract || savedContract;
+//   }
+// 
+//   // Création d'un contrat hors convention avec création du client si nécessaire
+//   async createHorsConventionWithCustomer(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
+//     // Vérifier les champs requis
+//     if (!contractData.capital || !contractData.duration) {
+//       throw new Error('Le capital et la durée sont obligatoires pour le contrat hors convention');
+//     }
+// 
+//     const creditType = this.getCreditType(contractData);
+// 
+//     // Valider les détails CP
+//     this.validateCPDetails(contractData, creditType);
+// 
+//     // Gestion client (création si nécessaire)
+//     if (contractData.clientData) {
+//       if (contractData.clientData.idCustomer) {
+//         // Si l'ID du client est fourni, l'utiliser directement
+//         contractData.idCustomer = contractData.clientData.idCustomer;
+//       } else {
+//         let existingCustomer: Customer | null = null;
+// 
+//         // 1. Vérifier d'abord par numCustomer si fourni
+//         if (contractData.clientData.numCustomer && contractData.clientData.numCustomer.trim()) {
+//           existingCustomer = await this.customerService.findByNumCustomer(
+//             contractData.clientData.numCustomer.trim()
+//           );
+//           
+//           if (existingCustomer) {
+//             // Client trouvé par numCustomer, utiliser ce client
+//             contractData.idCustomer = existingCustomer.id;
+//             console.log(`✅ Client trouvé par numCustomer: ${existingCustomer.numCustomer} (ID: ${existingCustomer.id})`);
+//           }
+//         }
+// 
+//         // 2. Si pas trouvé par numCustomer, vérifier par nom, prénom et date de naissance
+//         if (!existingCustomer && contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
+//           existingCustomer = await this.customerService.findByPersonalInfo(
+//             contractData.clientData.lastname.trim().toUpperCase(),
+//             contractData.clientData.firstname.trim().toUpperCase(),
+//             contractData.clientData.birthdate.trim()
+//           );
+//           
+//           if (existingCustomer) {
+//             // Client trouvé par informations personnelles, utiliser ce client
+//             contractData.idCustomer = existingCustomer.id;
+//             console.log(`✅ Client trouvé par informations personnelles: ${existingCustomer.lastname} ${existingCustomer.firstname} (ID: ${existingCustomer.id})`);
+//           }
+//         }
+// 
+//         // 3. Si aucun client trouvé, créer un nouveau client
+//         if (!existingCustomer) {
+//           // Vérifier que les informations minimales sont présentes
+//           if (!contractData.clientData.lastname || !contractData.clientData.firstname || !contractData.clientData.birthdate) {
+//             throw new Error('Les informations du client (nom, prénom, date de naissance) sont obligatoires pour créer un nouveau client');
+//           }
+// 
+//           // Vérifier si le numCustomer n'existe pas déjà (double vérification)
+//           if (contractData.clientData.numCustomer && contractData.clientData.numCustomer.trim()) {
+//             const existingByNum = await this.customerService.findByNumCustomer(
+//               contractData.clientData.numCustomer.trim()
+//             );
+//             if (existingByNum) {
+//               throw new Error(`Un client avec le numéro "${contractData.clientData.numCustomer}" existe déjà`);
+//             }
+//           }
+// 
+//           // Créer un nouveau client
+//           const newClient = await this.customerService.create({
+//             ...contractData.clientData,
+//             idUser: contractData.idUser
+//           });
+//           contractData.idCustomer = newClient.id;
+//           console.log(`✅ Nouveau client créé: ${newClient.lastname} ${newClient.firstname} (ID: ${newClient.id}, numCustomer: ${newClient.numCustomer})`);
+//         }
+//       }
+//     } else if (!contractData.idCustomer) {
+//       throw new Error('L\'ID du client ou les données du client sont obligatoires');
+//     }
+// 
+//     // Utiliser la fonction de validation et traitement des données
+//     await this.validateAndProcessContractDataHorsConvention(contractData, contractData.idUser);
+// 
+//     // S'assurer que les primes sont présentes (elles doivent être fournies manuellement pour hors convention)
+//     if (!contractData.pd && contractData.pd !== 0) contractData.pd = 0;
+//     if (!contractData.pc && contractData.pc !== 0) contractData.pc = 0;
+//     if (!contractData.surp && contractData.surp !== 0) contractData.surp = 0;
+//     if (!contractData.acc && contractData.acc !== 0) contractData.acc = 0;
+//     if (!contractData.fm && contractData.fm !== 0) contractData.fm = 0;
+//     if (!contractData.puttc && contractData.puttc !== 0) {
+//       // Calculer PUTTC si non fourni
+//       contractData.puttc = (contractData.pd || 0) + (contractData.pc || 0) + (contractData.surp || 0) + (contractData.acc || 0) + (contractData.fm || 0);
+//     }
+// 
+//     // Fixer garantieCompl à 'NON' par défaut si non fourni
+//     if (!contractData.garantieCompl) {
+//       contractData.garantieCompl = 'NON';
+//     }
+// 
+//     // Marquer comme contrat hors convention
+//     contractData.contractType = ContractType.HORS_CONVENTION;
+// 
+//     const { beneficiaries, ...rest } = contractData;
+//     const contract = this.contractRepository.create(rest);
+//     const savedContract = await this.contractRepository.save(contract);
+// 
+//     if (creditType === 'CP' && beneficiaries) {
+//       await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
+//     }
+// 
+//     // Enregistrer les membres assurés OBA si présents
+//     if (creditType === 'OBA' && contractData.obaOptions) {
+//       await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
+//     }
+// 
+//     // Créer l'historique de création
+//     await this.createHistoryRecord(
+//       savedContract, 
+//       null, 
+//       contractData, 
+//       ContractHistoryAction.CREATE
+//     );
+// 
+//     // Charger la relation customer et beneficiaries pour le retour
+//     const contractWithRelations = await this.findOneWithRelations(savedContract.id);
+// 
+//     return contractWithRelations || savedContract;
+//   }
 
   // Fonction pour générer la police selon le type de crédit et de contrat
   async generatePolice(idAgency: number, typeCredit: string = 'A'): Promise<string> {
     return this.policyNumberService.generateStandardPolice(idAgency, typeCredit);
   }
 
-  // Générer une police PADME (format BE{agency}P{nextId})
-  async generatePadmePolice(idAgency: number): Promise<string> {
-    return this.policyNumberService.generatePadmePolice(idAgency);
-  }
+//   // Générer une police PADME (format BE{agency}P{nextId})
+//   async generatePadmePolice(idAgency: number): Promise<string> {
+//     return this.policyNumberService.generatePadmePolice(idAgency);
+//   }
 
   // Fonction pour générer la référence selon le type de contrat et de crédit
   async generateReference(idUser: number, typeCredit: string = 'A'): Promise<string> {
     return this.policyNumberService.generateStandardReference(idUser, typeCredit);
   }
 
-  // Générer une référence PADME (format PA{randomCode}{creditType})
-  async generatePadmeReference(idUser: number, creditType: string = 'AMORT'): Promise<string> {
-    return this.policyNumberService.generatePadmeReference(idUser, creditType);
-  }
-
-  /**
-   * Convertit une cotation PADME en contrat
-   * @param cotation Cotation à convertir
-   * @param clientData Données client du modal
-   */
-  async convertCotationToContract(cotation: any, clientData: any): Promise<Contract> {
-    // Générer la police et la référence
-    const police = await this.generatePadmePolice(clientData.idAgency);
-    const creditType = cotation.idNatureCredit === 2 ? 'CP' : (cotation.idNatureCredit === 3 ? 'OBA' : 'AMORT');
-    
-    let reference = cotation.reference;
-    if (reference) {
-      const existingWithRef = await this.contractRepository.findOne({ where: { reference } });
-      if (existingWithRef) {
-        reference = await this.generatePadmeReference(clientData.idUser, creditType);
-      }
-    } else {
-      reference = await this.generatePadmeReference(clientData.idUser, creditType);
-    }
-
-    // Créer ou récupérer le client
-    let customer: Customer;
-    if (clientData.idCustomer) {
-      const existingCustomer = await this.customerService.findOne(clientData.idCustomer);
-      if (existingCustomer) {
-        customer = existingCustomer;
-      } else {
-        throw new Error(`Client avec l'ID ${clientData.idCustomer} introuvable`);
-      }
-    } else {
-      // Créer un nouveau client avec les données fournies
-      customer = await this.customerService.create({
-        lastname: clientData.nom || clientData.lastname,
-        firstname: clientData.prenoms || clientData.firstname,
-        phone: clientData.telephone || clientData.phone,
-        email: clientData.email,
-        address: clientData.adresse || clientData.address,
-        placeOfBirth: clientData.lieuNaissance || clientData.placeOfBirth,
-        birthdate: cotation.birthdate || clientData.dateNaissance,
-        occupation: clientData.profession || clientData.occupation,
-        gender: clientData.sexe === 'Homme' ? 'M' : (clientData.gender || 'M'),
-        idTypeCustomer: parseInt(clientData.typeClient || clientData.idTypeCustomer || '1')
-      });
-    }
-
-    // Créer le contrat en copiant les champs de la cotation
-    const contractData: Partial<Contract> = {
-      idUser: clientData.idUser,
-      idAgency: clientData.idAgency,
-      idCustomer: customer.id,
-      idNatureCredit: cotation.idNatureCredit,
-      idPeriodicite: cotation.idPeriodicite,
-      capital: cotation.capital,
-      duration: cotation.duration,
-      differe: cotation.differe,
-      garantieCompl: cotation.garantieCompl || 'NON',
-      pd: cotation.pd,
-      pc: cotation.pc,
-      surp: cotation.surp,
-      acc: cotation.acc,
-      fm: cotation.fm,
-      puttc: cotation.puttc,
-      reference,
-      police,
-      etablissement: clientData.etablissement || cotation.etablissement,
-      contractType: 'PADME',
-      description: `Contrat généré depuis cotation ${cotation.id}`,
-      keyCont: `COTATION_${cotation.id}`
-    };
-
-    // Créer le contrat
-    return this.create(contractData);
-  }
-
-  // Création d'un contrat PADME (differe + idPeriodicite + primePADME)
-  async createPadmeContract(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
-    if (!contractData.capital || !contractData.duration || !contractData.clientData?.birthdate) {
-      throw new Error('Champs requis manquants pour le contrat PADME');
-    }
-
-    const birthdate = contractData.clientData.birthdate;
-    const creditType = this.getCreditType(contractData);
-    const isCPorOBA = creditType === 'CP' || creditType === 'OBA';
-    
-    // Validate CP details
-    this.validateCPDetails(contractData, creditType);
-
-    if (isCPorOBA) {
-      contractData.differe = 0;
-      contractData.idPeriodicite = 12;
-    }
-    
-    const differe = contractData.differe || 0;
-    const idPeriodicite = contractData.idPeriodicite || 1;
-    const dateEff = contractData.dateEff ? new Date(contractData.dateEff) : new Date();
-    const dateEffISO = dateEff.toISOString().split('T')[0];
-
-    // Enforce date d'effet >= today for non-CP contracts
-    if (creditType !== 'CP') {
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (dateEffISO < todayStr) {
-        throw new Error("La date d'effet ne peut pas être antérieure à la date courante.");
-      }
-    }
-
-    // Enforce dateEch1 >= dateEff for non-AMORT non-CP contracts
-    if (creditType !== 'AMORT' && creditType !== 'CP') {
-      if (contractData.dateEch1) {
-        const dateEffDate = new Date(dateEffISO);
-        const dateEch1Date = new Date(contractData.dateEch1);
-        dateEffDate.setHours(0, 0, 0, 0);
-        dateEch1Date.setHours(0, 0, 0, 0);
-        if (dateEch1Date < dateEffDate) {
-          throw new Error("La date de la 1re échéance ne peut pas être antérieure à la date d'effet.");
-        }
-      }
-    }
-
-    const primeData = await this.quotationService.primePADME(
-      contractData.capital,
-      birthdate,
-      contractData.duration,
-      idPeriodicite,
-      dateEffISO,
-      differe,
-      creditType,
-      contractData.obaOptions
-    );
-
-    if (primeData.error) {
-      throw new Error(primeData.message || 'Erreur calcul prime PADME');
-    }
-
-    if (creditType === 'OBA' && primeData.capital) {
-      contractData.capital = primeData.capital;
-    }
-
-    // Gestion client (simplifiée)
-    if (contractData.clientData) {
-      if (contractData.clientData.idCustomer) {
-        contractData.idCustomer = contractData.clientData.idCustomer;
-      } else if (contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
-        const existing = await this.customerService.findByPersonalInfo(
-          contractData.clientData.lastname.trim(),
-          contractData.clientData.firstname.trim(),
-          contractData.clientData.birthdate.trim()
-        );
-        if (existing) {
-          contractData.idCustomer = existing.id;
-        } else {
-          const newClient = await this.customerService.create({
-            ...contractData.clientData,
-            idUser: contractData.idUser
-          });
-          contractData.idCustomer = newClient.id;
-        }
-      }
-    }
-
-    // Vérifier la limite de contrats par nature et par période pour le client
-    await this.checkContractLimits(contractData, contractData.dateEff);
-
-    contractData.police = contractData.police || await this.generatePadmePolice(contractData.idAgency || 0);
-    contractData.reference = contractData.reference || await this.generatePadmeReference(contractData.idUser || 0, creditType);
-
-    // Vérifier l'unicité de la référence
-    const existingContractReference = await this.findByReference(contractData.reference || '');
-    if (existingContractReference.length > 0) {
-      throw new Error(`Cette référence est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
-    }
-
-    // Dates échéances
-    if (creditType === 'CP') {
-      contractData.duration = 12;
-      const activeDate = new Date();
-      activeDate.setDate(activeDate.getDate() + 1);
-      activeDate.setHours(0, 0, 0, 0);
-      
-      const dateEchVal = new Date(activeDate);
-      dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
-      dateEchVal.setDate(dateEchVal.getDate() - 1);
-      dateEchVal.setHours(0, 0, 0, 0);
-
-      contractData.dateEff = activeDate;
-      contractData.dateEch1 = dateEchVal;
-      contractData.dateEch = dateEchVal;
-    } else {
-      const dateEch1 = contractData.dateEch1 
-        ? new Date(contractData.dateEch1) 
-        : (() => {
-            const d = new Date(dateEff);
-            d.setMonth(d.getMonth() + 1 + differe);
-            return d;
-          })();
-
-      const dateEch = contractData.dateEch 
-        ? new Date(contractData.dateEch) 
-        : await this.calculerDateEch(dateEch1, contractData.duration || 0);
-
-      contractData.dateEff = dateEff;
-      contractData.dateEch1 = dateEch1;
-      contractData.dateEch = dateEch;
-    }
-
-    // Primes
-    contractData.pd = primeData.pd;
-    contractData.pc = primeData.pc;
-    contractData.acc = primeData.acc;
-    contractData.surp = primeData.surp;
-    contractData.fm = primeData.fm;
-    contractData.puttc = primeData.puttc;
-    (contractData as any).prime = contractData.puttc;
-    (contractData as any).commission = 0;
-
-    // Fixer garantieCompl à 'NON' par défaut si non fourni
-    if (!contractData.garantieCompl) {
-      contractData.garantieCompl = 'NON';
-    }
-
-    contractData.contractType = 'PADME';
-
-    // Unicité contrat (avec suffixe unique pour autoriser les souscriptions multiples le même jour)
-    contractData.keyCont = await this.generateKeyCont(
-      contractData.idCustomer || 0,
-      creditType,
-      contractData.capital || 0,
-      contractData.duration || 0,
-      contractData.garantieCompl
-    );
-
-    const { beneficiaries, ...rest } = contractData;
-    const contract = this.contractRepository.create(rest);
-    const savedContract = await this.contractRepository.save(contract);
-
-    if (creditType === 'CP' && beneficiaries) {
-      await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
-    }
-
-    // Enregistrer les membres assurés OBA si présents
-    if (creditType === 'OBA' && contractData.obaOptions) {
-      await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
-    }
-
-    // Créer l'historique de création
-    await this.createHistoryRecord(
-      savedContract,
-      null,
-      rest,
-      ContractHistoryAction.CREATE
-    );
-
-    return savedContract;
-  }
+//   // Générer une référence PADME (format PA{randomCode}{creditType})
+//   async generatePadmeReference(idUser: number, creditType: string = 'AMORT'): Promise<string> {
+//     return this.policyNumberService.generatePadmeReference(idUser, creditType);
+//   }
+// 
+//   /**
+//    * Convertit une cotation PADME en contrat
+//    * @param cotation Cotation à convertir
+//    * @param clientData Données client du modal
+//    */
+//   async convertCotationToContract(cotation: any, clientData: any): Promise<Contract> {
+//     // Générer la police et la référence
+//     const police = await this.generatePadmePolice(clientData.idAgency);
+//     const creditType = cotation.idNatureCredit === 2 ? 'CP' : (cotation.idNatureCredit === 3 ? 'OBA' : 'AMORT');
+//     
+//     let reference = cotation.reference;
+//     if (reference) {
+//       const existingWithRef = await this.contractRepository.findOne({ where: { reference } });
+//       if (existingWithRef) {
+//         reference = await this.generatePadmeReference(clientData.idUser, creditType);
+//       }
+//     } else {
+//       reference = await this.generatePadmeReference(clientData.idUser, creditType);
+//     }
+// 
+//     // Créer ou récupérer le client
+//     let customer: Customer;
+//     if (clientData.idCustomer) {
+//       const existingCustomer = await this.customerService.findOne(clientData.idCustomer);
+//       if (existingCustomer) {
+//         customer = existingCustomer;
+//       } else {
+//         throw new Error(`Client avec l'ID ${clientData.idCustomer} introuvable`);
+//       }
+//     } else {
+//       // Créer un nouveau client avec les données fournies
+//       customer = await this.customerService.create({
+//         lastname: clientData.nom || clientData.lastname,
+//         firstname: clientData.prenoms || clientData.firstname,
+//         phone: clientData.telephone || clientData.phone,
+//         email: clientData.email,
+//         address: clientData.adresse || clientData.address,
+//         placeOfBirth: clientData.lieuNaissance || clientData.placeOfBirth,
+//         birthdate: cotation.birthdate || clientData.dateNaissance,
+//         occupation: clientData.profession || clientData.occupation,
+//         gender: clientData.sexe === 'Homme' ? 'M' : (clientData.gender || 'M'),
+//         idTypeCustomer: parseInt(clientData.typeClient || clientData.idTypeCustomer || '1')
+//       });
+//     }
+// 
+//     // Créer le contrat en copiant les champs de la cotation
+//     const contractData: Partial<Contract> = {
+//       idUser: clientData.idUser,
+//       idAgency: clientData.idAgency,
+//       idCustomer: customer.id,
+//       idNatureCredit: cotation.idNatureCredit,
+//       idPeriodicite: cotation.idPeriodicite,
+//       capital: cotation.capital,
+//       duration: cotation.duration,
+//       differe: cotation.differe,
+//       garantieCompl: cotation.garantieCompl || 'NON',
+//       pd: cotation.pd,
+//       pc: cotation.pc,
+//       surp: cotation.surp,
+//       acc: cotation.acc,
+//       fm: cotation.fm,
+//       puttc: cotation.puttc,
+//       reference,
+//       police,
+//       etablissement: clientData.etablissement || cotation.etablissement,
+//       contractType: 'PADME',
+//       description: `Contrat généré depuis cotation ${cotation.id}`,
+//       keyCont: `COTATION_${cotation.id}`
+//     };
+// 
+//     // Créer le contrat
+//     return this.create(contractData);
+//   }
+// 
+//   // Création d'un contrat PADME (differe + idPeriodicite + primePADME)
+//   async createPadmeContract(contractData: Partial<Contract> & { clientData?: any }): Promise<Contract> {
+//     if (!contractData.capital || !contractData.duration || !contractData.clientData?.birthdate) {
+//       throw new Error('Champs requis manquants pour le contrat PADME');
+//     }
+// 
+//     const birthdate = contractData.clientData.birthdate;
+//     const creditType = this.getCreditType(contractData);
+//     const isCPorOBA = creditType === 'CP' || creditType === 'OBA';
+//     
+//     // Validate CP details
+//     this.validateCPDetails(contractData, creditType);
+// 
+//     if (isCPorOBA) {
+//       contractData.differe = 0;
+//       contractData.idPeriodicite = 12;
+//     }
+//     
+//     const differe = contractData.differe || 0;
+//     const idPeriodicite = contractData.idPeriodicite || 1;
+//     const dateEff = contractData.dateEff ? new Date(contractData.dateEff) : new Date();
+//     const dateEffISO = dateEff.toISOString().split('T')[0];
+// 
+//     // Enforce date d'effet >= today for non-CP contracts
+//     if (creditType !== 'CP') {
+//       const todayStr = new Date().toISOString().split('T')[0];
+//       if (dateEffISO < todayStr) {
+//         throw new Error("La date d'effet ne peut pas être antérieure à la date courante.");
+//       }
+//     }
+// 
+//     // Enforce dateEch1 >= dateEff for non-AMORT non-CP contracts
+//     if (creditType !== 'AMORT' && creditType !== 'CP') {
+//       if (contractData.dateEch1) {
+//         const dateEffDate = new Date(dateEffISO);
+//         const dateEch1Date = new Date(contractData.dateEch1);
+//         dateEffDate.setHours(0, 0, 0, 0);
+//         dateEch1Date.setHours(0, 0, 0, 0);
+//         if (dateEch1Date < dateEffDate) {
+//           throw new Error("La date de la 1re échéance ne peut pas être antérieure à la date d'effet.");
+//         }
+//       }
+//     }
+// 
+//     const primeData = await this.quotationService.primePADME(
+//       contractData.capital,
+//       birthdate,
+//       contractData.duration,
+//       idPeriodicite,
+//       dateEffISO,
+//       differe,
+//       creditType,
+//       contractData.obaOptions
+//     );
+// 
+//     if (primeData.error) {
+//       throw new Error(primeData.message || 'Erreur calcul prime PADME');
+//     }
+// 
+//     if (creditType === 'OBA' && primeData.capital) {
+//       contractData.capital = primeData.capital;
+//     }
+// 
+//     // Gestion client (simplifiée)
+//     if (contractData.clientData) {
+//       if (contractData.clientData.idCustomer) {
+//         contractData.idCustomer = contractData.clientData.idCustomer;
+//       } else if (contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
+//         const existing = await this.customerService.findByPersonalInfo(
+//           contractData.clientData.lastname.trim(),
+//           contractData.clientData.firstname.trim(),
+//           contractData.clientData.birthdate.trim()
+//         );
+//         if (existing) {
+//           contractData.idCustomer = existing.id;
+//         } else {
+//           const newClient = await this.customerService.create({
+//             ...contractData.clientData,
+//             idUser: contractData.idUser
+//           });
+//           contractData.idCustomer = newClient.id;
+//         }
+//       }
+//     }
+// 
+//     // Vérifier la limite de contrats par nature et par période pour le client
+//     await this.checkContractLimits(contractData, contractData.dateEff);
+// 
+//     contractData.police = contractData.police || await this.generatePadmePolice(contractData.idAgency || 0);
+//     contractData.reference = contractData.reference || await this.generatePadmeReference(contractData.idUser || 0, creditType);
+// 
+//     // Vérifier l'unicité de la référence
+//     const existingContractReference = await this.findByReference(contractData.reference || '');
+//     if (existingContractReference.length > 0) {
+//       throw new Error(`Cette référence est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
+//     }
+// 
+//     // Dates échéances
+//     if (creditType === 'CP') {
+//       contractData.duration = 12;
+//       const activeDate = new Date();
+//       activeDate.setDate(activeDate.getDate() + 1);
+//       activeDate.setHours(0, 0, 0, 0);
+//       
+//       const dateEchVal = new Date(activeDate);
+//       dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
+//       dateEchVal.setDate(dateEchVal.getDate() - 1);
+//       dateEchVal.setHours(0, 0, 0, 0);
+// 
+//       contractData.dateEff = activeDate;
+//       contractData.dateEch1 = dateEchVal;
+//       contractData.dateEch = dateEchVal;
+//     } else {
+//       const dateEch1 = contractData.dateEch1 
+//         ? new Date(contractData.dateEch1) 
+//         : (() => {
+//             const d = new Date(dateEff);
+//             d.setMonth(d.getMonth() + 1 + differe);
+//             return d;
+//           })();
+// 
+//       const dateEch = contractData.dateEch 
+//         ? new Date(contractData.dateEch) 
+//         : await this.calculerDateEch(dateEch1, contractData.duration || 0);
+// 
+//       contractData.dateEff = dateEff;
+//       contractData.dateEch1 = dateEch1;
+//       contractData.dateEch = dateEch;
+//     }
+// 
+//     // Primes
+//     contractData.pd = primeData.pd;
+//     contractData.pc = primeData.pc;
+//     contractData.acc = primeData.acc;
+//     contractData.surp = primeData.surp;
+//     contractData.fm = primeData.fm;
+//     contractData.puttc = primeData.puttc;
+//     (contractData as any).prime = contractData.puttc;
+//     (contractData as any).commission = 0;
+// 
+//     // Fixer garantieCompl à 'NON' par défaut si non fourni
+//     if (!contractData.garantieCompl) {
+//       contractData.garantieCompl = 'NON';
+//     }
+// 
+//     contractData.contractType = 'PADME';
+// 
+//     // Unicité contrat (avec suffixe unique pour autoriser les souscriptions multiples le même jour)
+//     contractData.keyCont = await this.generateKeyCont(
+//       contractData.idCustomer || 0,
+//       creditType,
+//       contractData.capital || 0,
+//       contractData.duration || 0,
+//       contractData.garantieCompl
+//     );
+// 
+//     const { beneficiaries, ...rest } = contractData;
+//     const contract = this.contractRepository.create(rest);
+//     const savedContract = await this.contractRepository.save(contract);
+// 
+//     if (creditType === 'CP' && beneficiaries) {
+//       await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
+//     }
+// 
+//     // Enregistrer les membres assurés OBA si présents
+//     if (creditType === 'OBA' && contractData.obaOptions) {
+//       await this.saveOBAInsuredMembers(savedContract.id, contractData.obaOptions);
+//     }
+// 
+//     // Créer l'historique de création
+//     await this.createHistoryRecord(
+//       savedContract,
+//       null,
+//       rest,
+//       ContractHistoryAction.CREATE
+//     );
+// 
+//     return savedContract;
+//   }
 
   /**
    * Résout le type de capital RENACA ('AMORT' ou 'CONST') à partir du code
@@ -1406,15 +1411,16 @@ export class ContractService {
     Object.assign(existingContract, adminUpdateData);
     const updatedContract = await this.contractRepository.save(existingContract);
 
-    if (obaOptions) {
-      await this.insuredMemberRepository.delete({ idContract: updatedContract.id });
-      await this.saveOBAInsuredMembers(updatedContract.id, obaOptions);
-    }
-
-    if (beneficiaries && Array.isArray(beneficiaries) && beneficiaries.length > 0) {
-      await this.beneficiaryRepository.delete({ idContract: updatedContract.id });
-      await this.saveCPBeneficiaries(updatedContract.id, beneficiaries);
-    }
+    // PADME — persistance des membres OBA / bénéficiaires CP retirée (helpers commentés).
+    // if (obaOptions) {
+    //   await this.insuredMemberRepository.delete({ idContract: updatedContract.id });
+    //   await this.saveOBAInsuredMembers(updatedContract.id, obaOptions);
+    // }
+    //
+    // if (beneficiaries && Array.isArray(beneficiaries) && beneficiaries.length > 0) {
+    //   await this.beneficiaryRepository.delete({ idContract: updatedContract.id });
+    //   await this.saveCPBeneficiaries(updatedContract.id, beneficiaries);
+    // }
 
     // Enregistrer l'historique (toujours)
     await this.createHistoryRecord(
@@ -1522,35 +1528,16 @@ export class ContractService {
       }
     }
 
-    const idNatureCredit = contractData.idNatureCredit || existingContract.idNatureCredit;
-    const creditType = (contractData as any).creditType || (String(idNatureCredit) === '2' ? 'CP' : String(idNatureCredit) === '3' ? 'OBA' : 'AMORT');
-    
-    if (creditType === 'CP') {
-      const cpDataToValidate = {
-        renouvellementAuto: contractData.renouvellementAuto !== undefined ? contractData.renouvellementAuto : existingContract.renouvellementAuto,
-        compteBancaire: contractData.compteBancaire !== undefined ? contractData.compteBancaire : existingContract.compteBancaire,
-        numeroCompte: contractData.numeroCompte !== undefined ? contractData.numeroCompte : existingContract.numeroCompte,
-        beneficiaries: beneficiaries !== undefined ? beneficiaries : existingContract.beneficiaries
-      };
-      this.validateCPDetails(cpDataToValidate, creditType);
-    } else {
-      this.validateCPDetails(contractData, creditType);
-    }
-
-    // 3. Appliquer les contraintes automatiques par nature de crédit
-    this.applyCreditTypeConstraints(creditType, contractUpdateData, existingContract);
-
-    // 4. Recalculer les primes si nécessaire
+    // 3-4. Recalculer la prime si nécessaire (RENACA uniquement — le moteur PADME a été retiré,
+    // cf. recalculatePremiumIfNeeded qui rejette explicitement toute autre nature de contrat).
     const customer = await this.customerService.findOne(existingContract.idCustomer);
     const birthdate = customer?.birthdate || '';
     await this.recalculatePremiumIfNeeded(
       id,
-      creditType,
       contractUpdateData,
       existingContract,
       originalBirthdate,
-      birthdate,
-      (contractData as any).obaOptions
+      birthdate
     );
 
     // Convertir les dates string en objets Date si nécessaire
@@ -1570,18 +1557,6 @@ export class ContractService {
     // 5. Enregistrer les modifications
     Object.assign(existingContract, contractUpdateData);
     const updatedContract = await this.contractRepository.save(existingContract);
-
-    // Recréation des bénéficiaires CP
-    if (creditType === 'CP' && beneficiaries && Array.isArray(beneficiaries) && beneficiaries.length > 0) {
-      await this.beneficiaryRepository.delete({ idContract: updatedContract.id });
-      await this.saveCPBeneficiaries(updatedContract.id, beneficiaries);
-    }
-
-    // Recréation des membres OBA
-    if (creditType === 'OBA' && (contractData as any).obaOptions) {
-      await this.insuredMemberRepository.delete({ idContract: updatedContract.id });
-      await this.saveOBAInsuredMembers(updatedContract.id, (contractData as any).obaOptions);
-    }
 
     // Enregistrer l'historique
     await this.createHistoryRecord(
@@ -1626,107 +1601,89 @@ export class ContractService {
     }
   }
 
-  /**
-   * Applique les contraintes automatiques sur la périodicité, le différé et la durée selon la nature du crédit.
-   */
-  private applyCreditTypeConstraints(creditType: string, contractUpdateData: Partial<Contract>, existingContract: Contract): void {
-    if (creditType === 'CP' || creditType === 'OBA') {
-      contractUpdateData.idPeriodicite = 12;
-      contractUpdateData.differe = 0;
-      contractUpdateData.duration = 12;
-      
-      const baseDate = contractUpdateData.dateEff ? new Date(contractUpdateData.dateEff) : (existingContract.dateEff ? new Date(existingContract.dateEff) : new Date());
-      const activeDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
-      
-      const dateEchVal = new Date(activeDate);
-      dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
-      dateEchVal.setDate(dateEchVal.getDate() - 1);
-
-      contractUpdateData.dateEff = activeDate;
-      contractUpdateData.dateEch1 = dateEchVal;
-      contractUpdateData.dateEch = dateEchVal;
-    }
-  }
+  // PADME — méthode retirée (contraintes automatiques CP/OBA, plus pertinentes).
+  // private applyCreditTypeConstraints(creditType: string, contractUpdateData: Partial<Contract>, existingContract: Contract): void {
+  //   if (creditType === 'CP' || creditType === 'OBA') {
+  //     contractUpdateData.idPeriodicite = 12;
+  //     contractUpdateData.differe = 0;
+  //     contractUpdateData.duration = 12;
+  //
+  //     const baseDate = contractUpdateData.dateEff ? new Date(contractUpdateData.dateEff) : (existingContract.dateEff ? new Date(existingContract.dateEff) : new Date());
+  //     const activeDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
+  //
+  //     const dateEchVal = new Date(activeDate);
+  //     dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
+  //     dateEchVal.setDate(dateEchVal.getDate() - 1);
+  //
+  //     contractUpdateData.dateEff = activeDate;
+  //     contractUpdateData.dateEch1 = dateEchVal;
+  //     contractUpdateData.dateEch = dateEchVal;
+  //   }
+  // }
 
   /**
    * Recalcule la prime du contrat si un critère de calcul a changé.
+   * RENACA uniquement : le moteur PADME a été retiré, toute autre nature de
+   * contrat (existingContract.contractType !== 'RENACA') est explicitement
+   * rejetée plutôt que de tenter un calcul avec une fonction qui n'existe plus.
    */
   private async recalculatePremiumIfNeeded(
     id: number,
-    creditType: string,
     contractUpdateData: Partial<Contract>,
     existingContract: Contract,
     originalBirthdate: string,
-    birthdate: string,
-    obaOptions?: any
+    birthdate: string
   ): Promise<void> {
     const currentCapital = contractUpdateData.capital !== undefined ? contractUpdateData.capital : existingContract.capital;
     const currentDuration = contractUpdateData.duration !== undefined ? contractUpdateData.duration : existingContract.duration;
-    const currentPeriodicite = contractUpdateData.idPeriodicite !== undefined ? contractUpdateData.idPeriodicite : existingContract.idPeriodicite;
-    const currentDiffere = contractUpdateData.differe !== undefined ? contractUpdateData.differe : existingContract.differe;
-    const currentDateEff = contractUpdateData.dateEff !== undefined ? contractUpdateData.dateEff : existingContract.dateEff;
+    const currentPerteEmploi = (contractUpdateData as any).perteEmploi !== undefined ? (contractUpdateData as any).perteEmploi : (existingContract as any).perteEmploi;
+    const currentTauxSurprime = (contractUpdateData as any).tauxSurprime !== undefined ? (contractUpdateData as any).tauxSurprime : (existingContract as any).tauxSurprime;
 
     const capitalChanged = contractUpdateData.capital !== undefined && contractUpdateData.capital !== existingContract.capital;
     const durationChanged = contractUpdateData.duration !== undefined && contractUpdateData.duration !== existingContract.duration;
-    const periodiciteChanged = contractUpdateData.idPeriodicite !== undefined && contractUpdateData.idPeriodicite !== existingContract.idPeriodicite;
-    const differeChanged = contractUpdateData.differe !== undefined && contractUpdateData.differe !== existingContract.differe;
-    const dateEffChanged = contractUpdateData.dateEff !== undefined && 
-      (new Date(contractUpdateData.dateEff).getTime() !== new Date(existingContract.dateEff).getTime());
     const natureChanged = contractUpdateData.idNatureCredit !== undefined && contractUpdateData.idNatureCredit !== existingContract.idNatureCredit;
-    const birthdateChanged = originalBirthdate && birthdate !== originalBirthdate;
-    const obaOptionsChanged = obaOptions !== undefined;
-    const garantieComplChanged = contractUpdateData.garantieCompl !== undefined && contractUpdateData.garantieCompl !== existingContract.garantieCompl;
+    const birthdateChanged = !!(originalBirthdate && birthdate !== originalBirthdate);
+    const perteEmploiChanged = (contractUpdateData as any).perteEmploi !== undefined && (contractUpdateData as any).perteEmploi !== (existingContract as any).perteEmploi;
+    const tauxSurprimeChanged = (contractUpdateData as any).tauxSurprime !== undefined && (contractUpdateData as any).tauxSurprime !== (existingContract as any).tauxSurprime;
 
-    const needsRecalculation = 
-      capitalChanged || 
-      durationChanged || 
-      periodiciteChanged || 
-      differeChanged || 
-      dateEffChanged || 
-      natureChanged || 
-      birthdateChanged || 
-      obaOptionsChanged ||
-      garantieComplChanged;
+    const needsRecalculation =
+      capitalChanged ||
+      durationChanged ||
+      natureChanged ||
+      birthdateChanged ||
+      perteEmploiChanged ||
+      tauxSurprimeChanged;
 
-    if (needsRecalculation) {
-      console.log(`🔄 Recalcul automatique des primes requis pour le contrat ${id} (Nature: ${creditType})`);
-      const datecreditStr = currentDateEff
-        ? new Date(currentDateEff).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
-
-      const obaOpts = obaOptions || existingContract.obaOptions;
-
-      const primeData = await this.quotationService.primePADME(
-        currentCapital,
-        birthdate,
-        currentDuration,
-        currentPeriodicite,
-        datecreditStr,
-        currentDiffere,
-        creditType,
-        obaOpts
-      );
-
-      if (primeData.error) {
-        throw new BadRequestException(primeData.message);
-      }
-
-      contractUpdateData.pd = primeData.pd;
-      contractUpdateData.pc = primeData.pc;
-      contractUpdateData.acc = primeData.acc;
-      contractUpdateData.surp = primeData.surp;
-      contractUpdateData.fm = primeData.fm;
-      contractUpdateData.puttc = primeData.puttc;
-
-      if (creditType === 'OBA') {
-        if (primeData.capital) {
-          contractUpdateData.capital = primeData.capital;
-        }
-        if (obaOpts) {
-          contractUpdateData.obaOptions = obaOpts;
-        }
-      }
+    if (!needsRecalculation) {
+      return;
     }
+
+    if (existingContract.contractType !== 'RENACA') {
+      throw new BadRequestException("Le moteur de calcul PADME a été retiré — la modification de ce contrat n'est plus disponible.");
+    }
+
+    console.log(`🔄 Recalcul automatique de la prime RENACA requis pour le contrat ${id}`);
+    const idNatureCredit = contractUpdateData.idNatureCredit !== undefined ? contractUpdateData.idNatureCredit : existingContract.idNatureCredit;
+    const typeCapital = await this.resolveRenacaTypeCapital(idNatureCredit);
+
+    const primeData = await this.quotationService.primeRENACA(
+      typeCapital,
+      currentCapital,
+      birthdate,
+      currentDuration,
+      currentPerteEmploi,
+      currentTauxSurprime
+    );
+
+    if (primeData.error) {
+      throw new BadRequestException(primeData.message);
+    }
+
+    contractUpdateData.pd = primeData.pd;
+    contractUpdateData.acc = primeData.acc;
+    contractUpdateData.surp = primeData.surp;
+    contractUpdateData.puttc = primeData.puttc;
+    (contractUpdateData as any).primePE = primeData.primePE || 0;
   }
 
   /**
@@ -1953,200 +1910,200 @@ export class ContractService {
 
   // Fonction d'import en lot de contrats
   // Fonction d'import en lot de contrats
-  async importContracts(contractsData: Array<Partial<Contract> & { clientData?: any; beneficiaries?: any[] }>, userId: number, userAgency: number): Promise<{
-    success: boolean;
-    message: string;
-    results: Array<{
-      index: number;
-      success: boolean;
-      contract?: Contract;
-      error?: string;
-    }>;
-    summary: {
-      total: number;
-      success: number;
-      failed: number;
-    };
-    successfulContractIds: number[];
-  }> {
-    console.log(`📥 Import de ${contractsData.length} contrats pour l'utilisateur ${userId}`);
-    console.log('📋 Données reçues:', contractsData.map((c, i) => ({
-      index: i,
-      clientData: c.clientData,
-      capital: c.capital,
-      idNatureCredit: c.idNatureCredit
-    })));
-    
-    console.log('🔍 Début du traitement des contrats...');
-    
-    const results: Array<{
-      index: number;
-      success: boolean;
-      contract?: Contract;
-      error?: string;
-    }> = [];
-    
-    let successCount = 0;
-    let failedCount = 0;
-
-    // Traitement séquentiel pour éviter les conflits de clés
-    for (let i = 0; i < contractsData.length; i++) {
-      const contractData = contractsData[i];
-      console.log(`🔄 Traitement du contrat ${i + 1}/${contractsData.length}...`);
-      
-      try {
-        // Ajouter les champs d'audit et l'utilisateur
-        contractData.idUser = userId;
-        contractData.idAgency = userAgency;
-        contractData.idProduct = 1;
-        contractData.idContractState = 1;
-        (contractData as any).isImport = true;
-        
-        const isHC = contractData.contractType === ContractType.HORS_CONVENTION;
-        const creditType = this.getCreditType(contractData);
-
-        // Valider les bénéficiaires CP
-        this.validateCPDetails(contractData, creditType);
-
-        // Gestion du client (recherche ou création) - commune
-        if (contractData.clientData) {
-          if (contractData.clientData.idCustomer) {
-            contractData.idCustomer = contractData.clientData.idCustomer;
-          } else {
-            let existingCustomer: Customer | null = null;
-            if (contractData.clientData.numCustomer && contractData.clientData.numCustomer.trim()) {
-              existingCustomer = await this.customerService.findByNumCustomer(contractData.clientData.numCustomer.trim());
-            }
-            if (!existingCustomer && contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
-              existingCustomer = await this.customerService.findByPersonalInfo(
-                contractData.clientData.lastname.trim().toUpperCase(),
-                contractData.clientData.firstname.trim().toUpperCase(),
-                contractData.clientData.birthdate.trim()
-              );
-            }
-            if (!existingCustomer) {
-              if (!contractData.clientData.lastname || !contractData.clientData.firstname || !contractData.clientData.birthdate) {
-                throw new Error('Les informations du client (nom, prénom, date de naissance) sont obligatoires pour créer un nouveau client');
-              }
-
-              const clientInfo = contractData.clientData;
-              const placeOfBirth = clientInfo.placeOfBirth || clientInfo.birthplace || clientInfo.place_of_birth || clientInfo.lieuNaissance || 'NON RENSEIGNÉ';
-              const occupation = clientInfo.occupation || clientInfo.profession || 'NON RENSEIGNÉ';
-
-              const newClient = await this.customerService.create({
-                ...clientInfo,
-                placeOfBirth,
-                occupation,
-                idUser: userId
-              });
-              contractData.idCustomer = newClient.id;
-            } else {
-              contractData.idCustomer = existingCustomer.id;
-            }
-          }
-        } else if (!contractData.idCustomer) {
-          throw new Error('L\'ID du client ou les données du client sont obligatoires');
-        }
-
-        if (isHC) {
-          await this.validateAndProcessContractDataHorsConvention(contractData, userId);
-          if (!contractData.pd && contractData.pd !== 0) contractData.pd = 0;
-          if (!contractData.pc && contractData.pc !== 0) contractData.pc = 0;
-          if (!contractData.surp && contractData.surp !== 0) contractData.surp = 0;
-          if (!contractData.acc && contractData.acc !== 0) contractData.acc = 0;
-          if (!contractData.fm && contractData.fm !== 0) contractData.fm = 0;
-          if (!contractData.puttc && contractData.puttc !== 0) {
-            contractData.puttc = Number(contractData.pd || 0) + Number(contractData.pc || 0) + Number(contractData.surp || 0) + Number(contractData.acc || 0) + Number(contractData.fm || 0);
-          }
-        } else {
-          await this.validateAndProcessContractData(contractData, userId);
-        }
-
-        const { beneficiaries, clientData, ...rest } = contractData;
-        const contract = this.contractRepository.create(rest);
-        const savedContract = await this.contractRepository.save(contract) as Contract;
-
-        if (creditType === 'CP') {
-          if (beneficiaries && beneficiaries.length > 0) {
-            await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
-          } else {
-            const customerObj = savedContract.customer || clientData;
-            const custNomPrenoms = customerObj ? `${customerObj.lastname || ''} ${customerObj.firstname || ''}`.trim() : 'Ayant droit';
-            const defaultBeneficiaries = [
-              {
-                nomPrenoms: custNomPrenoms || 'Ayant droit',
-                lienParente: 'AUTRE',
-                pourcentage: 100
-              }
-            ];
-            await this.saveCPBeneficiaries(savedContract.id, defaultBeneficiaries);
-          }
-        }
-
-        if (creditType === 'OBA' && (contractData as any).obaOptions) {
-          await this.saveOBAInsuredMembers(savedContract.id, (contractData as any).obaOptions);
-        }
-
-        // Créer l'historique de création
-        await this.createHistoryRecord(
-          savedContract, 
-          null, 
-          contractData, 
-          ContractHistoryAction.CREATE
-        );
-
-        results.push({
-          index: i,
-          success: true,
-          contract: savedContract
-        });
-        
-        successCount++;
-        console.log(`✅ Contrat ${i + 1}/${contractsData.length} créé avec succès: ${savedContract.reference}`);
-        
-      } catch (error) {
-        console.error(`❌ Erreur lors de la création du contrat ${i + 1}:`, error.message);
-        console.error(`🔍 Détails de l'erreur:`, {
-          error: error.message,
-          stack: error.stack,
-          contractData: {
-            capital: contractData.capital,
-            idNatureCredit: contractData.idNatureCredit,
-            clientData: contractData.clientData
-          }
-        });
-        
-        results.push({
-          index: i,
-          success: false,
-          error: error.message || 'Erreur inconnue'
-        });
-        
-        failedCount++;
-      }
-    }
-
-    const summary = {
-      total: contractsData.length,
-      success: successCount,
-      failed: failedCount
-    };
-
-    console.log(`📊 Résumé de l'import: ${successCount} succès, ${failedCount} échecs sur ${contractsData.length} contrats`);
-
-    // Récupérer les IDs des contrats créés avec succès
-    const successfulContractIds = results
-      .filter(result => result.success && result.contract?.id)
-      .map(result => result.contract!.id);
-
-    return {
-      success: true, // Toujours true pour permettre l'affichage des résultats
-      message: `Import terminé: ${successCount} contrat(s) créé(s) avec succès, ${failedCount} échec(s)`,
-      results,
-      summary,
-      successfulContractIds
-    };
-  }
+//   async importContracts(contractsData: Array<Partial<Contract> & { clientData?: any; beneficiaries?: any[] }>, userId: number, userAgency: number): Promise<{
+//     success: boolean;
+//     message: string;
+//     results: Array<{
+//       index: number;
+//       success: boolean;
+//       contract?: Contract;
+//       error?: string;
+//     }>;
+//     summary: {
+//       total: number;
+//       success: number;
+//       failed: number;
+//     };
+//     successfulContractIds: number[];
+//   }> {
+//     console.log(`📥 Import de ${contractsData.length} contrats pour l'utilisateur ${userId}`);
+//     console.log('📋 Données reçues:', contractsData.map((c, i) => ({
+//       index: i,
+//       clientData: c.clientData,
+//       capital: c.capital,
+//       idNatureCredit: c.idNatureCredit
+//     })));
+//     
+//     console.log('🔍 Début du traitement des contrats...');
+//     
+//     const results: Array<{
+//       index: number;
+//       success: boolean;
+//       contract?: Contract;
+//       error?: string;
+//     }> = [];
+//     
+//     let successCount = 0;
+//     let failedCount = 0;
+// 
+//     // Traitement séquentiel pour éviter les conflits de clés
+//     for (let i = 0; i < contractsData.length; i++) {
+//       const contractData = contractsData[i];
+//       console.log(`🔄 Traitement du contrat ${i + 1}/${contractsData.length}...`);
+//       
+//       try {
+//         // Ajouter les champs d'audit et l'utilisateur
+//         contractData.idUser = userId;
+//         contractData.idAgency = userAgency;
+//         contractData.idProduct = 1;
+//         contractData.idContractState = 1;
+//         (contractData as any).isImport = true;
+//         
+//         const isHC = contractData.contractType === ContractType.HORS_CONVENTION;
+//         const creditType = this.getCreditType(contractData);
+// 
+//         // Valider les bénéficiaires CP
+//         this.validateCPDetails(contractData, creditType);
+// 
+//         // Gestion du client (recherche ou création) - commune
+//         if (contractData.clientData) {
+//           if (contractData.clientData.idCustomer) {
+//             contractData.idCustomer = contractData.clientData.idCustomer;
+//           } else {
+//             let existingCustomer: Customer | null = null;
+//             if (contractData.clientData.numCustomer && contractData.clientData.numCustomer.trim()) {
+//               existingCustomer = await this.customerService.findByNumCustomer(contractData.clientData.numCustomer.trim());
+//             }
+//             if (!existingCustomer && contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
+//               existingCustomer = await this.customerService.findByPersonalInfo(
+//                 contractData.clientData.lastname.trim().toUpperCase(),
+//                 contractData.clientData.firstname.trim().toUpperCase(),
+//                 contractData.clientData.birthdate.trim()
+//               );
+//             }
+//             if (!existingCustomer) {
+//               if (!contractData.clientData.lastname || !contractData.clientData.firstname || !contractData.clientData.birthdate) {
+//                 throw new Error('Les informations du client (nom, prénom, date de naissance) sont obligatoires pour créer un nouveau client');
+//               }
+// 
+//               const clientInfo = contractData.clientData;
+//               const placeOfBirth = clientInfo.placeOfBirth || clientInfo.birthplace || clientInfo.place_of_birth || clientInfo.lieuNaissance || 'NON RENSEIGNÉ';
+//               const occupation = clientInfo.occupation || clientInfo.profession || 'NON RENSEIGNÉ';
+// 
+//               const newClient = await this.customerService.create({
+//                 ...clientInfo,
+//                 placeOfBirth,
+//                 occupation,
+//                 idUser: userId
+//               });
+//               contractData.idCustomer = newClient.id;
+//             } else {
+//               contractData.idCustomer = existingCustomer.id;
+//             }
+//           }
+//         } else if (!contractData.idCustomer) {
+//           throw new Error('L\'ID du client ou les données du client sont obligatoires');
+//         }
+// 
+//         if (isHC) {
+//           await this.validateAndProcessContractDataHorsConvention(contractData, userId);
+//           if (!contractData.pd && contractData.pd !== 0) contractData.pd = 0;
+//           if (!contractData.pc && contractData.pc !== 0) contractData.pc = 0;
+//           if (!contractData.surp && contractData.surp !== 0) contractData.surp = 0;
+//           if (!contractData.acc && contractData.acc !== 0) contractData.acc = 0;
+//           if (!contractData.fm && contractData.fm !== 0) contractData.fm = 0;
+//           if (!contractData.puttc && contractData.puttc !== 0) {
+//             contractData.puttc = Number(contractData.pd || 0) + Number(contractData.pc || 0) + Number(contractData.surp || 0) + Number(contractData.acc || 0) + Number(contractData.fm || 0);
+//           }
+//         } else {
+//           await this.validateAndProcessContractData(contractData, userId);
+//         }
+// 
+//         const { beneficiaries, clientData, ...rest } = contractData;
+//         const contract = this.contractRepository.create(rest);
+//         const savedContract = await this.contractRepository.save(contract) as Contract;
+// 
+//         if (creditType === 'CP') {
+//           if (beneficiaries && beneficiaries.length > 0) {
+//             await this.saveCPBeneficiaries(savedContract.id, beneficiaries);
+//           } else {
+//             const customerObj = savedContract.customer || clientData;
+//             const custNomPrenoms = customerObj ? `${customerObj.lastname || ''} ${customerObj.firstname || ''}`.trim() : 'Ayant droit';
+//             const defaultBeneficiaries = [
+//               {
+//                 nomPrenoms: custNomPrenoms || 'Ayant droit',
+//                 lienParente: 'AUTRE',
+//                 pourcentage: 100
+//               }
+//             ];
+//             await this.saveCPBeneficiaries(savedContract.id, defaultBeneficiaries);
+//           }
+//         }
+// 
+//         if (creditType === 'OBA' && (contractData as any).obaOptions) {
+//           await this.saveOBAInsuredMembers(savedContract.id, (contractData as any).obaOptions);
+//         }
+// 
+//         // Créer l'historique de création
+//         await this.createHistoryRecord(
+//           savedContract, 
+//           null, 
+//           contractData, 
+//           ContractHistoryAction.CREATE
+//         );
+// 
+//         results.push({
+//           index: i,
+//           success: true,
+//           contract: savedContract
+//         });
+//         
+//         successCount++;
+//         console.log(`✅ Contrat ${i + 1}/${contractsData.length} créé avec succès: ${savedContract.reference}`);
+//         
+//       } catch (error) {
+//         console.error(`❌ Erreur lors de la création du contrat ${i + 1}:`, error.message);
+//         console.error(`🔍 Détails de l'erreur:`, {
+//           error: error.message,
+//           stack: error.stack,
+//           contractData: {
+//             capital: contractData.capital,
+//             idNatureCredit: contractData.idNatureCredit,
+//             clientData: contractData.clientData
+//           }
+//         });
+//         
+//         results.push({
+//           index: i,
+//           success: false,
+//           error: error.message || 'Erreur inconnue'
+//         });
+//         
+//         failedCount++;
+//       }
+//     }
+// 
+//     const summary = {
+//       total: contractsData.length,
+//       success: successCount,
+//       failed: failedCount
+//     };
+// 
+//     console.log(`📊 Résumé de l'import: ${successCount} succès, ${failedCount} échecs sur ${contractsData.length} contrats`);
+// 
+//     // Récupérer les IDs des contrats créés avec succès
+//     const successfulContractIds = results
+//       .filter(result => result.success && result.contract?.id)
+//       .map(result => result.contract!.id);
+// 
+//     return {
+//       success: true, // Toujours true pour permettre l'affichage des résultats
+//       message: `Import terminé: ${successCount} contrat(s) créé(s) avec succès, ${failedCount} échec(s)`,
+//       results,
+//       summary,
+//       successfulContractIds
+//     };
+//   }
 
   // Vérification de la limite de contrats par nature et par période pour un client
   private async checkContractLimits(
@@ -2296,410 +2253,410 @@ export class ContractService {
       }
     }
   }
-
-  private getCreditType(contractData: Partial<Contract>): string {
-    return (contractData as any).creditType || 
-      (String(contractData.idNatureCredit) === '2' ? 'CP' : String(contractData.idNatureCredit) === '3' ? 'OBA' : 'AMORT');
-  }
-
-  private validateCPDetails(contractData: any, creditType: string): void {
-    if (creditType !== 'CP') {
-      return;
-    }
-
-    const { renouvellementAuto, compteBancaire, numeroCompte, beneficiaries } = contractData;
-
-    // Check CP-specific fields
-    if (renouvellementAuto === undefined || renouvellementAuto === null) {
-      throw new BadRequestException("Le champ 'Renouvellement automatique' est obligatoire pour un contrat CP.");
-    }
-    if (!compteBancaire || !compteBancaire.trim()) {
-      throw new BadRequestException("Le champ 'Compte bancaire' est obligatoire pour un contrat CP.");
-    }
-    if (!numeroCompte || !numeroCompte.trim()) {
-      throw new BadRequestException("Le champ 'Numéro de compte' est obligatoire pour un contrat CP.");
-    }
-
-    // Check beneficiaries
-    if (!beneficiaries || !Array.isArray(beneficiaries) || beneficiaries.length === 0) {
-      throw new BadRequestException("Au moins un bénéficiaire doit être enregistré pour un contrat CP.");
-    }
-    if (beneficiaries.length > 5) {
-      throw new BadRequestException("Un maximum de 5 bénéficiaires est autorisé pour un contrat CP.");
-    }
-
-    let sumPourcentage = 0;
-    for (const b of beneficiaries) {
-      if (!b.nomPrenoms || !b.nomPrenoms.trim()) {
-        throw new BadRequestException("Le nom et les prénoms du bénéficiaire sont obligatoires.");
-      }
-      if (!b.lienParente || !b.lienParente.trim()) {
-        throw new BadRequestException("Le lien de parenté du bénéficiaire est obligatoire.");
-      }
-      const pct = parseFloat(b.pourcentage);
-      if (isNaN(pct) || pct <= 0) {
-        throw new BadRequestException("Le pourcentage de part du bénéficiaire doit être supérieur à 0.");
-      }
-      sumPourcentage += pct;
-    }
-
-    if (Math.abs(sumPourcentage - 100) > 0.01) {
-      throw new BadRequestException("La somme des parts des bénéficiaires doit être exactement égale à 100%.");
-    }
-  }
-
-  /**
-   * Normalise le lien de parenté pour correspondre strictement aux libellés de la table lien_parente :
-   * PERE, MERE, ENFANT, CONJOINT, FRERE, SOEUR, AUTRE
-   */
-  normalizeLienParente(lien?: string): string {
-    if (!lien || !lien.trim()) return 'AUTRE';
-    const clean = lien.trim().toUpperCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-    if (clean.includes('ENFANT') || clean.includes('FILS') || clean.includes('FILLE')) {
-      return 'ENFANT';
-    }
-    if (clean.includes('CONJOINT') || clean.includes('EPOUX') || clean.includes('EPOUSE') || clean.includes('MARI') || clean.includes('FEMME')) {
-      return 'CONJOINT';
-    }
-    if (clean.includes('PERE') || clean.includes('PAPA')) {
-      return 'PERE';
-    }
-    if (clean.includes('MERE') || clean.includes('MAMAN')) {
-      return 'MERE';
-    }
-    if (clean.includes('FRERE')) {
-      return 'FRERE';
-    }
-    if (clean.includes('SOEUR')) {
-      return 'SOEUR';
-    }
-    if (clean.includes('AUTRE') || clean.includes('AYANT') || clean.includes('DROIT')) {
-      return 'AUTRE';
-    }
-
-    const validCodes = ['PERE', 'MERE', 'ENFANT', 'CONJOINT', 'FRERE', 'SOEUR', 'AUTRE'];
-    if (validCodes.includes(clean)) {
-      return clean;
-    }
-
-    return 'AUTRE';
-  }
-
-  private async saveCPBeneficiaries(contractId: number, beneficiaries: any[]): Promise<void> {
-    const records = beneficiaries.map(b => {
-      const record = new Beneficiary();
-      record.idContract = contractId;
-      record.nomPrenoms = (b.nomPrenoms || `${b.nom || ''} ${b.prenom || ''}`).trim() || 'Ayant droit';
-      record.lienParente = this.normalizeLienParente(b.lienParente);
-      record.pourcentage = parseFloat(b.pourcentage) || 100;
-      return record;
-    });
-    await this.beneficiaryRepository.save(records);
-  }
-
-  /**
-   * Enregistre les membres assurés secondaires d'un contrat OBA.
-   * Seul l'assuré principal est dans la table customers.
-   * Le conjoint et les ascendants (cochés dans obaOptions) sont enregistrés ici.
-   */
-  private async saveOBAInsuredMembers(contractId: number, obaOptions: any): Promise<void> {
-    const roleConfig: Record<string, { label: string }> = {
-      conjoint:    { label: 'Conjoint(e)' },
-      ascendant1:  { label: "Père de l'Assuré" },
-      ascendant2:  { label: "Mère de l'Assuré" },
-      ascendant3:  { label: 'Père du (de la) Conjoint(e)' },
-      ascendant4:  { label: 'Mère du (de la) Conjoint(e)' },
-    };
-
-    const records: ContractInsuredMember[] = [];
-
-    for (const [role, cfg] of Object.entries(roleConfig)) {
-      const opt = obaOptions[role];
-      if (!opt || !opt.checked) continue;
-
-      const member = new ContractInsuredMember();
-      member.idContract   = contractId;
-      member.role         = role;
-      member.roleLabel    = cfg.label;
-      member.lastname     = (opt.lastname  || '').toUpperCase().trim();
-      member.firstname    = (opt.firstname || '').trim();
-      member.birthdate    = opt.birthdate  || null;
-      member.gender       = opt.gender     || null;
-      member.capitalAssure = opt.capitalAssure ? Number(opt.capitalAssure) : 0;
-      member.prime        = opt.prime       ? Number(opt.prime)        : 0;
-      records.push(member);
-    }
-
-    if (records.length > 0) {
-      await this.insuredMemberRepository.save(records);
-    }
-  }
-
-  // Fonction de validation et traitement des données de contrat (extrait de create)
-  private async validateAndProcessContractData(contractData: Partial<Contract> & { clientData?: any }, userId?: number): Promise<void> {
-    // Recalculer les primes avant tout
-    let primeData: any;
-    const birthdate = contractData.clientData?.birthdate || '';
-    let capital = contractData.capital || 0;
-    let duration = contractData.duration || 0;
-    const creditType = this.getCreditType(contractData);
-    
-    // Validate CP details
-    this.validateCPDetails(contractData, creditType);
-
-    const isCPorOBA = creditType === 'CP' || creditType === 'OBA';
-    
-    if (isCPorOBA) {
-      contractData.differe = 0;
-      contractData.idPeriodicite = 12;
-      contractData.duration = 12;
-    }
-
-    // Aligner avec conversion contrat (CotationToContratModal.vue)
-    if (creditType === 'CP') {
-      contractData.duration = 12;
-      contractData.differe = 0;
-      contractData.idPeriodicite = 12;
-
-      let activeDate: Date;
-      if (contractData.dateEff) {
-        const parsed = new Date(contractData.dateEff);
-        activeDate = isNaN(parsed.getTime()) ? new Date() : parsed;
-      } else {
-        activeDate = new Date();
-        activeDate.setDate(activeDate.getDate() + 1);
-      }
-      activeDate.setHours(0, 0, 0, 0);
-
-      // Date d'échéance = Date d'effet + 1 an - 1 jour (la veille dans un an)
-      const dateEchVal = new Date(activeDate);
-      dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
-      dateEchVal.setDate(dateEchVal.getDate() - 1);
-      dateEchVal.setHours(0, 0, 0, 0);
-
-      contractData.dateEff = activeDate;
-      contractData.dateEch1 = dateEchVal;
-      contractData.dateEch = dateEchVal;
-    } else if (creditType === 'OBA') {
-      contractData.duration = 12;
-      contractData.differe = 0;
-      contractData.idPeriodicite = 12;
-    }
-    
-    const idPeriodicite = contractData.idPeriodicite || 1;
-    const differe = contractData.differe || 0;
-    duration = contractData.duration || 0;
-    const datecredit = contractData.dateEff 
-      ? new Date(contractData.dateEff).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
-
-    // Enforce date d'effet >= today for non-CP contracts
-    if (creditType !== 'CP') {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const isImport = (contractData as any).isImport || false;
-      if (!isImport && datecredit < todayStr) {
-        throw new Error("La date d'effet ne peut pas être antérieure à la date courante.");
-      }
-    }
-
-    // Enforce dateEch1 >= dateEff for non-CP contracts
-    if (creditType !== 'CP') {
-      if (contractData.dateEch1) {
-        const dateEffDate = new Date(datecredit);
-        const dateEch1Date = new Date(contractData.dateEch1);
-        dateEffDate.setHours(0, 0, 0, 0);
-        dateEch1Date.setHours(0, 0, 0, 0);
-        if (dateEch1Date < dateEffDate) {
-          throw new Error("La date de la 1re échéance ne peut pas être antérieure à la date d'effet.");
-        }
-      }
-    }
-    
-    primeData = await this.quotationService.primePADME(
-      capital,
-      birthdate,
-      duration,
-      idPeriodicite,
-      datecredit,
-      differe,
-      creditType,
-      contractData.obaOptions
-    );
-
-    if (creditType === 'OBA' && primeData.capital) {
-      contractData.capital = primeData.capital;
-      capital = primeData.capital;
-    }
-    const typeCredit = contractData.idNatureCredit === 1 ? 'A' : 'HC';
-    
-    // Utiliser les méthodes PADME pour la génération des identifiants
-    contractData.police = contractData.police || await this.generatePadmePolice(contractData.idAgency || 0);
-    contractData.reference = contractData.reference || (contractData.idUser ? await this.generatePadmeReference(contractData.idUser, creditType) : '');
-
-    
-    if(primeData.error) {
-      throw new Error(primeData.message);
-    }
-    contractData.pd = primeData.pd;
-    contractData.pc = primeData.pc;
-    contractData.acc = primeData.acc;
-    contractData.surp = primeData.surp;
-    contractData.fm = primeData.fm;
-    contractData.puttc = primeData.puttc;
-
-    // Calculer dateEch1 si pas fourni (date d'effet + 1 mois)
-    if (!contractData.dateEch1 && contractData.dateEff) {
-      const dateEff = new Date(contractData.dateEff);
-      const dateEch1 = new Date(dateEff);
-      dateEch1.setMonth(dateEff.getMonth() + 1);
-      contractData.dateEch1 = dateEch1;
-    }
-    
-    if (creditType === 'AMORT') {
-      if (!contractData.dateEch) {
-        contractData.dateEch = await this.calculerDateEch(contractData.dateEch1 || new Date(), contractData.duration || 0);
-      }
-    } else if (creditType !== 'CP') {
-      contractData.dateEch = await this.calculerDateEch(contractData.dateEch1 || new Date(), contractData.duration || 0);
-    }
-
-    if (creditType === 'CP') {
-      contractData.duration = 12;
-      const baseDate = contractData.dateEff ? new Date(contractData.dateEff) : new Date();
-      const activeDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
-      activeDate.setHours(0, 0, 0, 0);
-      
-      const dateEchVal = new Date(activeDate);
-      dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
-      dateEchVal.setDate(dateEchVal.getDate() - 1);
-      dateEchVal.setHours(0, 0, 0, 0);
-
-      contractData.dateEff = activeDate;
-      contractData.dateEch1 = dateEchVal;
-      contractData.dateEch = dateEchVal;
-    }
-    
-    // Traitement du taux (conversion en nombre si nécessaire)
-    if (contractData.taux) {
-      if (typeof contractData.taux === 'string') {
-        contractData.taux = parseFloat((contractData.taux as string).replace('%', ''));
-      }
-      console.log(`📊 Taux traité: ${contractData.taux}%`);
-    }
-
-    // Fixer garantieCompl à 'NON' par défaut si non fourni
-    if (!contractData.garantieCompl) {
-      contractData.garantieCompl = 'NON';
-    }
-
-    // Gestion du client (recherche ou création)
-    if (contractData.clientData) {
-      
-      if (contractData.clientData.idCustomer) {
-        contractData.idCustomer = contractData.clientData.idCustomer;
-        console.log('🔍 Client existant trouvé avec ID:', contractData.clientData.idCustomer);
-      }
-      else {
-        let clientByPersonalInfo: Customer | null = null;
-        // Recherche par infos personnelles seulement si toutes les infos sont fournies
-        if (contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
-          clientByPersonalInfo = await this.customerService.findByPersonalInfo(
-            contractData.clientData.lastname.trim(), 
-            contractData.clientData.firstname.trim(), 
-            contractData.clientData.birthdate.trim()
-          );
-          console.log('🔍 clientByPersonalInfo:', clientByPersonalInfo);
-        }
-
-        const existingClient = clientByPersonalInfo;
-
-        if (!existingClient) {
-          console.log('🔍 Création nouveau client...');
-          // Ajouter l'idUser aux données du client
-          const clientDataWithUser = {
-            ...contractData.clientData,
-            idUser: userId
-          };
-          const newClient = await this.customerService.create(clientDataWithUser);
-          contractData.idCustomer = newClient.id;
-          console.log('🔍 Nouveau client créé avec ID:', newClient.id);
-        } else {
-          contractData.idCustomer = existingClient.id;
-          console.log('🔍 Client existant trouvé avec ID:', existingClient.id);
-        }
-      }
-    }
-
-    // Vérifier la limite de contrats par nature et par période pour le client
-    await this.checkContractLimits(contractData, contractData.dateEff);
-
-    // Générer la keyCont après avoir l'ID du client
-    contractData.keyCont = contractData.keyCont || await this.generateKeyCont(contractData.idCustomer || 0, typeCredit, contractData.capital!, contractData.duration!);
-
-    // Vérifier l'unicité de la clé de contrat
-    const existingKeyCont = await this.findByKeyCont(contractData.keyCont || '');
-    if (existingKeyCont.length > 0) {
-      throw new Error(`Ce client a déjà fait un contrat aujourd'hui avec ces caractéristiques. Veuillez le rechercher par la police ${existingKeyCont[0].police} ou la référence ${existingKeyCont[0].reference}`);
-    }
-
-    // Vérifier l'unicité de la référence
-    const existingContractReference = await this.findByReference(contractData.reference || '');
-    if (existingContractReference.length > 0) {
-      throw new Error(`Cette reference est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
-    }
-  }
-
-  // Fonction de validation et traitement des données de contrat (extrait de createHorsConvention)
-  private async validateAndProcessContractDataHorsConvention(contractData: Partial<Contract> & { clientData?: any }, userId?: number): Promise<void> {
-    const creditType = this.getCreditType(contractData);
-    if (creditType === 'CP') {
-      contractData.duration = 12;
-      const activeDate = new Date();
-      activeDate.setDate(activeDate.getDate() + 1);
-      activeDate.setHours(0, 0, 0, 0);
-
-      const dateEchVal = new Date(activeDate);
-      dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
-      dateEchVal.setDate(dateEchVal.getDate() - 1);
-      dateEchVal.setHours(0, 0, 0, 0);
-
-      contractData.dateEff = activeDate;
-      contractData.dateEch1 = dateEchVal;
-      contractData.dateEch = dateEchVal;
-      contractData.idPeriodicite = 12;
-      contractData.differe = 0;
-    }
-
-    // Fixer garantieCompl à 'NON' par défaut si non fourni
-    if (!contractData.garantieCompl) {
-      contractData.garantieCompl = 'NON';
-    }
-
-    // Vérifier la limite de contrats par nature et par période pour le client
-    await this.checkContractLimits(contractData, contractData.dateEff);
-
-    // Générer la keyCont après avoir l'ID du client
-    const typeCredit = contractData.idNatureCredit === 1 ? 'A' : 'HC';
-    contractData.keyCont = contractData.keyCont || await this.generateKeyCont(contractData.idCustomer || 0, typeCredit, contractData.capital!, contractData.duration!);
-    
-    // Utiliser les méthodes PADME pour la génération des identifiants
-    contractData.police = contractData.police || await this.generatePadmePolice(contractData.idAgency || 0);
-    contractData.reference = contractData.reference || (contractData.idUser ? await this.generatePadmeReference(contractData.idUser, creditType) : '');
-
-    // Vérifier l'unicité de la clé de contrat
-    const existingKeyCont = await this.findByKeyCont(contractData.keyCont || '');
-    if (existingKeyCont.length > 0) {
-      throw new Error(`Ce client a déjà fait un contrat aujourd'hui avec ces caractéristiques. Veuillez le rechercher par la police ${existingKeyCont[0].police} ou la référence ${existingKeyCont[0].reference}`);
-    }
-
-    // Vérifier l'unicité de la référence
-    const existingContractReference = await this.findByReference(contractData.reference || '');
-    if (existingContractReference.length > 0) {
-      throw new Error(`Cette reference est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
-    }
-  }
+// 
+//   private getCreditType(contractData: Partial<Contract>): string {
+//     return (contractData as any).creditType || 
+//       (String(contractData.idNatureCredit) === '2' ? 'CP' : String(contractData.idNatureCredit) === '3' ? 'OBA' : 'AMORT');
+//   }
+// 
+//   private validateCPDetails(contractData: any, creditType: string): void {
+//     if (creditType !== 'CP') {
+//       return;
+//     }
+// 
+//     const { renouvellementAuto, compteBancaire, numeroCompte, beneficiaries } = contractData;
+// 
+//     // Check CP-specific fields
+//     if (renouvellementAuto === undefined || renouvellementAuto === null) {
+//       throw new BadRequestException("Le champ 'Renouvellement automatique' est obligatoire pour un contrat CP.");
+//     }
+//     if (!compteBancaire || !compteBancaire.trim()) {
+//       throw new BadRequestException("Le champ 'Compte bancaire' est obligatoire pour un contrat CP.");
+//     }
+//     if (!numeroCompte || !numeroCompte.trim()) {
+//       throw new BadRequestException("Le champ 'Numéro de compte' est obligatoire pour un contrat CP.");
+//     }
+// 
+//     // Check beneficiaries
+//     if (!beneficiaries || !Array.isArray(beneficiaries) || beneficiaries.length === 0) {
+//       throw new BadRequestException("Au moins un bénéficiaire doit être enregistré pour un contrat CP.");
+//     }
+//     if (beneficiaries.length > 5) {
+//       throw new BadRequestException("Un maximum de 5 bénéficiaires est autorisé pour un contrat CP.");
+//     }
+// 
+//     let sumPourcentage = 0;
+//     for (const b of beneficiaries) {
+//       if (!b.nomPrenoms || !b.nomPrenoms.trim()) {
+//         throw new BadRequestException("Le nom et les prénoms du bénéficiaire sont obligatoires.");
+//       }
+//       if (!b.lienParente || !b.lienParente.trim()) {
+//         throw new BadRequestException("Le lien de parenté du bénéficiaire est obligatoire.");
+//       }
+//       const pct = parseFloat(b.pourcentage);
+//       if (isNaN(pct) || pct <= 0) {
+//         throw new BadRequestException("Le pourcentage de part du bénéficiaire doit être supérieur à 0.");
+//       }
+//       sumPourcentage += pct;
+//     }
+// 
+//     if (Math.abs(sumPourcentage - 100) > 0.01) {
+//       throw new BadRequestException("La somme des parts des bénéficiaires doit être exactement égale à 100%.");
+//     }
+//   }
+// 
+//   /**
+//    * Normalise le lien de parenté pour correspondre strictement aux libellés de la table lien_parente :
+//    * PERE, MERE, ENFANT, CONJOINT, FRERE, SOEUR, AUTRE
+//    */
+//   normalizeLienParente(lien?: string): string {
+//     if (!lien || !lien.trim()) return 'AUTRE';
+//     const clean = lien.trim().toUpperCase()
+//       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+// 
+//     if (clean.includes('ENFANT') || clean.includes('FILS') || clean.includes('FILLE')) {
+//       return 'ENFANT';
+//     }
+//     if (clean.includes('CONJOINT') || clean.includes('EPOUX') || clean.includes('EPOUSE') || clean.includes('MARI') || clean.includes('FEMME')) {
+//       return 'CONJOINT';
+//     }
+//     if (clean.includes('PERE') || clean.includes('PAPA')) {
+//       return 'PERE';
+//     }
+//     if (clean.includes('MERE') || clean.includes('MAMAN')) {
+//       return 'MERE';
+//     }
+//     if (clean.includes('FRERE')) {
+//       return 'FRERE';
+//     }
+//     if (clean.includes('SOEUR')) {
+//       return 'SOEUR';
+//     }
+//     if (clean.includes('AUTRE') || clean.includes('AYANT') || clean.includes('DROIT')) {
+//       return 'AUTRE';
+//     }
+// 
+//     const validCodes = ['PERE', 'MERE', 'ENFANT', 'CONJOINT', 'FRERE', 'SOEUR', 'AUTRE'];
+//     if (validCodes.includes(clean)) {
+//       return clean;
+//     }
+// 
+//     return 'AUTRE';
+//   }
+// 
+//   private async saveCPBeneficiaries(contractId: number, beneficiaries: any[]): Promise<void> {
+//     const records = beneficiaries.map(b => {
+//       const record = new Beneficiary();
+//       record.idContract = contractId;
+//       record.nomPrenoms = (b.nomPrenoms || `${b.nom || ''} ${b.prenom || ''}`).trim() || 'Ayant droit';
+//       record.lienParente = this.normalizeLienParente(b.lienParente);
+//       record.pourcentage = parseFloat(b.pourcentage) || 100;
+//       return record;
+//     });
+//     await this.beneficiaryRepository.save(records);
+//   }
+// 
+//   /**
+//    * Enregistre les membres assurés secondaires d'un contrat OBA.
+//    * Seul l'assuré principal est dans la table customers.
+//    * Le conjoint et les ascendants (cochés dans obaOptions) sont enregistrés ici.
+//    */
+//   private async saveOBAInsuredMembers(contractId: number, obaOptions: any): Promise<void> {
+//     const roleConfig: Record<string, { label: string }> = {
+//       conjoint:    { label: 'Conjoint(e)' },
+//       ascendant1:  { label: "Père de l'Assuré" },
+//       ascendant2:  { label: "Mère de l'Assuré" },
+//       ascendant3:  { label: 'Père du (de la) Conjoint(e)' },
+//       ascendant4:  { label: 'Mère du (de la) Conjoint(e)' },
+//     };
+// 
+//     const records: ContractInsuredMember[] = [];
+// 
+//     for (const [role, cfg] of Object.entries(roleConfig)) {
+//       const opt = obaOptions[role];
+//       if (!opt || !opt.checked) continue;
+// 
+//       const member = new ContractInsuredMember();
+//       member.idContract   = contractId;
+//       member.role         = role;
+//       member.roleLabel    = cfg.label;
+//       member.lastname     = (opt.lastname  || '').toUpperCase().trim();
+//       member.firstname    = (opt.firstname || '').trim();
+//       member.birthdate    = opt.birthdate  || null;
+//       member.gender       = opt.gender     || null;
+//       member.capitalAssure = opt.capitalAssure ? Number(opt.capitalAssure) : 0;
+//       member.prime        = opt.prime       ? Number(opt.prime)        : 0;
+//       records.push(member);
+//     }
+// 
+//     if (records.length > 0) {
+//       await this.insuredMemberRepository.save(records);
+//     }
+//   }
+// 
+//   // Fonction de validation et traitement des données de contrat (extrait de create)
+//   private async validateAndProcessContractData(contractData: Partial<Contract> & { clientData?: any }, userId?: number): Promise<void> {
+//     // Recalculer les primes avant tout
+//     let primeData: any;
+//     const birthdate = contractData.clientData?.birthdate || '';
+//     let capital = contractData.capital || 0;
+//     let duration = contractData.duration || 0;
+//     const creditType = this.getCreditType(contractData);
+//     
+//     // Validate CP details
+//     this.validateCPDetails(contractData, creditType);
+// 
+//     const isCPorOBA = creditType === 'CP' || creditType === 'OBA';
+//     
+//     if (isCPorOBA) {
+//       contractData.differe = 0;
+//       contractData.idPeriodicite = 12;
+//       contractData.duration = 12;
+//     }
+// 
+//     // Aligner avec conversion contrat (CotationToContratModal.vue)
+//     if (creditType === 'CP') {
+//       contractData.duration = 12;
+//       contractData.differe = 0;
+//       contractData.idPeriodicite = 12;
+// 
+//       let activeDate: Date;
+//       if (contractData.dateEff) {
+//         const parsed = new Date(contractData.dateEff);
+//         activeDate = isNaN(parsed.getTime()) ? new Date() : parsed;
+//       } else {
+//         activeDate = new Date();
+//         activeDate.setDate(activeDate.getDate() + 1);
+//       }
+//       activeDate.setHours(0, 0, 0, 0);
+// 
+//       // Date d'échéance = Date d'effet + 1 an - 1 jour (la veille dans un an)
+//       const dateEchVal = new Date(activeDate);
+//       dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
+//       dateEchVal.setDate(dateEchVal.getDate() - 1);
+//       dateEchVal.setHours(0, 0, 0, 0);
+// 
+//       contractData.dateEff = activeDate;
+//       contractData.dateEch1 = dateEchVal;
+//       contractData.dateEch = dateEchVal;
+//     } else if (creditType === 'OBA') {
+//       contractData.duration = 12;
+//       contractData.differe = 0;
+//       contractData.idPeriodicite = 12;
+//     }
+//     
+//     const idPeriodicite = contractData.idPeriodicite || 1;
+//     const differe = contractData.differe || 0;
+//     duration = contractData.duration || 0;
+//     const datecredit = contractData.dateEff 
+//       ? new Date(contractData.dateEff).toISOString().split('T')[0]
+//       : new Date().toISOString().split('T')[0];
+// 
+//     // Enforce date d'effet >= today for non-CP contracts
+//     if (creditType !== 'CP') {
+//       const todayStr = new Date().toISOString().split('T')[0];
+//       const isImport = (contractData as any).isImport || false;
+//       if (!isImport && datecredit < todayStr) {
+//         throw new Error("La date d'effet ne peut pas être antérieure à la date courante.");
+//       }
+//     }
+// 
+//     // Enforce dateEch1 >= dateEff for non-CP contracts
+//     if (creditType !== 'CP') {
+//       if (contractData.dateEch1) {
+//         const dateEffDate = new Date(datecredit);
+//         const dateEch1Date = new Date(contractData.dateEch1);
+//         dateEffDate.setHours(0, 0, 0, 0);
+//         dateEch1Date.setHours(0, 0, 0, 0);
+//         if (dateEch1Date < dateEffDate) {
+//           throw new Error("La date de la 1re échéance ne peut pas être antérieure à la date d'effet.");
+//         }
+//       }
+//     }
+//     
+//     primeData = await this.quotationService.primePADME(
+//       capital,
+//       birthdate,
+//       duration,
+//       idPeriodicite,
+//       datecredit,
+//       differe,
+//       creditType,
+//       contractData.obaOptions
+//     );
+// 
+//     if (creditType === 'OBA' && primeData.capital) {
+//       contractData.capital = primeData.capital;
+//       capital = primeData.capital;
+//     }
+//     const typeCredit = contractData.idNatureCredit === 1 ? 'A' : 'HC';
+//     
+//     // Utiliser les méthodes PADME pour la génération des identifiants
+//     contractData.police = contractData.police || await this.generatePadmePolice(contractData.idAgency || 0);
+//     contractData.reference = contractData.reference || (contractData.idUser ? await this.generatePadmeReference(contractData.idUser, creditType) : '');
+// 
+//     
+//     if(primeData.error) {
+//       throw new Error(primeData.message);
+//     }
+//     contractData.pd = primeData.pd;
+//     contractData.pc = primeData.pc;
+//     contractData.acc = primeData.acc;
+//     contractData.surp = primeData.surp;
+//     contractData.fm = primeData.fm;
+//     contractData.puttc = primeData.puttc;
+// 
+//     // Calculer dateEch1 si pas fourni (date d'effet + 1 mois)
+//     if (!contractData.dateEch1 && contractData.dateEff) {
+//       const dateEff = new Date(contractData.dateEff);
+//       const dateEch1 = new Date(dateEff);
+//       dateEch1.setMonth(dateEff.getMonth() + 1);
+//       contractData.dateEch1 = dateEch1;
+//     }
+//     
+//     if (creditType === 'AMORT') {
+//       if (!contractData.dateEch) {
+//         contractData.dateEch = await this.calculerDateEch(contractData.dateEch1 || new Date(), contractData.duration || 0);
+//       }
+//     } else if (creditType !== 'CP') {
+//       contractData.dateEch = await this.calculerDateEch(contractData.dateEch1 || new Date(), contractData.duration || 0);
+//     }
+// 
+//     if (creditType === 'CP') {
+//       contractData.duration = 12;
+//       const baseDate = contractData.dateEff ? new Date(contractData.dateEff) : new Date();
+//       const activeDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
+//       activeDate.setHours(0, 0, 0, 0);
+//       
+//       const dateEchVal = new Date(activeDate);
+//       dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
+//       dateEchVal.setDate(dateEchVal.getDate() - 1);
+//       dateEchVal.setHours(0, 0, 0, 0);
+// 
+//       contractData.dateEff = activeDate;
+//       contractData.dateEch1 = dateEchVal;
+//       contractData.dateEch = dateEchVal;
+//     }
+//     
+//     // Traitement du taux (conversion en nombre si nécessaire)
+//     if (contractData.taux) {
+//       if (typeof contractData.taux === 'string') {
+//         contractData.taux = parseFloat((contractData.taux as string).replace('%', ''));
+//       }
+//       console.log(`📊 Taux traité: ${contractData.taux}%`);
+//     }
+// 
+//     // Fixer garantieCompl à 'NON' par défaut si non fourni
+//     if (!contractData.garantieCompl) {
+//       contractData.garantieCompl = 'NON';
+//     }
+// 
+//     // Gestion du client (recherche ou création)
+//     if (contractData.clientData) {
+//       
+//       if (contractData.clientData.idCustomer) {
+//         contractData.idCustomer = contractData.clientData.idCustomer;
+//         console.log('🔍 Client existant trouvé avec ID:', contractData.clientData.idCustomer);
+//       }
+//       else {
+//         let clientByPersonalInfo: Customer | null = null;
+//         // Recherche par infos personnelles seulement si toutes les infos sont fournies
+//         if (contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
+//           clientByPersonalInfo = await this.customerService.findByPersonalInfo(
+//             contractData.clientData.lastname.trim(), 
+//             contractData.clientData.firstname.trim(), 
+//             contractData.clientData.birthdate.trim()
+//           );
+//           console.log('🔍 clientByPersonalInfo:', clientByPersonalInfo);
+//         }
+// 
+//         const existingClient = clientByPersonalInfo;
+// 
+//         if (!existingClient) {
+//           console.log('🔍 Création nouveau client...');
+//           // Ajouter l'idUser aux données du client
+//           const clientDataWithUser = {
+//             ...contractData.clientData,
+//             idUser: userId
+//           };
+//           const newClient = await this.customerService.create(clientDataWithUser);
+//           contractData.idCustomer = newClient.id;
+//           console.log('🔍 Nouveau client créé avec ID:', newClient.id);
+//         } else {
+//           contractData.idCustomer = existingClient.id;
+//           console.log('🔍 Client existant trouvé avec ID:', existingClient.id);
+//         }
+//       }
+//     }
+// 
+//     // Vérifier la limite de contrats par nature et par période pour le client
+//     await this.checkContractLimits(contractData, contractData.dateEff);
+// 
+//     // Générer la keyCont après avoir l'ID du client
+//     contractData.keyCont = contractData.keyCont || await this.generateKeyCont(contractData.idCustomer || 0, typeCredit, contractData.capital!, contractData.duration!);
+// 
+//     // Vérifier l'unicité de la clé de contrat
+//     const existingKeyCont = await this.findByKeyCont(contractData.keyCont || '');
+//     if (existingKeyCont.length > 0) {
+//       throw new Error(`Ce client a déjà fait un contrat aujourd'hui avec ces caractéristiques. Veuillez le rechercher par la police ${existingKeyCont[0].police} ou la référence ${existingKeyCont[0].reference}`);
+//     }
+// 
+//     // Vérifier l'unicité de la référence
+//     const existingContractReference = await this.findByReference(contractData.reference || '');
+//     if (existingContractReference.length > 0) {
+//       throw new Error(`Cette reference est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
+//     }
+//   }
+// 
+//   // Fonction de validation et traitement des données de contrat (extrait de createHorsConvention)
+//   private async validateAndProcessContractDataHorsConvention(contractData: Partial<Contract> & { clientData?: any }, userId?: number): Promise<void> {
+//     const creditType = this.getCreditType(contractData);
+//     if (creditType === 'CP') {
+//       contractData.duration = 12;
+//       const activeDate = new Date();
+//       activeDate.setDate(activeDate.getDate() + 1);
+//       activeDate.setHours(0, 0, 0, 0);
+// 
+//       const dateEchVal = new Date(activeDate);
+//       dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
+//       dateEchVal.setDate(dateEchVal.getDate() - 1);
+//       dateEchVal.setHours(0, 0, 0, 0);
+// 
+//       contractData.dateEff = activeDate;
+//       contractData.dateEch1 = dateEchVal;
+//       contractData.dateEch = dateEchVal;
+//       contractData.idPeriodicite = 12;
+//       contractData.differe = 0;
+//     }
+// 
+//     // Fixer garantieCompl à 'NON' par défaut si non fourni
+//     if (!contractData.garantieCompl) {
+//       contractData.garantieCompl = 'NON';
+//     }
+// 
+//     // Vérifier la limite de contrats par nature et par période pour le client
+//     await this.checkContractLimits(contractData, contractData.dateEff);
+// 
+//     // Générer la keyCont après avoir l'ID du client
+//     const typeCredit = contractData.idNatureCredit === 1 ? 'A' : 'HC';
+//     contractData.keyCont = contractData.keyCont || await this.generateKeyCont(contractData.idCustomer || 0, typeCredit, contractData.capital!, contractData.duration!);
+//     
+//     // Utiliser les méthodes PADME pour la génération des identifiants
+//     contractData.police = contractData.police || await this.generatePadmePolice(contractData.idAgency || 0);
+//     contractData.reference = contractData.reference || (contractData.idUser ? await this.generatePadmeReference(contractData.idUser, creditType) : '');
+// 
+//     // Vérifier l'unicité de la clé de contrat
+//     const existingKeyCont = await this.findByKeyCont(contractData.keyCont || '');
+//     if (existingKeyCont.length > 0) {
+//       throw new Error(`Ce client a déjà fait un contrat aujourd'hui avec ces caractéristiques. Veuillez le rechercher par la police ${existingKeyCont[0].police} ou la référence ${existingKeyCont[0].reference}`);
+//     }
+// 
+//     // Vérifier l'unicité de la référence
+//     const existingContractReference = await this.findByReference(contractData.reference || '');
+//     if (existingContractReference.length > 0) {
+//       throw new Error(`Cette reference est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
+//     }
+//   }
 
   async findByPeriodAndFilters(
     startDate: Date,
@@ -2812,462 +2769,462 @@ export class ContractService {
     });
   }
 
-  async importContractsFromExcel(
-    file: any,
-    currentUser: { id: number; idAgency: number }
-  ): Promise<{ successCount: number; errorCount: number; errors: string[] }> {
-    const rows = await this.excelService.parseContractsImport(file.path);
-    let successCount = 0;
-    let errorCount = 0;
-    const errors: string[] = [];
+//   async importContractsFromExcel(
+//     file: any,
+//     currentUser: { id: number; idAgency: number }
+//   ): Promise<{ successCount: number; errorCount: number; errors: string[] }> {
+//     const rows = await this.excelService.parseContractsImport(file.path);
+//     let successCount = 0;
+//     let errorCount = 0;
+//     const errors: string[] = [];
+// 
+//     const natureCredits = await this.natureCreditRepository.find();
+// 
+//     for (let i = 0; i < rows.length; i++) {
+//       const row = rows[i];
+//       const rowNum = i + 2;
+// 
+//       try {
+//         if (!row.nomClient) throw new Error(`Le nom du client est obligatoire.`);
+//         if (!row.prenomClient) throw new Error(`Le prénom du client est obligatoire.`);
+//         if (!row.dateNaissanceClient) throw new Error(`La date de naissance du client est obligatoire.`);
+//         if (!row.genreClient) throw new Error(`Le genre du client est obligatoire (M/F).`);
+//         if (!row.telephoneClient) throw new Error(`Le téléphone du client est obligatoire.`);
+//         if (!row.police) throw new Error(`Le numéro de police est obligatoire.`);
+//         if (!row.reference) throw new Error(`La référence du dossier est obligatoire.`);
+//         if (!row.dateEffet) throw new Error(`La date d'effet est obligatoire.`);
+//         if (!row.dureeMois) throw new Error(`La durée est obligatoire.`);
+//         if (!row.natureCredit) throw new Error(`La nature de crédit est obligatoire.`);
+//         if (!row.capital) throw new Error(`Le capital garanti est obligatoire.`);
+// 
+//         const nat = natureCredits.find(
+//           n => n.code.toUpperCase() === row.natureCredit.toUpperCase() ||
+//                n.libelle.toUpperCase() === row.natureCredit.toUpperCase()
+//         );
+//         if (!nat) {
+//           throw new Error(`La nature de crédit '${row.natureCredit}' n'est pas valide.`);
+//         }
+// 
+//         const creditType = nat.code;
+//         const isCP = creditType === 'CP';
+//         const isOBA = creditType === 'OBA';
+//         const isCPorOBA = isCP || isOBA;
+// 
+//         const existingPolice = await this.contractRepository.findOne({ where: { police: row.police } });
+//         if (existingPolice) {
+//           throw new Error(`La police '${row.police}' existe déjà en base.`);
+//         }
+// 
+//         const existingRef = await this.contractRepository.findOne({ where: { reference: row.reference } });
+//         if (existingRef) {
+//           throw new Error(`La référence '${row.reference}' existe déjà en base.`);
+//         }
+// 
+//         const parsedBirthdateObj = this.isDateString(row.dateNaissanceClient);
+//         const parsedBirthdate = parsedBirthdateObj.isDate && parsedBirthdateObj.dateValue
+//           ? parsedBirthdateObj.dateValue.toISOString().split('T')[0]
+//           : new Date(row.dateNaissanceClient).toISOString().split('T')[0];
+// 
+//         if (!parsedBirthdate || isNaN(new Date(parsedBirthdate).getTime())) {
+//           throw new Error(`Date de naissance du client invalide: ${row.dateNaissanceClient}`);
+//         }
+// 
+//         let customer = await this.customerService.findByPersonalInfo(
+//           row.nomClient.trim(),
+//           row.prenomClient.trim(),
+//           parsedBirthdate
+//         );
+// 
+//         if (!customer) {
+//           customer = await this.customerService.create({
+//             lastname: row.nomClient.toUpperCase().trim(),
+//             firstname: row.prenomClient.trim(),
+//             birthdate: parsedBirthdate,
+//             gender: row.genreClient.toUpperCase().trim() === 'F' ? 'F' : 'M',
+//             occupation: row.professionClient || '',
+//             phone: row.telephoneClient,
+//             email: row.emailClient || '',
+//             address: row.adresseClient || '',
+//             idUser: currentUser.id,
+//             idTypeCustomer: 1
+//           });
+//         }
+// 
+//         let obaOptions: any = null;
+//         if (isOBA) {
+//           obaOptions = {};
+//           const parseObaMember = (prefix: string, role: string, roleLabel: string, rowData: any) => {
+//             const checkedVal = rowData[`${prefix}Checked`]?.toUpperCase().trim();
+//             const checked = checkedVal === 'OUI' || checkedVal === 'YES';
+//             if (!checked) return;
+// 
+//             const nom = (rowData[`${prefix}Nom`] || '').toUpperCase().trim();
+//             const prenom = (rowData[`${prefix}Prenom`] || '').trim();
+//             if (!nom || !prenom) return;
+// 
+//             const birth = rowData[`${prefix}DateNaissance`]?.trim();
+//             const parsedBirthObj = birth ? this.isDateString(birth) : null;
+//             const parsedBirth = parsedBirthObj && parsedBirthObj.isDate && parsedBirthObj.dateValue
+//               ? parsedBirthObj.dateValue.toISOString().split('T')[0]
+//               : birth ? new Date(birth).toISOString().split('T')[0] : null;
+// 
+//             obaOptions[role] = {
+//               checked: true,
+//               lastname: nom,
+//               firstname: prenom,
+//               birthdate: parsedBirth,
+//               gender: role === 'conjoint' ? (rowData[`${prefix}Genre`]?.toUpperCase().trim() === 'F' ? 'F' : 'M') : (roleLabel.includes('Père') ? 'M' : 'F'),
+//               capitalAssure: Number(rowData[`${prefix}Capital`]) || 0
+//             };
+//           };
+// 
+//           parseObaMember('conjoint', 'conjoint', 'Conjoint(e)', row);
+//           parseObaMember('pereAssure', 'ascendant1', 'Père de l\'Assuré', row);
+//           parseObaMember('mereAssure', 'ascendant2', 'Mère de l\'Assuré', row);
+//           parseObaMember('pereConjoint', 'ascendant3', 'Père du (de la) Conjoint(e)', row);
+//           parseObaMember('mereConjoint', 'ascendant4', 'Mère du (de la) Conjoint(e)', row);
+//         }
+// 
+//         const parsedDateEffObj = this.isDateString(row.dateEffet);
+//         const parsedDateEff = parsedDateEffObj.isDate && parsedDateEffObj.dateValue
+//           ? parsedDateEffObj.dateValue.toISOString().split('T')[0]
+//           : new Date(row.dateEffet).toISOString().split('T')[0];
+// 
+//         if (!parsedDateEff || isNaN(new Date(parsedDateEff).getTime())) {
+//           throw new Error(`Date d'effet invalide: ${row.dateEffet}`);
+//         }
+// 
+//         const idPeriodicite = 12; // Enforce ANNUELLE
+//         const differe = 0;
+// 
+//         const primeData = await this.quotationService.primePADME(
+//           row.capital,
+//           customer.birthdate,
+//           row.dureeMois,
+//           idPeriodicite,
+//           parsedDateEff,
+//           differe,
+//           creditType,
+//           obaOptions
+//         );
+// 
+//         if (primeData.error) {
+//           throw new Error(`Calcul prime échoué: ${primeData.message}`);
+//         }
+// 
+//         if (isOBA && primeData.obaOptions) {
+//           for (const role of Object.keys(obaOptions)) {
+//             if (primeData.obaOptions[role]) {
+//               obaOptions[role].prime = primeData.obaOptions[role].prime;
+//             }
+//           }
+//         }
+// 
+//         let dateEch1: Date;
+//         let dateEch: Date;
+// 
+//         if (isCP) {
+//           const dateEffObj = new Date(parsedDateEff);
+//           const dateEchVal = new Date(dateEffObj);
+//           dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
+//           dateEchVal.setDate(dateEchVal.getDate() - 2);
+// 
+//           dateEch1 = dateEchVal;
+//           dateEch = dateEchVal;
+//         } else {
+//           const dateEffObj = new Date(parsedDateEff);
+//           dateEch1 = new Date(dateEffObj);
+//           dateEch1.setMonth(dateEffObj.getMonth() + 1);
+//           dateEch = new Date(dateEch1);
+//           dateEch.setMonth(dateEch.getMonth() + (row.dureeMois - 1));
+//         }
+// 
+//         const todayStr = new Date().toLocaleDateString('fr-FR');
+//         const keyCont = `IMPORT_CUST${customer.id}_BE${row.capital}_DUR${row.dureeMois}_LE${todayStr}_${row.police}`;
+// 
+//         const compteBancaire = isCP ? (row.compteBancaire || 'PARRAIN') : (row.compteBancaire || '');
+//         const numeroCompte = isCP ? (row.numeroCompte || 'N/A') : (row.numeroCompte || '');
+//         const renouvellementAuto = isCP ? true : undefined;
+// 
+//         const contract = this.contractRepository.create({
+//           idCustomer: customer.id,
+//           idUser: currentUser.id,
+//           idAgency: currentUser.idAgency,
+//           idProduct: 1,
+//           idContractState: 1, // Brouillon (allows attaching medical questionnaire)
+//           idNatureCredit: nat.id,
+//           idPeriodicite: idPeriodicite,
+//           capital: isOBA && primeData.capital ? primeData.capital : row.capital,
+//           duration: row.dureeMois,
+//           differe: differe,
+//           taux: 0,
+//           dateEff: new Date(parsedDateEff),
+//           dateEch1: dateEch1,
+//           dateEch: dateEch,
+//           pd: primeData.pd || 0,
+//           pc: primeData.pc || 0,
+//           acc: primeData.acc || 0,
+//           surp: primeData.surp || 0,
+//           fm: primeData.fm || 0,
+//           puttc: primeData.puttc || 0,
+//           police: row.police,
+//           reference: row.reference,
+//           garantieCompl: 'NON',
+//           obaOptions: obaOptions,
+//           etablissement: row.etablissement || '',
+//           compteBancaire: compteBancaire,
+//           numeroCompte: numeroCompte,
+//           renouvellementAuto: renouvellementAuto,
+//           keyCont: keyCont,
+//           contractType: 'PADME'
+//         });
+// 
+//         const savedContract = await this.contractRepository.save(contract) as Contract;
+// 
+//         if (isCP) {
+//           const defaultBeneficiaries = [
+//             {
+//               nomPrenoms: `${customer.lastname} ${customer.firstname}`,
+//               lienParente: 'AUTRE',
+//               pourcentage: 100
+//             }
+//           ];
+//           await this.saveCPBeneficiaries(savedContract.id, defaultBeneficiaries);
+//         }
+// 
+//         if (isOBA && obaOptions) {
+//           await this.saveOBAInsuredMembers(savedContract.id, obaOptions);
+//         }
+// 
+//         await this.createHistoryRecord(
+//           savedContract,
+//           null,
+//           contract,
+//           ContractHistoryAction.CREATE
+//         );
+// 
+//         successCount++;
+//       } catch (err) {
+//         errorCount++;
+//         errors.push(`Ligne ${rowNum} (${row.nomClient || 'Sans nom'} - Police ${row.police || 'Sans police'}) : ${err.message}`);
+//       }
+//     }
+// 
+//     return { successCount, errorCount, errors };
+//   }
 
-    const natureCredits = await this.natureCreditRepository.find();
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const rowNum = i + 2;
-
-      try {
-        if (!row.nomClient) throw new Error(`Le nom du client est obligatoire.`);
-        if (!row.prenomClient) throw new Error(`Le prénom du client est obligatoire.`);
-        if (!row.dateNaissanceClient) throw new Error(`La date de naissance du client est obligatoire.`);
-        if (!row.genreClient) throw new Error(`Le genre du client est obligatoire (M/F).`);
-        if (!row.telephoneClient) throw new Error(`Le téléphone du client est obligatoire.`);
-        if (!row.police) throw new Error(`Le numéro de police est obligatoire.`);
-        if (!row.reference) throw new Error(`La référence du dossier est obligatoire.`);
-        if (!row.dateEffet) throw new Error(`La date d'effet est obligatoire.`);
-        if (!row.dureeMois) throw new Error(`La durée est obligatoire.`);
-        if (!row.natureCredit) throw new Error(`La nature de crédit est obligatoire.`);
-        if (!row.capital) throw new Error(`Le capital garanti est obligatoire.`);
-
-        const nat = natureCredits.find(
-          n => n.code.toUpperCase() === row.natureCredit.toUpperCase() ||
-               n.libelle.toUpperCase() === row.natureCredit.toUpperCase()
-        );
-        if (!nat) {
-          throw new Error(`La nature de crédit '${row.natureCredit}' n'est pas valide.`);
-        }
-
-        const creditType = nat.code;
-        const isCP = creditType === 'CP';
-        const isOBA = creditType === 'OBA';
-        const isCPorOBA = isCP || isOBA;
-
-        const existingPolice = await this.contractRepository.findOne({ where: { police: row.police } });
-        if (existingPolice) {
-          throw new Error(`La police '${row.police}' existe déjà en base.`);
-        }
-
-        const existingRef = await this.contractRepository.findOne({ where: { reference: row.reference } });
-        if (existingRef) {
-          throw new Error(`La référence '${row.reference}' existe déjà en base.`);
-        }
-
-        const parsedBirthdateObj = this.isDateString(row.dateNaissanceClient);
-        const parsedBirthdate = parsedBirthdateObj.isDate && parsedBirthdateObj.dateValue
-          ? parsedBirthdateObj.dateValue.toISOString().split('T')[0]
-          : new Date(row.dateNaissanceClient).toISOString().split('T')[0];
-
-        if (!parsedBirthdate || isNaN(new Date(parsedBirthdate).getTime())) {
-          throw new Error(`Date de naissance du client invalide: ${row.dateNaissanceClient}`);
-        }
-
-        let customer = await this.customerService.findByPersonalInfo(
-          row.nomClient.trim(),
-          row.prenomClient.trim(),
-          parsedBirthdate
-        );
-
-        if (!customer) {
-          customer = await this.customerService.create({
-            lastname: row.nomClient.toUpperCase().trim(),
-            firstname: row.prenomClient.trim(),
-            birthdate: parsedBirthdate,
-            gender: row.genreClient.toUpperCase().trim() === 'F' ? 'F' : 'M',
-            occupation: row.professionClient || '',
-            phone: row.telephoneClient,
-            email: row.emailClient || '',
-            address: row.adresseClient || '',
-            idUser: currentUser.id,
-            idTypeCustomer: 1
-          });
-        }
-
-        let obaOptions: any = null;
-        if (isOBA) {
-          obaOptions = {};
-          const parseObaMember = (prefix: string, role: string, roleLabel: string, rowData: any) => {
-            const checkedVal = rowData[`${prefix}Checked`]?.toUpperCase().trim();
-            const checked = checkedVal === 'OUI' || checkedVal === 'YES';
-            if (!checked) return;
-
-            const nom = (rowData[`${prefix}Nom`] || '').toUpperCase().trim();
-            const prenom = (rowData[`${prefix}Prenom`] || '').trim();
-            if (!nom || !prenom) return;
-
-            const birth = rowData[`${prefix}DateNaissance`]?.trim();
-            const parsedBirthObj = birth ? this.isDateString(birth) : null;
-            const parsedBirth = parsedBirthObj && parsedBirthObj.isDate && parsedBirthObj.dateValue
-              ? parsedBirthObj.dateValue.toISOString().split('T')[0]
-              : birth ? new Date(birth).toISOString().split('T')[0] : null;
-
-            obaOptions[role] = {
-              checked: true,
-              lastname: nom,
-              firstname: prenom,
-              birthdate: parsedBirth,
-              gender: role === 'conjoint' ? (rowData[`${prefix}Genre`]?.toUpperCase().trim() === 'F' ? 'F' : 'M') : (roleLabel.includes('Père') ? 'M' : 'F'),
-              capitalAssure: Number(rowData[`${prefix}Capital`]) || 0
-            };
-          };
-
-          parseObaMember('conjoint', 'conjoint', 'Conjoint(e)', row);
-          parseObaMember('pereAssure', 'ascendant1', 'Père de l\'Assuré', row);
-          parseObaMember('mereAssure', 'ascendant2', 'Mère de l\'Assuré', row);
-          parseObaMember('pereConjoint', 'ascendant3', 'Père du (de la) Conjoint(e)', row);
-          parseObaMember('mereConjoint', 'ascendant4', 'Mère du (de la) Conjoint(e)', row);
-        }
-
-        const parsedDateEffObj = this.isDateString(row.dateEffet);
-        const parsedDateEff = parsedDateEffObj.isDate && parsedDateEffObj.dateValue
-          ? parsedDateEffObj.dateValue.toISOString().split('T')[0]
-          : new Date(row.dateEffet).toISOString().split('T')[0];
-
-        if (!parsedDateEff || isNaN(new Date(parsedDateEff).getTime())) {
-          throw new Error(`Date d'effet invalide: ${row.dateEffet}`);
-        }
-
-        const idPeriodicite = 12; // Enforce ANNUELLE
-        const differe = 0;
-
-        const primeData = await this.quotationService.primePADME(
-          row.capital,
-          customer.birthdate,
-          row.dureeMois,
-          idPeriodicite,
-          parsedDateEff,
-          differe,
-          creditType,
-          obaOptions
-        );
-
-        if (primeData.error) {
-          throw new Error(`Calcul prime échoué: ${primeData.message}`);
-        }
-
-        if (isOBA && primeData.obaOptions) {
-          for (const role of Object.keys(obaOptions)) {
-            if (primeData.obaOptions[role]) {
-              obaOptions[role].prime = primeData.obaOptions[role].prime;
-            }
-          }
-        }
-
-        let dateEch1: Date;
-        let dateEch: Date;
-
-        if (isCP) {
-          const dateEffObj = new Date(parsedDateEff);
-          const dateEchVal = new Date(dateEffObj);
-          dateEchVal.setFullYear(dateEchVal.getFullYear() + 1);
-          dateEchVal.setDate(dateEchVal.getDate() - 2);
-
-          dateEch1 = dateEchVal;
-          dateEch = dateEchVal;
-        } else {
-          const dateEffObj = new Date(parsedDateEff);
-          dateEch1 = new Date(dateEffObj);
-          dateEch1.setMonth(dateEffObj.getMonth() + 1);
-          dateEch = new Date(dateEch1);
-          dateEch.setMonth(dateEch.getMonth() + (row.dureeMois - 1));
-        }
-
-        const todayStr = new Date().toLocaleDateString('fr-FR');
-        const keyCont = `IMPORT_CUST${customer.id}_BE${row.capital}_DUR${row.dureeMois}_LE${todayStr}_${row.police}`;
-
-        const compteBancaire = isCP ? (row.compteBancaire || 'PARRAIN') : (row.compteBancaire || '');
-        const numeroCompte = isCP ? (row.numeroCompte || 'N/A') : (row.numeroCompte || '');
-        const renouvellementAuto = isCP ? true : undefined;
-
-        const contract = this.contractRepository.create({
-          idCustomer: customer.id,
-          idUser: currentUser.id,
-          idAgency: currentUser.idAgency,
-          idProduct: 1,
-          idContractState: 1, // Brouillon (allows attaching medical questionnaire)
-          idNatureCredit: nat.id,
-          idPeriodicite: idPeriodicite,
-          capital: isOBA && primeData.capital ? primeData.capital : row.capital,
-          duration: row.dureeMois,
-          differe: differe,
-          taux: 0,
-          dateEff: new Date(parsedDateEff),
-          dateEch1: dateEch1,
-          dateEch: dateEch,
-          pd: primeData.pd || 0,
-          pc: primeData.pc || 0,
-          acc: primeData.acc || 0,
-          surp: primeData.surp || 0,
-          fm: primeData.fm || 0,
-          puttc: primeData.puttc || 0,
-          police: row.police,
-          reference: row.reference,
-          garantieCompl: 'NON',
-          obaOptions: obaOptions,
-          etablissement: row.etablissement || '',
-          compteBancaire: compteBancaire,
-          numeroCompte: numeroCompte,
-          renouvellementAuto: renouvellementAuto,
-          keyCont: keyCont,
-          contractType: 'PADME'
-        });
-
-        const savedContract = await this.contractRepository.save(contract) as Contract;
-
-        if (isCP) {
-          const defaultBeneficiaries = [
-            {
-              nomPrenoms: `${customer.lastname} ${customer.firstname}`,
-              lienParente: 'AUTRE',
-              pourcentage: 100
-            }
-          ];
-          await this.saveCPBeneficiaries(savedContract.id, defaultBeneficiaries);
-        }
-
-        if (isOBA && obaOptions) {
-          await this.saveOBAInsuredMembers(savedContract.id, obaOptions);
-        }
-
-        await this.createHistoryRecord(
-          savedContract,
-          null,
-          contract,
-          ContractHistoryAction.CREATE
-        );
-
-        successCount++;
-      } catch (err) {
-        errorCount++;
-        errors.push(`Ligne ${rowNum} (${row.nomClient || 'Sans nom'} - Police ${row.police || 'Sans police'}) : ${err.message}`);
-      }
-    }
-
-    return { successCount, errorCount, errors };
-  }
-
-  async updateBeneficiary(id: number, data: { nomPrenoms?: string; lienParente?: string; pourcentage?: number }): Promise<Beneficiary> {
-    const beneficiary = await this.beneficiaryRepository.findOne({ where: { id } });
-    if (!beneficiary) {
-      throw new NotFoundException(`Bénéficiaire introuvable`);
-    }
-    if (data.nomPrenoms !== undefined) beneficiary.nomPrenoms = data.nomPrenoms;
-    if (data.lienParente !== undefined) beneficiary.lienParente = data.lienParente;
-    if (data.pourcentage !== undefined) {
-      const newPct = Number(data.pourcentage);
-      if (newPct <= 0 || newPct > 100) {
-        throw new BadRequestException('Le pourcentage doit être compris entre 1% et 100%.');
-      }
-      const otherBenefs = await this.beneficiaryRepository.find({ where: { idContract: beneficiary.idContract } });
-      const otherTotal = otherBenefs.filter(b => b.id !== id).reduce((sum, b) => sum + Number(b.pourcentage || 0), 0);
-      if (otherTotal + newPct > 100) {
-        throw new BadRequestException(`Impossible d'enregistrer ${newPct}% : le total des bénéficiaires dépasserait 100% (Parts des autres bénéficiaires : ${otherTotal}%, Maximum autorisé : ${100 - otherTotal}%).`);
-      }
-      beneficiary.pourcentage = newPct;
-    }
-    return this.beneficiaryRepository.save(beneficiary);
-  }
-
-  async deleteBeneficiary(id: number): Promise<void> {
-    const beneficiary = await this.beneficiaryRepository.findOne({ where: { id } });
-    if (!beneficiary) {
-      throw new NotFoundException(`Bénéficiaire introuvable`);
-    }
-    const count = await this.beneficiaryRepository.count({ where: { idContract: beneficiary.idContract } });
-    if (count <= 1) {
-      throw new BadRequestException('Impossible de supprimer : au moins un bénéficiaire est obligatoire sur ce contrat.');
-    }
-    await this.beneficiaryRepository.delete(id);
-  }
-
-  async updateInsuredMember(
-    id: number,
-    data: { lastname?: string; firstname?: string; birthdate?: string; gender?: string }
-  ): Promise<ContractInsuredMember> {
-    const member = await this.insuredMemberRepository.findOne({ where: { id } });
-    if (!member) {
-      throw new NotFoundException(`Membre assuré introuvable`);
-    }
-
-    const contract = await this.contractRepository.findOne({
-      where: { id: member.idContract },
-      relations: ['customer']
-    });
-    if (!contract) {
-      throw new NotFoundException(`Contrat associé introuvable`);
-    }
-
-    // Mettre à jour l'entité membre
-    if (data.lastname !== undefined) member.lastname = data.lastname.toUpperCase().trim();
-    if (data.firstname !== undefined) member.firstname = data.firstname.trim();
-    if (data.birthdate !== undefined) member.birthdate = data.birthdate;
-    if (data.gender !== undefined) member.gender = data.gender;
-
-    // Mettre à jour l'option correspondante dans obaOptions
-    const obaOptions = contract.obaOptions || {};
-    if (obaOptions[member.role]) {
-      obaOptions[member.role] = {
-        ...obaOptions[member.role],
-        lastname: member.lastname,
-        firstname: member.firstname,
-        birthdate: member.birthdate,
-        gender: member.gender
-      };
-    }
-
-    // Recalculer les primes pour validation de l'âge/configuration
-    const primeData = await this.quotationService.primeObsequesAlafia(
-      contract.capital,
-      contract.customer.birthdate,
-      contract.duration,
-      obaOptions
-    );
-
-    if (primeData.error) {
-      throw new BadRequestException(primeData.message);
-    }
-
-    // Mettre à jour les primes et capitaux du contrat si besoin
-    contract.obaOptions = obaOptions;
-    contract.pd = primeData.pd ?? contract.pd;
-    contract.puttc = primeData.puttc ?? contract.puttc;
-    contract.capital = primeData.capital ?? contract.capital;
-
-    await this.contractRepository.save(contract);
-
-    // Mettre à jour la prime et capitalAssure du membre
-    if (primeData.obaOptions && primeData.obaOptions[member.role]) {
-      member.prime = Number(primeData.obaOptions[member.role].prime) || member.prime;
-    }
-
-    return this.insuredMemberRepository.save(member);
-  }
-
-  async deleteInsuredMember(id: number): Promise<void> {
-    const member = await this.insuredMemberRepository.findOne({ where: { id } });
-    if (!member) {
-      throw new NotFoundException(`Membre assuré introuvable`);
-    }
-
-    const contract = await this.contractRepository.findOne({
-      where: { id: member.idContract },
-      relations: ['customer']
-    });
-    if (!contract) {
-      throw new NotFoundException(`Contrat associé introuvable`);
-    }
-
-    // Supprimer le membre de la table
-    await this.insuredMemberRepository.delete(id);
-
-    // Mettre à jour obaOptions en désactivant ce rôle
-    const obaOptions = contract.obaOptions || {};
-    if (obaOptions[member.role]) {
-      obaOptions[member.role].checked = false;
-    }
-
-    // Recalculer les primes pour le contrat
-    const primeData = await this.quotationService.primeObsequesAlafia(
-      contract.capital,
-      contract.customer.birthdate,
-      contract.duration,
-      obaOptions
-    );
-
-    // Mettre à jour le contrat
-    contract.obaOptions = obaOptions;
-    if (!primeData.error) {
-      contract.pd = primeData.pd ?? contract.pd;
-      contract.puttc = primeData.puttc ?? contract.puttc;
-      contract.capital = primeData.capital ?? contract.capital;
-    } else {
-      const activeOptions = Object.values(obaOptions).filter((o: any) => o && o.checked);
-      if (activeOptions.length === 0) {
-        contract.pd = 0;
-        contract.puttc = 0;
-        contract.capital = 0;
-      } else {
-        throw new BadRequestException(primeData.message);
-      }
-    }
-
-    await this.contractRepository.save(contract);
-  }
-
-  async addBeneficiary(contractIdentifier: string | number, data: { nomPrenoms: string; lienParente: string; pourcentage: number }): Promise<Beneficiary> {
-    const contract = await this.findOne(contractIdentifier);
-    if (!contract) {
-      throw new NotFoundException(`Contrat introuvable`);
-    }
-    const contractId = contract.id;
-    const newPct = Number(data.pourcentage);
-    if (newPct <= 0 || newPct > 100) {
-      throw new BadRequestException('Le pourcentage doit être compris entre 1% et 100%.');
-    }
-    const currentBenefs = await this.beneficiaryRepository.find({ where: { idContract: contractId } });
-    const currentTotal = currentBenefs.reduce((sum, b) => sum + Number(b.pourcentage || 0), 0);
-    if (currentTotal + newPct > 100) {
-      const remaining = Math.max(0, 100 - currentTotal);
-      throw new BadRequestException(`Impossible d'ajouter ${newPct}% : le total des bénéficiaires dépasserait 100% (Total actuel : ${currentTotal}%, Part restante disponible : ${remaining}%).`);
-    }
-
-    const beneficiary = new Beneficiary();
-    beneficiary.idContract = contractId;
-    beneficiary.nomPrenoms = data.nomPrenoms;
-    beneficiary.lienParente = data.lienParente;
-    beneficiary.pourcentage = newPct;
-    return this.beneficiaryRepository.save(beneficiary);
-  }
-
-  async saveAllBeneficiaries(contractIdentifier: string | number, beneficiaries: any[]): Promise<Beneficiary[]> {
-    const contract = await this.findOne(contractIdentifier);
-    if (!contract) {
-      throw new NotFoundException('Contrat introuvable');
-    }
-    const contractId = contract.id;
-    if (!beneficiaries || !Array.isArray(beneficiaries) || beneficiaries.length === 0) {
-      throw new BadRequestException('Au moins un bénéficiaire est obligatoire.');
-    }
-
-    let total = 0;
-    for (const b of beneficiaries) {
-      if (!b.nomPrenoms || !b.nomPrenoms.trim()) {
-        throw new BadRequestException('Le nom et prénoms de chaque bénéficiaire est obligatoire.');
-      }
-      if (!b.lienParente || !b.lienParente.trim()) {
-        throw new BadRequestException(`Le lien de parenté est obligatoire pour ${b.nomPrenoms}.`);
-      }
-      const p = Number(b.pourcentage);
-      if (isNaN(p) || p <= 0) {
-        throw new BadRequestException(`Le pourcentage pour ${b.nomPrenoms} doit être supérieur à 0%.`);
-      }
-      total += p;
-    }
-
-    if (Math.round(total * 100) / 100 !== 100) {
-      throw new BadRequestException(`La somme des pourcentages doit être exactement égale à 100% (Somme actuelle : ${total}%).`);
-    }
-
-    await this.beneficiaryRepository.delete({ idContract: contractId });
-    const records = beneficiaries.map(b => {
-      const record = new Beneficiary();
-      record.idContract = contractId;
-      record.nomPrenoms = b.nomPrenoms.trim().toUpperCase();
-      record.lienParente = b.lienParente.trim();
-      record.pourcentage = Number(b.pourcentage);
-      return record;
-    });
-
-    return this.beneficiaryRepository.save(records);
-  }
+//   async updateBeneficiary(id: number, data: { nomPrenoms?: string; lienParente?: string; pourcentage?: number }): Promise<Beneficiary> {
+//     const beneficiary = await this.beneficiaryRepository.findOne({ where: { id } });
+//     if (!beneficiary) {
+//       throw new NotFoundException(`Bénéficiaire introuvable`);
+//     }
+//     if (data.nomPrenoms !== undefined) beneficiary.nomPrenoms = data.nomPrenoms;
+//     if (data.lienParente !== undefined) beneficiary.lienParente = data.lienParente;
+//     if (data.pourcentage !== undefined) {
+//       const newPct = Number(data.pourcentage);
+//       if (newPct <= 0 || newPct > 100) {
+//         throw new BadRequestException('Le pourcentage doit être compris entre 1% et 100%.');
+//       }
+//       const otherBenefs = await this.beneficiaryRepository.find({ where: { idContract: beneficiary.idContract } });
+//       const otherTotal = otherBenefs.filter(b => b.id !== id).reduce((sum, b) => sum + Number(b.pourcentage || 0), 0);
+//       if (otherTotal + newPct > 100) {
+//         throw new BadRequestException(`Impossible d'enregistrer ${newPct}% : le total des bénéficiaires dépasserait 100% (Parts des autres bénéficiaires : ${otherTotal}%, Maximum autorisé : ${100 - otherTotal}%).`);
+//       }
+//       beneficiary.pourcentage = newPct;
+//     }
+//     return this.beneficiaryRepository.save(beneficiary);
+//   }
+// 
+//   async deleteBeneficiary(id: number): Promise<void> {
+//     const beneficiary = await this.beneficiaryRepository.findOne({ where: { id } });
+//     if (!beneficiary) {
+//       throw new NotFoundException(`Bénéficiaire introuvable`);
+//     }
+//     const count = await this.beneficiaryRepository.count({ where: { idContract: beneficiary.idContract } });
+//     if (count <= 1) {
+//       throw new BadRequestException('Impossible de supprimer : au moins un bénéficiaire est obligatoire sur ce contrat.');
+//     }
+//     await this.beneficiaryRepository.delete(id);
+//   }
+// 
+//   async updateInsuredMember(
+//     id: number,
+//     data: { lastname?: string; firstname?: string; birthdate?: string; gender?: string }
+//   ): Promise<ContractInsuredMember> {
+//     const member = await this.insuredMemberRepository.findOne({ where: { id } });
+//     if (!member) {
+//       throw new NotFoundException(`Membre assuré introuvable`);
+//     }
+// 
+//     const contract = await this.contractRepository.findOne({
+//       where: { id: member.idContract },
+//       relations: ['customer']
+//     });
+//     if (!contract) {
+//       throw new NotFoundException(`Contrat associé introuvable`);
+//     }
+// 
+//     // Mettre à jour l'entité membre
+//     if (data.lastname !== undefined) member.lastname = data.lastname.toUpperCase().trim();
+//     if (data.firstname !== undefined) member.firstname = data.firstname.trim();
+//     if (data.birthdate !== undefined) member.birthdate = data.birthdate;
+//     if (data.gender !== undefined) member.gender = data.gender;
+// 
+//     // Mettre à jour l'option correspondante dans obaOptions
+//     const obaOptions = contract.obaOptions || {};
+//     if (obaOptions[member.role]) {
+//       obaOptions[member.role] = {
+//         ...obaOptions[member.role],
+//         lastname: member.lastname,
+//         firstname: member.firstname,
+//         birthdate: member.birthdate,
+//         gender: member.gender
+//       };
+//     }
+// 
+//     // Recalculer les primes pour validation de l'âge/configuration
+//     const primeData = await this.quotationService.primeObsequesAlafia(
+//       contract.capital,
+//       contract.customer.birthdate,
+//       contract.duration,
+//       obaOptions
+//     );
+// 
+//     if (primeData.error) {
+//       throw new BadRequestException(primeData.message);
+//     }
+// 
+//     // Mettre à jour les primes et capitaux du contrat si besoin
+//     contract.obaOptions = obaOptions;
+//     contract.pd = primeData.pd ?? contract.pd;
+//     contract.puttc = primeData.puttc ?? contract.puttc;
+//     contract.capital = primeData.capital ?? contract.capital;
+// 
+//     await this.contractRepository.save(contract);
+// 
+//     // Mettre à jour la prime et capitalAssure du membre
+//     if (primeData.obaOptions && primeData.obaOptions[member.role]) {
+//       member.prime = Number(primeData.obaOptions[member.role].prime) || member.prime;
+//     }
+// 
+//     return this.insuredMemberRepository.save(member);
+//   }
+// 
+//   async deleteInsuredMember(id: number): Promise<void> {
+//     const member = await this.insuredMemberRepository.findOne({ where: { id } });
+//     if (!member) {
+//       throw new NotFoundException(`Membre assuré introuvable`);
+//     }
+// 
+//     const contract = await this.contractRepository.findOne({
+//       where: { id: member.idContract },
+//       relations: ['customer']
+//     });
+//     if (!contract) {
+//       throw new NotFoundException(`Contrat associé introuvable`);
+//     }
+// 
+//     // Supprimer le membre de la table
+//     await this.insuredMemberRepository.delete(id);
+// 
+//     // Mettre à jour obaOptions en désactivant ce rôle
+//     const obaOptions = contract.obaOptions || {};
+//     if (obaOptions[member.role]) {
+//       obaOptions[member.role].checked = false;
+//     }
+// 
+//     // Recalculer les primes pour le contrat
+//     const primeData = await this.quotationService.primeObsequesAlafia(
+//       contract.capital,
+//       contract.customer.birthdate,
+//       contract.duration,
+//       obaOptions
+//     );
+// 
+//     // Mettre à jour le contrat
+//     contract.obaOptions = obaOptions;
+//     if (!primeData.error) {
+//       contract.pd = primeData.pd ?? contract.pd;
+//       contract.puttc = primeData.puttc ?? contract.puttc;
+//       contract.capital = primeData.capital ?? contract.capital;
+//     } else {
+//       const activeOptions = Object.values(obaOptions).filter((o: any) => o && o.checked);
+//       if (activeOptions.length === 0) {
+//         contract.pd = 0;
+//         contract.puttc = 0;
+//         contract.capital = 0;
+//       } else {
+//         throw new BadRequestException(primeData.message);
+//       }
+//     }
+// 
+//     await this.contractRepository.save(contract);
+//   }
+// 
+//   async addBeneficiary(contractIdentifier: string | number, data: { nomPrenoms: string; lienParente: string; pourcentage: number }): Promise<Beneficiary> {
+//     const contract = await this.findOne(contractIdentifier);
+//     if (!contract) {
+//       throw new NotFoundException(`Contrat introuvable`);
+//     }
+//     const contractId = contract.id;
+//     const newPct = Number(data.pourcentage);
+//     if (newPct <= 0 || newPct > 100) {
+//       throw new BadRequestException('Le pourcentage doit être compris entre 1% et 100%.');
+//     }
+//     const currentBenefs = await this.beneficiaryRepository.find({ where: { idContract: contractId } });
+//     const currentTotal = currentBenefs.reduce((sum, b) => sum + Number(b.pourcentage || 0), 0);
+//     if (currentTotal + newPct > 100) {
+//       const remaining = Math.max(0, 100 - currentTotal);
+//       throw new BadRequestException(`Impossible d'ajouter ${newPct}% : le total des bénéficiaires dépasserait 100% (Total actuel : ${currentTotal}%, Part restante disponible : ${remaining}%).`);
+//     }
+// 
+//     const beneficiary = new Beneficiary();
+//     beneficiary.idContract = contractId;
+//     beneficiary.nomPrenoms = data.nomPrenoms;
+//     beneficiary.lienParente = data.lienParente;
+//     beneficiary.pourcentage = newPct;
+//     return this.beneficiaryRepository.save(beneficiary);
+//   }
+// 
+//   async saveAllBeneficiaries(contractIdentifier: string | number, beneficiaries: any[]): Promise<Beneficiary[]> {
+//     const contract = await this.findOne(contractIdentifier);
+//     if (!contract) {
+//       throw new NotFoundException('Contrat introuvable');
+//     }
+//     const contractId = contract.id;
+//     if (!beneficiaries || !Array.isArray(beneficiaries) || beneficiaries.length === 0) {
+//       throw new BadRequestException('Au moins un bénéficiaire est obligatoire.');
+//     }
+// 
+//     let total = 0;
+//     for (const b of beneficiaries) {
+//       if (!b.nomPrenoms || !b.nomPrenoms.trim()) {
+//         throw new BadRequestException('Le nom et prénoms de chaque bénéficiaire est obligatoire.');
+//       }
+//       if (!b.lienParente || !b.lienParente.trim()) {
+//         throw new BadRequestException(`Le lien de parenté est obligatoire pour ${b.nomPrenoms}.`);
+//       }
+//       const p = Number(b.pourcentage);
+//       if (isNaN(p) || p <= 0) {
+//         throw new BadRequestException(`Le pourcentage pour ${b.nomPrenoms} doit être supérieur à 0%.`);
+//       }
+//       total += p;
+//     }
+// 
+//     if (Math.round(total * 100) / 100 !== 100) {
+//       throw new BadRequestException(`La somme des pourcentages doit être exactement égale à 100% (Somme actuelle : ${total}%).`);
+//     }
+// 
+//     await this.beneficiaryRepository.delete({ idContract: contractId });
+//     const records = beneficiaries.map(b => {
+//       const record = new Beneficiary();
+//       record.idContract = contractId;
+//       record.nomPrenoms = b.nomPrenoms.trim().toUpperCase();
+//       record.lienParente = b.lienParente.trim();
+//       record.pourcentage = Number(b.pourcentage);
+//       return record;
+//     });
+// 
+//     return this.beneficiaryRepository.save(records);
+//   }
 }
