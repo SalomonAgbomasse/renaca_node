@@ -501,7 +501,7 @@
                       :class="{ 'field-disabled': !isCapitalValid && isAmortMode, 'bg-light': !isAmortMode }"
                       :disabled="(!isCapitalValid && isAmortMode) || !isAmortMode"
                       :placeholder="getDurationPlaceholder()"
-                      :max="getDurationMaxRenaca()"
+                      :max="60"
                       maxlength="2"
                       @input="handleDurationInput"
                     />
@@ -806,7 +806,7 @@ setup() {
 
   // Fonction pour obtenir le placeholder de durée selon le type de crédit
   const getDurationPlaceholder = (): string => {
-    return 'Durée maximale selon votre âge (60 mois max)';
+    return 'Durée en mois (60 mois max)';
   };
 
   // Durée maximale RENACA selon l'âge : âge + CEIL(durée/12) <= 70, donc
@@ -880,17 +880,18 @@ setup() {
     isFormDirty.value = true;
   };
 
-  // Fonction pour gérer l'input de la durée (RENACA)
+  // Fonction pour gérer l'input de la durée (RENACA) : seule limite en temps réel = 60 mois
+  // (plafond absolu). La limite réelle selon l'âge (âge + durée <= 70) est signalée par un
+  // message d'erreur à la validation, pas par un blocage silencieux pendant la frappe.
   const handleDurationInput = (event: Event): void => {
     const target = event.target as HTMLInputElement;
     let digits = (target.value || '').replace(/[^0-9]/g, '');
 
     if (digits) {
-      const maxDuration = getDurationMaxRenaca();
-      const num = Math.max(1, Math.min(maxDuration, parseInt(digits, 10)));
+      const num = Math.max(1, Math.min(60, parseInt(digits, 10)));
       digits = String(num);
     }
-    
+
     target.value = digits;
     
     if (contratForm.value) {
@@ -1308,7 +1309,14 @@ setup() {
           const maxDuration = Math.min(60, Math.max(0, (70 - age) * 12));
 
           if (value > maxDuration) {
-            return this.createError({ message: `La durée maximale pour ${age} ans est ${maxDuration} mois` });
+            const maxYears = Math.floor(maxDuration / 12);
+            const yearsText = maxYears > 0 ? `${maxYears} an${maxYears > 1 ? 's' : ''}` : '';
+            const monthsRemainder = maxDuration % 12;
+            const monthsText = monthsRemainder > 0 ? `${yearsText ? ' et ' : ''}${monthsRemainder} mois` : '';
+            const durationText = maxDuration > 0 ? `${yearsText}${monthsText} (${maxDuration} mois)` : '0 mois';
+            return this.createError({
+              message: `L'âge du bénéficiaire (${age} ans) + la durée dépasse la limite de 70 ans. Pour cet âge, la durée conforme est de ${durationText}.`
+            });
           }
           return true;
         }),
