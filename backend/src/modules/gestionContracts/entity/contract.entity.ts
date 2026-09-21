@@ -165,6 +165,19 @@ export class Contract {
   @Column({ name: 'numeroCompte', type: 'varchar', length: 100, nullable: true, default: null })
   numeroCompte: string;
 
+  // Champs spécifiques RENACA (Assurance Bouclier Emprunteurs)
+  @Column({ name: 'perteEmploi', type: 'boolean', nullable: true, default: false })
+  perteEmploi: boolean;
+
+  @Column({ name: 'tauxSurprime', type: 'decimal', precision: 5, scale: 4, nullable: true, default: 0 })
+  tauxSurprime: number;
+
+  @Column({ name: 'beneficiaire', type: 'varchar', length: 255, nullable: true })
+  beneficiaire: string;
+
+  @Column({ name: 'primePE', type: 'int', unsigned: true, nullable: true, default: 0 })
+  primePE: number;
+
   @OneToMany(() => Beneficiary, (beneficiary) => beneficiary.contract, { cascade: true })
   beneficiaries: Beneficiary[];
 
