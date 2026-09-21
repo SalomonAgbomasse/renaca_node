@@ -547,11 +547,9 @@
                 </div>
                 <ErrorMessage name="typeCustomer" class="text-danger" />
               </div>
-            </div>
 
-            <div class="row">
               <!-- Etablissement -->
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Établissement
@@ -567,9 +565,11 @@
                   <ErrorMessage name="etablissement" class="text-danger"/>
                 </div>
               </div>
-              
+            </div>
+
+            <div class="row">
               <!-- Nom -->
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Nom
@@ -588,7 +588,7 @@
               </div>
 
               <!-- Prénoms -->
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Prénoms
