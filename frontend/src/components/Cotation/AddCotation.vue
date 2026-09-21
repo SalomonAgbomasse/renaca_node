@@ -548,8 +548,8 @@
                 <ErrorMessage name="typeCustomer" class="text-danger" />
               </div>
 
-              <!-- Etablissement -->
-              <div class="col-md-6">
+              <!-- Etablissement (Constant : même ligne que Type de client) -->
+              <div class="col-md-6" v-if="isConstMode">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Établissement
@@ -568,8 +568,26 @@
             </div>
 
             <div class="row">
+              <!-- Etablissement (Amortissable : même ligne que Nom/Prénoms) -->
+              <div class="col-md-4" v-if="isAmortMode">
+                <div class="form-group mb-15 mb-sm-20 mb-md-25">
+                  <label class="d-block text-black fw-semibold mb-10">
+                    Établissement
+                  </label>
+                  <Field name="etablissement" v-slot="{ field }">
+                    <input
+                      v-bind="field"
+                      type="text"
+                      class="form-control shadow-none fs-md-15 text-black"
+                      placeholder="Nom de l'établissement (optionnel)"
+                    />
+                  </Field>
+                  <ErrorMessage name="etablissement" class="text-danger"/>
+                </div>
+              </div>
+
               <!-- Nom -->
-              <div class="col-md-6">
+              <div :class="isAmortMode ? 'col-md-4' : 'col-md-6'">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Nom
@@ -588,7 +606,7 @@
               </div>
 
               <!-- Prénoms -->
-              <div class="col-md-6">
+              <div :class="isAmortMode ? 'col-md-4' : 'col-md-6'">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
                     Prénoms
