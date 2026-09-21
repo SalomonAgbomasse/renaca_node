@@ -37,12 +37,18 @@ export class QuotationService {
   ) {}
 
   /**
-   * Calculer l'âge à partir de la date de naissance
+   * Calculer l'âge à partir de la date de naissance (tient compte du mois/jour,
+   * pas seulement de l'année — sinon l'âge est surestimé de 1 an tant que
+   * l'anniversaire de l'année en cours n'est pas encore passé).
    */
   public ageFromBirthdate(birthdate: string): number {
     const today = new Date();
     const birthDate = new Date(birthdate);
     let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
     return age;
   }
 
