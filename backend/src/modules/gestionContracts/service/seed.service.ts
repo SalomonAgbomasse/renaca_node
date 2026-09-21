@@ -44,12 +44,12 @@ export class SeedService implements OnModuleInit {
       const defaultTypes = [
         {
           id: 1,
-          libelle: 'Particulier',
+          libelle: 'PARTICULIER',
           description: 'Client individuel'
         },
         {
           id: 2,
-          libelle: 'Personnel',
+          libelle: 'PERSONNEL RENACA',
           description: 'Personnel de la société'
         },
       ];
