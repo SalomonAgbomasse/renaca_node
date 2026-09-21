@@ -1137,9 +1137,149 @@ export class ContractService {
 
     // Créer l'historique de création
     await this.createHistoryRecord(
-      savedContract, 
-      null, 
-      rest, 
+      savedContract,
+      null,
+      rest,
+      ContractHistoryAction.CREATE
+    );
+
+    return savedContract;
+  }
+
+  /**
+   * Résout le type de capital RENACA ('AMORT' ou 'CONST') à partir du code
+   * réel de la nature de crédit — pas un id numérique en dur.
+   */
+  private async resolveRenacaTypeCapital(idNatureCredit: number): Promise<'AMORT' | 'CONST'> {
+    const natureCredit = await this.natureCreditRepository.findOne({ where: { id: idNatureCredit } });
+    if (!natureCredit) {
+      throw new BadRequestException(`Nature de crédit introuvable (id: ${idNatureCredit}).`);
+    }
+    return natureCredit.code === 'CONST' ? 'CONST' : 'AMORT';
+  }
+
+  /**
+   * Création d'un contrat RENACA (Amortissable ou Constant).
+   * Indépendant de createPadmeContract : ne modifie aucun chemin PADME
+   * existant, n'appelle pas validateCPDetails/saveCPBeneficiaries
+   * (spécifiques à PADME/CP, non pertinents ici).
+   */
+  async createRenacaContract(contractData: Partial<Contract> & { clientData?: any; perteEmploi?: boolean; tauxSurprime?: number; beneficiaire?: string; accessoires?: number }): Promise<Contract> {
+    if (!contractData.capital || !contractData.duration || !contractData.clientData?.birthdate || !contractData.idNatureCredit) {
+      throw new BadRequestException('Champs requis manquants pour le contrat RENACA (capital, durée, date de naissance, nature de crédit).');
+    }
+
+    const birthdate = contractData.clientData.birthdate;
+    const typeCapital = await this.resolveRenacaTypeCapital(contractData.idNatureCredit);
+
+    const dateEff = contractData.dateEff ? new Date(contractData.dateEff) : new Date();
+    const dateEffISO = dateEff.toISOString().split('T')[0];
+
+    // Date d'effet >= aujourd'hui
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (dateEffISO < todayStr) {
+      throw new BadRequestException("La date d'effet ne peut pas être antérieure à la date courante.");
+    }
+
+    const accessoires = (contractData as any).accessoires ?? contractData.acc;
+    const primeData = await this.quotationService.primeRENACA(
+      typeCapital,
+      contractData.capital,
+      birthdate,
+      contractData.duration,
+      contractData.perteEmploi,
+      contractData.tauxSurprime,
+      accessoires
+    );
+
+    if (primeData.error) {
+      throw new BadRequestException(primeData.message || 'Erreur lors du calcul de la prime RENACA');
+    }
+
+    // Gestion client (recherche ou création, identique au chemin PADME)
+    if (contractData.clientData) {
+      if (contractData.clientData.idCustomer) {
+        contractData.idCustomer = contractData.clientData.idCustomer;
+      } else if (contractData.clientData.lastname && contractData.clientData.firstname && contractData.clientData.birthdate) {
+        const existing = await this.customerService.findByPersonalInfo(
+          contractData.clientData.lastname.trim(),
+          contractData.clientData.firstname.trim(),
+          contractData.clientData.birthdate.trim()
+        );
+        if (existing) {
+          contractData.idCustomer = existing.id;
+        } else {
+          const newClient = await this.customerService.create({
+            ...contractData.clientData,
+            idUser: contractData.idUser
+          });
+          contractData.idCustomer = newClient.id;
+        }
+      }
+    }
+
+    // Vérifier la limite de contrats par nature et par période pour le client
+    await this.checkContractLimits(contractData, contractData.dateEff);
+
+    const policeTypeCredit = typeCapital === 'CONST' ? 'RC' : 'RA';
+    contractData.police = contractData.police || await this.policyNumberService.generateStandardPolice(contractData.idAgency || 0, policeTypeCredit);
+    contractData.reference = contractData.reference || await this.policyNumberService.generateStandardReference(contractData.idUser || 0, policeTypeCredit);
+
+    const existingContractReference = await this.findByReference(contractData.reference || '');
+    if (existingContractReference.length > 0) {
+      throw new BadRequestException(`Cette référence est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
+    }
+
+    // Échéances : durée fixe, pas de différé pour RENACA
+    const dateEch1 = contractData.dateEch1
+      ? new Date(contractData.dateEch1)
+      : (() => {
+          const d = new Date(dateEff);
+          d.setMonth(d.getMonth() + 1);
+          return d;
+        })();
+    const dateEch = contractData.dateEch
+      ? new Date(contractData.dateEch)
+      : await this.calculerDateEch(dateEch1, contractData.duration || 0);
+
+    contractData.dateEff = dateEff;
+    contractData.dateEch1 = dateEch1;
+    contractData.dateEch = dateEch;
+    contractData.differe = 0;
+
+    // Primes
+    contractData.pd = primeData.pd;
+    contractData.pc = 0;
+    contractData.acc = primeData.acc;
+    contractData.surp = primeData.surp;
+    contractData.fm = 0;
+    contractData.puttc = primeData.puttc;
+    (contractData as any).primePE = primeData.primePE || 0;
+    (contractData as any).prime = contractData.puttc;
+    (contractData as any).commission = 0;
+
+    if (!contractData.garantieCompl) {
+      contractData.garantieCompl = 'NON';
+    }
+
+    contractData.contractType = 'RENACA';
+
+    contractData.keyCont = await this.generateKeyCont(
+      contractData.idCustomer || 0,
+      typeCapital,
+      contractData.capital || 0,
+      contractData.duration || 0,
+      contractData.garantieCompl
+    );
+
+    const { beneficiaries, ...rest } = contractData;
+    const contract = this.contractRepository.create(rest);
+    const savedContract = await this.contractRepository.save(contract);
+
+    await this.createHistoryRecord(
+      savedContract,
+      null,
+      rest,
       ContractHistoryAction.CREATE
     );
 

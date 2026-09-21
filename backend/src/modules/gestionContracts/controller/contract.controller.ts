@@ -219,7 +219,47 @@ export class ContractController {
     }
   }
 
-  
+  // Création spécifique RENACA (Amortissable ou Constant, utilise primeRENACA)
+  @Post('renaca')
+  @RequirePermissions(ContractPermission.CREATE)
+  async createRenaca(@Body() contractData: any, @Body('clientData') clientData: any, @Req() request: Request): Promise<{ success: boolean; message: string; contract?: Contract; primeData?: any }> {
+    try {
+      const user = (request as any).user;
+      if (!user) {
+        throw new Error('Utilisateur non authentifié');
+      }
+
+      if (!contractData.capital) return { success: false, message: 'Le capital est obligatoire' };
+      if (!contractData.duration) return { success: false, message: 'La durée est obligatoire' };
+      if (!clientData?.birthdate) return { success: false, message: 'La date de naissance est obligatoire' };
+      if (!contractData.idNatureCredit) return { success: false, message: 'Le type de capital (nature de crédit) est obligatoire' };
+
+      contractData.idUser = user.id;
+      contractData.idAgency = user.idAgency;
+      contractData.idProduct = contractData.idProduct || 1;
+      contractData.idContractState = contractData.idContractState || 1;
+      contractData.dateEff = contractData.dateEff || new Date().toISOString();
+
+      const contract = await this.contractService.createRenacaContract({ ...contractData, clientData });
+
+      return {
+        success: true,
+        message: `Contrat RENACA "${contract.reference}" créé avec succès`,
+        contract,
+        primeData: {
+          pd: contract.pd,
+          surp: contract.surp,
+          acc: contract.acc,
+          puttc: contract.puttc,
+          primePE: (contract as any).primePE
+        }
+      };
+    } catch (error) {
+      return { success: false, message: error.message || 'Erreur création contrat RENACA' };
+    }
+  }
+
+
   @Post('hors-convention')
   @RequirePermissions(ContractPermission.CREATE)
   async createHorsConvention(@Body() contractData: CreateContractDto, @Req() request: Request): Promise<{ success: boolean; message: string; contract?: Contract }> {
