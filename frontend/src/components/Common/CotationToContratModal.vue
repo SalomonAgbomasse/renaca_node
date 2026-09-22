@@ -358,49 +358,6 @@
           </h5>
         </div>
         <div class="row">
-          <!-- Nature de crédit -->
-          <div class="col-md-6">
-            <div class="form-group mb-4">
-              <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
-              <Field
-                name="contrat.creditType"
-                v-model="conversionForm.contrat.creditType"
-                as="select"
-                class="form-select shadow-none"
-                required
-              >
-                <option value="">Sélectionnez la nature de crédit</option>
-                <option v-for="nc in natureCredits" :key="nc.id || nc.code" :value="nc.code">
-                  {{ nc.libelle }}
-                </option>
-              </Field>
-              <ErrorMessage name="contrat.creditType" class="text-danger" />
-            </div>
-          </div>
-          <!-- Perte d'Emploi (Amortissable uniquement) -->
-          <div class="col-md-6" v-if="conversionForm.contrat.creditType === 'AMORT'">
-            <div class="form-group mb-4">
-              <label class="form-label">Perte d'Emploi <span class="text-danger">*</span></label>
-              <div class="d-flex gap-3">
-                <label class="d-flex align-items-center gap-2">
-                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-slot="{ field }">
-                    <input type="radio" v-bind="field" value="OUI" />
-                  </Field>
-                  OUI
-                </label>
-                <label class="d-flex align-items-center gap-2">
-                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-slot="{ field }">
-                    <input type="radio" v-bind="field" value="NON" />
-                  </Field>
-                  NON
-                </label>
-              </div>
-              <ErrorMessage name="contrat.perteEmploi" class="text-danger" />
-            </div>
-          </div>
-        </div>
-        <!-- Rangée Capital & Durée -->
-        <div class="row">
           <!-- Capital -->
           <div class="col-md-6">
             <div class="form-group mb-4">
@@ -420,6 +377,36 @@
               <ErrorMessage name="contrat.capital" class="text-danger" />
             </div>
           </div>
+          <!-- Nature de crédit -->
+          <div class="col-md-6">
+            <div class="form-group mb-4">
+              <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
+              <Field
+                v-if="!conversionForm.contrat.creditType"
+                name="contrat.creditType"
+                v-model="conversionForm.contrat.creditType"
+                as="select"
+                class="form-select shadow-none"
+                required
+              >
+                <option value="">Sélectionnez la nature de crédit</option>
+                <option v-for="nc in natureCredits" :key="nc.id || nc.code" :value="nc.code">
+                  {{ nc.libelle }}
+                </option>
+              </Field>
+              <input
+                v-else
+                :value="getCreditTypeLabel(conversionForm.contrat.creditType)"
+                type="text"
+                class="form-control bg-light"
+                readonly
+                disabled
+              />
+              <ErrorMessage name="contrat.creditType" class="text-danger" />
+            </div>
+          </div>
+        </div>
+        <div class="row">
           <!-- Périodicité -->
           <div class="col-md-6">
             <div class="form-group mb-4">
@@ -444,6 +431,53 @@
                 </option>
               </Field>
               <ErrorMessage name="contrat.idPeriodicite" class="text-danger" />
+            </div>
+          </div>
+          <!-- Perte d'Emploi (Amortissable uniquement) -->
+          <div class="col-md-6" v-if="conversionForm.contrat.creditType === 'AMORT'">
+            <div class="form-group mb-4">
+              <label class="form-label">Perte d'Emploi <span class="text-danger">*</span></label>
+              <div class="d-flex gap-3">
+                <label class="d-flex align-items-center gap-2">
+                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-slot="{ field }">
+                    <input type="radio" v-bind="field" value="OUI" />
+                  </Field>
+                  OUI
+                </label>
+                <label class="d-flex align-items-center gap-2">
+                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-slot="{ field }">
+                    <input type="radio" v-bind="field" value="NON" />
+                  </Field>
+                  NON
+                </label>
+              </div>
+              <ErrorMessage name="contrat.perteEmploi" class="text-danger" />
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <!-- Taux d'intérêt -->
+          <div class="col-md-6">
+            <div class="form-group mb-4">
+              <label class="form-label">Taux d'intérêt <span class="text-danger">*</span></label>
+              <Field
+                name="contrat.tauxInteret"
+                v-model="conversionForm.contrat.tauxInteret"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                class="form-control"
+                :class="{ 'border-warning': Number(conversionForm.contrat.tauxInteret) === 0 }"
+                placeholder="Taux d'intérêt (%)"
+                required
+                @input="validateTauxInteret"
+              />
+              <ErrorMessage name="contrat.tauxInteret" class="text-danger" />
+              <div v-if="Number(conversionForm.contrat.tauxInteret) === 0" class="text-warning small mt-1 d-flex align-items-center gap-1">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Le taux d'intérêt est à 0%. Veuillez vérifier cette valeur.</span>
+              </div>
             </div>
           </div>
           <!-- Durée (en mois) -->
@@ -649,6 +683,10 @@
                   <div class="recap-item">
                     <span class="recap-label">Durée</span>
                     <span class="recap-value">{{ conversionForm.contrat.duration }} mois</span>
+                  </div>
+                  <div class="recap-item">
+                    <span class="recap-label">Taux d'intérêt</span>
+                    <span class="recap-value">{{ conversionForm.contrat.tauxInteret }}%</span>
                   </div>
                   <div class="recap-item">
                     <span class="recap-label">Date d'effet</span>
@@ -978,6 +1016,7 @@ export default defineComponent({
         duration: props.defaultDuration || 12,
         idPeriodicite: 1, // Périodicité par défaut (Mensuelle) - informatif uniquement (RENACA = Prime Unique)
         capital: props.defaultCapital || 0,
+        tauxInteret: 0,
         perteEmploi: (props.defaultGarantieCompl === 'OUI' ? 'OUI' : 'NON') as string,
         dateEch1: (() => {
           // Calculer la date de première échéance (1 mois après la date d'effet)
@@ -1121,7 +1160,22 @@ export default defineComponent({
             const creditType = conversionForm.value.contrat.creditType;
             if (creditType !== 'AMORT') return true;
             return value === 'OUI' || value === 'NON';
+          }),
+        tauxInteret: Yup.number()
+          .nullable()
+          .transform((value, originalValue) => {
+            if (originalValue === '' || originalValue === null || originalValue === undefined) {
+              return null;
+            }
+            const numValue = Number(originalValue);
+            if (numValue === 0) {
+              return 0;
+            }
+            return isNaN(numValue) ? null : numValue;
           })
+          .required('Le taux d\'intérêt est obligatoire')
+          .min(0, 'Le taux d\'intérêt ne peut pas être négatif')
+          .max(100, 'Le taux d\'intérêt ne peut pas dépasser 100%')
       })
     });
 
@@ -1602,6 +1656,16 @@ export default defineComponent({
       );
     };
 
+    const validateTauxInteret = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const value = parseFloat(target.value);
+      if (value < 0) {
+        target.value = '0';
+      } else if (value > 100) {
+        target.value = '100';
+      }
+    };
+
     const validateDuration = (event: Event) => {
       const target = event.target as HTMLInputElement;
       let value = parseInt(target.value);
@@ -1960,6 +2024,7 @@ export default defineComponent({
         // Pré-remplir les données du contrat
         conversionForm.value.contrat.capital = contractData.capital || 0;
         conversionForm.value.contrat.duration = contractData.duration || contractData.duree || 12;
+        conversionForm.value.contrat.tauxInteret = contractData.taux || 0;
 
         // Mapper les dates selon la structure du backend :
         // - dateEff = Date d'effet
@@ -2081,6 +2146,7 @@ export default defineComponent({
           dateEch1: conversionForm.value.contrat.datePremiereEcheance,
           dateEch: conversionForm.value.contrat.dateEch1,
           idNatureCredit: idNatureCredit, // Mappé depuis creditType
+          taux: Number(conversionForm.value.contrat.tauxInteret),
           commission: 0,
           description: isEditMode.value ? `Contrat modifié` : `Contrat créé depuis cotation`,
           isActive: true,
@@ -2458,6 +2524,7 @@ export default defineComponent({
       validateDateEffet,
       validateDatePremiereEcheance,
       validateDateEcheance,
+      validateTauxInteret,
       validateDuration,
       adjustValuesToLimits,
       recalculatePrimes,
