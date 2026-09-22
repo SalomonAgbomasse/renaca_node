@@ -213,22 +213,6 @@
               </label>
             </div>
           </div>
-          <div class="col-md-6" v-if="formModel.contrat.perteEmploi === 'OUI'">
-            <div class="form-group mb-3">
-              <label class="form-label">Prime Complémentaire Perte d'Emploi (PC) <span class="text-danger">*</span></label>
-              <Field
-                name="primes.pc"
-                v-model="formModel.primes.pc"
-                type="number"
-                class="form-control"
-                :min="0"
-                step="0.01"
-                placeholder="0"
-                @input="handlePrimeInput"
-              />
-              <ErrorMessage name="primes.pc" class="text-danger" />
-            </div>
-          </div>
         </div>
 
         <div class="row">
@@ -317,16 +301,16 @@
           </div>
         </div>
 
-        <!-- Première ligne des primes : PD, SURP -->
+        <!-- Première ligne des primes : PD, PC, SURP -->
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div class="form-group mb-3">
               <label class="form-label">Prime Décès (PD) <span class="text-danger">*</span></label>
               <Field
                 name="primes.pd"
                 v-model="formModel.primes.pd"
-                type="number" 
-                class="form-control" 
+                type="number"
+                class="form-control"
                 :min="0"
                 step="0.01"
                 placeholder="0"
@@ -336,15 +320,33 @@
               <ErrorMessage name="primes.pd" class="text-danger" />
             </div>
           </div>
-          
-          <div class="col-md-6">
+
+          <div class="col-md-4" v-if="natureCreditCode === 'AMORT'">
+            <div class="form-group mb-3">
+              <label class="form-label">Prime Complémentaire Perte d'Emploi (PC)</label>
+              <Field
+                name="primes.pc"
+                v-model="formModel.primes.pc"
+                type="number"
+                class="form-control"
+                :min="0"
+                step="0.01"
+                placeholder="0"
+                :disabled="formModel.contrat.perteEmploi !== 'OUI'"
+                @input="handlePrimeInput"
+              />
+              <ErrorMessage name="primes.pc" class="text-danger" />
+            </div>
+          </div>
+
+          <div class="col-md-4">
             <div class="form-group mb-3">
               <label class="form-label">Surprime (SURP) <span class="text-danger">*</span></label>
               <Field
                 name="primes.surp"
                 v-model="formModel.primes.surp"
-                type="number" 
-                class="form-control" 
+                type="number"
+                class="form-control"
                 :min="0"
                 step="0.01"
                 placeholder="0"
@@ -1447,6 +1449,14 @@ export default defineComponent({
     watch(() => formModel.value.contrat.idPeriodicite, (newPeriodicite, oldPeriodicite) => {
       if (newPeriodicite && newPeriodicite !== oldPeriodicite && !dateEcheanceManuallyEdited.value && currentStep.value >= 2) {
         calculateDateEcheanceAuto();
+      }
+    });
+
+    // Réinitialise la Prime Complémentaire (PC) à 0 quand elle devient grisée
+    // (Perte d'Emploi = NON) ou disparaît (nature de crédit CONSTANT)
+    watch([natureCreditCode, () => formModel.value.contrat.perteEmploi], ([nature, perteEmploi]) => {
+      if (nature !== 'AMORT' || perteEmploi !== 'OUI') {
+        formModel.value.primes.pc = 0;
       }
     });
 
