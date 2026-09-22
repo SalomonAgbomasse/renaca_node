@@ -253,8 +253,7 @@
                 required
               >
                 <option value="">Sélectionner</option>
-                <option value="1">Particulier</option>
-                <option value="2">Personnel PADME</option>
+                <option v-for="tc in typeCustomers" :key="tc.id" :value="String(tc.id)">{{ tc.libelle }}</option>
               </Field>
               <select
                 v-else
@@ -263,8 +262,7 @@
                 disabled
               >
                 <option value="">Sélectionner</option>
-                <option value="1">Particulier</option>
-                <option value="2">Personnel PADME</option>
+                <option v-for="tc in typeCustomers" :key="tc.id" :value="String(tc.id)">{{ tc.libelle }}</option>
               </select>
               <ErrorMessage name="client.typeAss" class="text-danger" />
             </div>
@@ -358,10 +356,6 @@
             <i class="fa fa-file-contract me-2"></i>
             Informations du contrat
           </h5>
-          <div v-if="conversionForm.contrat.creditType === 'OBA'" class="alert alert-info px-4 py-2 shadow-sm rounded-pill border-2 border-info d-inline-flex align-items-center mb-0">
-            <i class="fas fa-shield-alt me-2 text-info fs-5"></i>
-            <span class="fs-15 fw-bold text-info-emphasis">Total Capital Assuré : <span class="fs-17 text-dark ms-1">{{ conversionForm.contrat.capital.toLocaleString('fr-FR') }} FCFA</span></span>
-          </div>
         </div>
         <div class="row">
           <!-- Nature de crédit -->
@@ -383,62 +377,42 @@
               <ErrorMessage name="contrat.creditType" class="text-danger" />
             </div>
           </div>
-          <!-- Taux d'intérêt -->
-          <div class="col-md-6">
+          <!-- Perte d'Emploi (Amortissable uniquement) -->
+          <div class="col-md-6" v-if="conversionForm.contrat.creditType === 'AMORT'">
             <div class="form-group mb-4">
-              <label class="form-label">Taux d'intérêt <span class="text-danger">*</span></label>
-              <Field
-                name="contrat.tauxInteret"
-                v-model="conversionForm.contrat.tauxInteret"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                class="form-control"
-                :class="{ 'border-warning': Number(conversionForm.contrat.tauxInteret) === 0 }"
-                placeholder="Taux d'intérêt (%)"
-                required
-                @input="validateTauxInteret"
-              />
-              <ErrorMessage name="contrat.tauxInteret" class="text-danger" />
-              <!-- Avertissement si le taux est à 0 -->
-              <div v-if="Number(conversionForm.contrat.tauxInteret) === 0" class="text-warning small mt-1 d-flex align-items-center gap-1">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>Le taux d'intérêt est à 0%. Veuillez vérifier cette valeur.</span>
+              <label class="form-label">Perte d'Emploi <span class="text-danger">*</span></label>
+              <div class="d-flex gap-3">
+                <label class="d-flex align-items-center gap-2">
+                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-slot="{ field }">
+                    <input type="radio" v-bind="field" value="OUI" />
+                  </Field>
+                  OUI
+                </label>
+                <label class="d-flex align-items-center gap-2">
+                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-slot="{ field }">
+                    <input type="radio" v-bind="field" value="NON" />
+                  </Field>
+                  NON
+                </label>
               </div>
+              <ErrorMessage name="contrat.perteEmploi" class="text-danger" />
             </div>
           </div>
         </div>
-        <!-- Rangée Capital & Durée pour NON-OBA -->
-        <div v-if="conversionForm.contrat.creditType !== 'OBA'" class="row">
+        <!-- Rangée Capital & Durée -->
+        <div class="row">
           <!-- Capital -->
           <div class="col-md-6">
             <div class="form-group mb-4">
               <label class="form-label">Capital <span class="text-danger">*</span></label>
-              
-              <!-- Dropdown pour CP -->
               <Field
-                v-if="conversionForm.contrat.creditType === 'CP'"
-                name="contrat.capital"
-                as="select"
-                class="form-select shadow-none"
-                v-model="conversionForm.contrat.capital"
-                required
-              >
-                <option :value="500000">Option 1 - 500 000 FCFA</option>
-                <option :value="1000000">Option 2 - 1 000 000 FCFA</option>
-              </Field>
-              
-              <!-- Input standard pour AMORT / Autre -->
-              <Field
-                v-else
                 name="contrat.capital"
                 v-model="conversionForm.contrat.capital"
-                type="number" 
-                class="form-control" 
+                type="number"
+                class="form-control"
                 placeholder="Capital"
                 :min="1"
-                :max="10000000"
+                :max="maxCapital"
                 @input="validateCapital"
                 @blur="validateCapital"
                 required
@@ -447,7 +421,7 @@
             </div>
           </div>
           <!-- Périodicité -->
-          <div v-if="conversionForm.contrat.creditType !== 'CP'" class="col-md-6">
+          <div class="col-md-6">
             <div class="form-group mb-4">
               <label class="form-label">Périodicité <span class="text-danger">*</span></label>
               <Field
@@ -461,9 +435,9 @@
                 <option value="">
                   {{ loadingPeriodicites ? 'Chargement...' : 'Sélectionner la périodicité' }}
                 </option>
-                <option 
-                  v-for="periodicite in periodicites" 
-                  :key="periodicite.id" 
+                <option
+                  v-for="periodicite in periodicites"
+                  :key="periodicite.id"
                   :value="periodicite.id"
                 >
                   {{ periodicite.libelle }}
@@ -479,352 +453,20 @@
               <Field
                 name="contrat.duration"
                 v-model="conversionForm.contrat.duration"
-                type="number" 
-                class="form-control" 
-                :class="{ 'bg-light': conversionForm.contrat.creditType === 'CP' }"
+                type="number"
+                class="form-control"
                 placeholder="Durée en mois"
-                :disabled="conversionForm.contrat.creditType === 'CP'"
                 :min="minDuration"
-                :max="maxDuration"
+                :max="60"
                 @input="validateDuration"
                 @blur="validateDuration"
                 required
               />
-              <small v-if="maxDuration < 120" class="text-muted">
+              <small v-if="maxDuration < 60" class="text-muted">
                 <i class="fas fa-info-circle me-1"></i>
-                Durée maximale : {{ maxDuration }} mois (Type: {{ conversionForm.contrat.creditType }}, Âge: {{ currentAge }} ans)
+                Durée maximale : {{ maxDuration }} mois (Âge: {{ currentAge }} ans)
               </small>
               <ErrorMessage name="contrat.duration" class="text-danger" />
-            </div>
-          </div>
-          <!-- Durée de différée (en mois) -->
-          <div v-if="conversionForm.contrat.creditType !== 'CP'" class="col-md-6">
-            <div class="form-group mb-4">
-              <label class="form-label">Durée de différée (en mois) <span class="text-danger">*</span></label>
-              <Field
-                name="contrat.dureeeDifferee"
-                v-model="conversionForm.contrat.dureeeDifferee"
-                as="select"
-                class="form-select"
-                required
-              >
-                <option value="0">0 mois</option>
-                <option value="1">1 mois</option>
-                <option value="2">2 mois</option>
-                <option value="3">3 mois</option>
-                <option value="4">4 mois</option>
-                <option value="5">5 mois</option>
-                <option value="6">6 mois</option>
-              </Field>
-            </div>
-          </div>
-        </div>
-
-        <!-- Rangée Capital, Durée & Checklist pour OBA -->
-        <div v-else class="mb-4">
-
-          <!-- Hidden fields for VeeValidate to pass OBA capital and duration -->
-          <Field name="contrat.capital" type="hidden" v-model="conversionForm.contrat.capital" />
-          <Field name="contrat.duration" type="hidden" :value="12" />
-
-          <div class="row">
-            <!-- Groupe Assuré -->
-            <div class="col-md-6">
-              <div class="border-bottom pb-2 mb-3">
-                <h6 class="text-black fw-bold mb-0">
-                  <i class="fas fa-user-circle text-primary me-2"></i>Groupe Assuré
-                </h6>
-              </div>
-
-              <!-- Assuré (Toujours coché/activé car renseigné à l'étape 1) -->
-              <div class="card p-3 border-2 border-primary mb-3 bg-light shadow-sm">
-                <div class="d-flex align-items-center justify-content-between gap-2" style="min-height: 38px;">
-                  <div class="form-check mb-0">
-                    <input class="form-check-input me-2" type="checkbox" checked disabled id="modal-oba-opt-assure" />
-                    <label class="form-check-label fw-bold text-black cursor-pointer" for="modal-oba-opt-assure">
-                      Assuré Principal
-                    </label>
-                  </div>
-                  <span class="badge bg-primary">Renseigné Étape 1</span>
-                </div>
-              </div>
-
-              <!-- Père Assuré -->
-              <div class="card p-3 border-2 mb-3" :class="conversionForm.contrat.obaOptions.ascendant1.checked ? 'border-primary bg-light-subtle shadow-sm' : 'border-light-subtle'">
-                <div class="d-flex align-items-center justify-content-between gap-2" style="min-height: 38px;">
-                  <div class="form-check mb-0">
-                    <input class="form-check-input me-2" type="checkbox" id="modal-oba-opt-ascendant1" v-model="conversionForm.contrat.obaOptions.ascendant1.checked" />
-                    <label class="form-check-label fw-bold text-black cursor-pointer" for="modal-oba-opt-ascendant1">
-                      Père Assuré
-                    </label>
-                  </div>
-                </div>
-                
-                <!-- Inputs Père Assuré si coché -->
-                <div v-if="conversionForm.contrat.obaOptions.ascendant1.checked" class="mt-3 pt-3 border-top">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Nom (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant1.lastname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Nom"
-                          @input="handleModalUppercaseInput($event, 'contrat.obaOptions.ascendant1.lastname')"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Prénoms (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant1.firstname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Prénoms"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Date de naissance <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant1.birthdate"
-                          type="date"
-                          class="form-control form-control-sm"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Mère Assuré -->
-              <div class="card p-3 border-2 mb-3" :class="conversionForm.contrat.obaOptions.ascendant2.checked ? 'border-primary bg-light-subtle shadow-sm' : 'border-light-subtle'">
-                <div class="d-flex align-items-center justify-content-between gap-2" style="min-height: 38px;">
-                  <div class="form-check mb-0">
-                    <input class="form-check-input me-2" type="checkbox" id="modal-oba-opt-ascendant2" v-model="conversionForm.contrat.obaOptions.ascendant2.checked" />
-                    <label class="form-check-label fw-bold text-black cursor-pointer" for="modal-oba-opt-ascendant2">
-                      Mère Assuré
-                    </label>
-                  </div>
-                </div>
-                
-                <!-- Inputs Mère Assuré si coché -->
-                <div v-if="conversionForm.contrat.obaOptions.ascendant2.checked" class="mt-3 pt-3 border-top">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Nom (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant2.lastname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Nom"
-                          @input="handleModalUppercaseInput($event, 'contrat.obaOptions.ascendant2.lastname')"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Prénoms (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant2.firstname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Prénoms"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Date de naissance <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant2.birthdate"
-                          type="date"
-                          class="form-control form-control-sm"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Groupe Conjoint -->
-            <div class="col-md-6">
-              <div class="border-bottom pb-2 mb-3">
-                <h6 class="text-black fw-bold mb-0">
-                  <i class="fas fa-user-friends text-primary me-2"></i>Groupe Conjoint(e)
-                </h6>
-              </div>
-
-              <!-- Conjoint -->
-              <div class="card p-3 border-2 mb-3" :class="conversionForm.contrat.obaOptions.conjoint.checked ? 'border-primary bg-light-subtle shadow-sm' : 'border-light-subtle'">
-                <div class="d-flex align-items-center justify-content-between gap-2" style="min-height: 38px;">
-                  <div class="form-check mb-0">
-                    <input class="form-check-input me-2" type="checkbox" id="modal-oba-opt-conjoint" v-model="conversionForm.contrat.obaOptions.conjoint.checked" @change="if(!conversionForm.contrat.obaOptions.conjoint.checked) { conversionForm.contrat.obaOptions.ascendant3.checked = false; conversionForm.contrat.obaOptions.ascendant4.checked = false; }" />
-                    <label class="form-check-label fw-bold text-black cursor-pointer" for="modal-oba-opt-conjoint">
-                      Conjoint(e)
-                    </label>
-                  </div>
-                </div>
-                
-                <!-- Inputs conjoint si coché -->
-                <div v-if="conversionForm.contrat.obaOptions.conjoint.checked" class="mt-3 pt-3 border-top">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Nom <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.conjoint.lastname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Nom du conjoint"
-                          required
-                          @input="handleModalUppercaseInput($event, 'contrat.obaOptions.conjoint.lastname')"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Prénoms <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.conjoint.firstname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Prénoms du conjoint"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Date de naissance <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.conjoint.birthdate"
-                          type="date"
-                          class="form-control form-control-sm"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Père Conjoint -->
-              <div class="card p-3 border-2 mb-3" :class="[
-                conversionForm.contrat.obaOptions.ascendant3.checked ? 'border-primary bg-light-subtle shadow-sm' : 'border-light-subtle',
-                !conversionForm.contrat.obaOptions.conjoint.checked ? 'bg-light text-muted opacity-50' : ''
-              ]">
-                <div class="d-flex align-items-center justify-content-between gap-2" style="min-height: 38px;">
-                  <div class="form-check mb-0">
-                    <input class="form-check-input me-2" type="checkbox" id="modal-oba-opt-ascendant3" v-model="conversionForm.contrat.obaOptions.ascendant3.checked" :disabled="!conversionForm.contrat.obaOptions.conjoint.checked" />
-                    <label class="form-check-label fw-bold text-black cursor-pointer" for="modal-oba-opt-ascendant3">
-                      Père Conjoint(e)
-                    </label>
-                  </div>
-                </div>
-                
-                <!-- Inputs Père Conjoint si coché -->
-                <div v-if="conversionForm.contrat.obaOptions.ascendant3.checked && conversionForm.contrat.obaOptions.conjoint.checked" class="mt-3 pt-3 border-top">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Nom (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant3.lastname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Nom"
-                          @input="handleModalUppercaseInput($event, 'contrat.obaOptions.ascendant3.lastname')"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Prénoms (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant3.firstname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Prénoms"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Date de naissance <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant3.birthdate"
-                          type="date"
-                          class="form-control form-control-sm"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Mère Conjoint -->
-              <div class="card p-3 border-2 mb-3" :class="[
-                conversionForm.contrat.obaOptions.ascendant4.checked ? 'border-primary bg-light-subtle shadow-sm' : 'border-light-subtle',
-                !conversionForm.contrat.obaOptions.conjoint.checked ? 'bg-light text-muted opacity-50' : ''
-              ]">
-                <div class="d-flex align-items-center justify-content-between gap-2" style="min-height: 38px;">
-                  <div class="form-check mb-0">
-                    <input class="form-check-input me-2" type="checkbox" id="modal-oba-opt-ascendant4" v-model="conversionForm.contrat.obaOptions.ascendant4.checked" :disabled="!conversionForm.contrat.obaOptions.conjoint.checked" />
-                    <label class="form-check-label fw-bold text-black cursor-pointer" for="modal-oba-opt-ascendant4">
-                      Mère Conjoint(e)
-                    </label>
-                  </div>
-                </div>
-                
-                <!-- Inputs Mère Conjoint si coché -->
-                <div v-if="conversionForm.contrat.obaOptions.ascendant4.checked && conversionForm.contrat.obaOptions.conjoint.checked" class="mt-3 pt-3 border-top">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Nom (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant4.lastname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Nom"
-                          @input="handleModalUppercaseInput($event, 'contrat.obaOptions.ascendant4.lastname')"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Prénoms (Optionnel)</label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant4.firstname"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Prénoms"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group mb-2">
-                        <label class="form-label small text-dark fw-bold">Date de naissance <span class="text-danger">*</span></label>
-                        <input
-                          v-model="conversionForm.contrat.obaOptions.ascendant4.birthdate"
-                          type="date"
-                          class="form-control form-control-sm"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -836,12 +478,9 @@
               <Field
                 name="contrat.dateEffet"
                 v-model="conversionForm.contrat.dateEffet"
-                type="date" 
-                class="form-control" 
-                :class="{ 'bg-light': conversionForm.contrat.creditType === 'CP' }"
-                :min="conversionForm.contrat.creditType === 'CP' ? null : todayDate"
-                :readonly="conversionForm.contrat.creditType === 'CP'"
-                :disabled="conversionForm.contrat.creditType === 'CP'"
+                type="date"
+                class="form-control"
+                :min="todayDate"
                 @change="updateDatePremiereEcheance"
                 @input="validateDateEffet"
                 required
@@ -855,12 +494,9 @@
               <Field
                 name="contrat.datePremiereEcheance"
                 v-model="conversionForm.contrat.datePremiereEcheance"
-                type="date" 
-                class="form-control" 
-                :class="{ 'bg-light': conversionForm.contrat.creditType === 'CP' }"
-                :min="conversionForm.contrat.creditType === 'CP' ? null : conversionForm.contrat.dateEffet"
-                :readonly="conversionForm.contrat.creditType === 'CP'"
-                :disabled="conversionForm.contrat.creditType === 'CP'"
+                type="date"
+                class="form-control"
+                :min="conversionForm.contrat.dateEffet"
                 required
                 @change="validateDatePremiereEcheance"
                 @blur="validateDatePremiereEcheance"
@@ -873,7 +509,7 @@
               <label class="form-label">
                 Date d'échéance <span class="text-danger">*</span>
                 <button
-                  v-if="dateEcheanceManuallyEdited && conversionForm.contrat.creditType !== 'CP'"
+                  v-if="dateEcheanceManuallyEdited"
                   type="button"
                   class="btn btn-sm btn-link p-0 ms-2"
                   @click="resetDateEcheanceAuto"
@@ -885,12 +521,9 @@
               <Field
                 name="contrat.dateEch1"
                 v-model="conversionForm.contrat.dateEch1"
-                type="date" 
-                class="form-control" 
-                :class="{ 'bg-light': conversionForm.contrat.creditType === 'CP' }"
-                :min="conversionForm.contrat.creditType === 'CP' ? null : getMinDateEcheance"
-                :readonly="conversionForm.contrat.creditType === 'CP'"
-                :disabled="conversionForm.contrat.creditType === 'CP'"
+                type="date"
+                class="form-control"
+                :min="getMinDateEcheance"
                 required
                 @input="handleDateEcheanceManualEdit"
                 @change="validateDateEcheance"
@@ -912,14 +545,13 @@
         <div class="row">
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Référence dossier </label>
+              <label class="form-label">Référence dossier</label>
               <Field
                 name="contrat.reference"
                 v-model="conversionForm.contrat.reference"
                 type="text"
                 class="form-control"
-                placeholder="Référence dossier"
-                required
+                placeholder="Référence dossier (générée automatiquement si vide)"
                 @input="handleModalUppercaseInput($event, 'contrat.reference')"
               />
               <ErrorMessage name="contrat.reference" class="text-danger" />
@@ -940,189 +572,10 @@
             </div>
           </div>
         </div>
-
-        <!-- Champs spécifiques CP (PADME PROTECTION) -->
-        <div v-if="conversionForm.contrat.creditType === 'CP'" class="row">
-          <div class="col-md-4">
-            <div class="form-group mb-4">
-              <label class="form-label">Renouvellement automatique <span class="text-danger">*</span></label>
-              <select
-                v-model="conversionForm.contrat.renouvellementAuto"
-                class="form-select"
-                required
-              >
-                <option value="">Sélectionner</option>
-                <option :value="true">OUI</option>
-                <option :value="false">NON</option>
-              </select>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group mb-4">
-              <label class="form-label">Compte bancaire <span class="text-danger">*</span></label>
-              <select
-                v-model="conversionForm.contrat.compteBancaire"
-                class="form-select"
-                required
-              >
-                <option value="">Sélectionner</option>
-                <option value="EPARGNE">EPARGNE</option>
-                <option value="COURANT">COURANT</option>
-              </select>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group mb-4">
-              <label class="form-label">Numéro de compte <span class="text-danger">*</span></label>
-              <input
-                v-model="conversionForm.contrat.numeroCompte"
-                type="text"
-                class="form-control"
-                placeholder="Numéro de compte"
-                required
-              />
-            </div>
-          </div>
-        </div>
-        
-        
-        
-
-        
-        <!-- Garantie Perte d'Emploi cachée -->
-        <div class="row" style="display: none;">
-          <div class="col-md-12">
-            <div class="form-group mb-3">
-              <label class="form-label">Garantie Perte d'Emploi <span class="text-danger">*</span></label>
-              <div class="d-flex gap-3">
-                <label class="d-flex align-items-center gap-2">
-                  <input 
-                    v-model="conversionForm.contrat.garantieCompl"
-                    type="radio" 
-                    value="OUI"
-                  />
-                  <span>Oui</span>
-                </label>
-                <label class="d-flex align-items-center gap-2">
-                  <input 
-                    v-model="conversionForm.contrat.garantieCompl"
-                    type="radio" 
-                    value="NON"
-                  />
-                  <span>Non</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Étape 3: Enregistrement des bénéficiaires (CP uniquement) -->
-      <div v-if="currentStep === 3 && conversionForm.contrat.creditType === 'CP' && !conversionSuccess && !isLoadingContract" class="form-step">
-        <h5 class="mb-3 text-uppercase">
-          <i class="fas fa-users me-2"></i>
-          Bénéficiaires (Maximum 5)
-        </h5>
-        <div class="alert alert-info py-2">
-          <small class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <span>Veuillez enregistrer au moins un bénéficiaire et au plus 5 bénéficiaires. La somme des parts doit être égale à exactement 100%.</span>
-          </small>
-        </div>
-        
-        <div class="table-responsive mb-3">
-          <table class="table table-bordered table-striped align-middle">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 45%;">Nom & prénoms <span class="text-danger">*</span></th>
-                <th style="width: 25%;">Lien de parenté <span class="text-danger">*</span></th>
-                <th style="width: 20%;">Part (%) <span class="text-danger">*</span></th>
-                <th style="width: 10%;" class="text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(beneficiary, index) in conversionForm.contrat.beneficiaries" :key="index">
-                <td>
-                  <input
-                    v-model="beneficiary.nomPrenoms"
-                    type="text"
-                    class="form-control"
-                    placeholder="Nom et Prénoms"
-                    required
-                  />
-                </td>
-                <td>
-                  <select
-                    v-model="beneficiary.lienParente"
-                    class="form-select"
-                    required
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    <option v-for="l in liensParenteList" :key="l.id || l" :value="l.libelle || l">
-                      {{ l.libelle || l }}
-                    </option>
-                  </select>
-                </td>
-                <td>
-                  <input
-                    v-model.number="beneficiary.pourcentage"
-                    type="number"
-                    min="0.01"
-                    max="100"
-                    step="0.01"
-                    class="form-control"
-                    placeholder="Part %"
-                    required
-                  />
-                </td>
-                <td class="text-center">
-                  <button
-                    type="button"
-                    class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1"
-                    @click="removeBeneficiary(index)"
-                  >
-                    <i class="flaticon-trash"></i>
-                    <span>Supprimer</span>
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="conversionForm.contrat.beneficiaries.length === 0">
-                <td colspan="4" class="text-center text-muted py-3">
-                  Aucun bénéficiaire enregistré. Cliquez sur "Ajouter un bénéficiaire" ci-dessous.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <button
-            v-if="conversionForm.contrat.beneficiaries.length < 5"
-            type="button"
-            class="btn btn-outline-success btn-sm"
-            @click="addBeneficiary"
-          >
-            <i class="fas fa-plus me-2"></i> Ajouter un bénéficiaire
-          </button>
-          
-          <div class="text-end">
-            <span class="badge" :class="totalPercentage === 100 ? 'bg-success' : 'bg-warning text-dark'">
-              Total des parts : {{ totalPercentage }}%
-            </span>
-          </div>
-        </div>
-
-        <!-- Validation message for beneficiaries -->
-        <div v-if="beneficiaryValidationMessage" class="alert alert-warning py-2 mb-0">
-          <small class="d-flex align-items-center">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <span>{{ beneficiaryValidationMessage }}</span>
-          </small>
-        </div>
-      </div>
-
-      <!-- Étape 3 ou 4: Récapitulatif et validation -->
-      <div v-if="((currentStep === 3 && conversionForm.contrat.creditType !== 'CP') || (currentStep === 4 && conversionForm.contrat.creditType === 'CP')) && !conversionSuccess && !isLoadingContract" class="form-step recap-step">
+      <!-- Étape 3: Récapitulatif et validation -->
+      <div v-if="currentStep === 3 && !conversionSuccess && !isLoadingContract" class="form-step recap-step">
         <h5 class="mb-4 d-flex align-items-center gap-2">
           <i class="fas fa-check-circle text-success fs-4"></i>
           <span class="fw-bold text-dark">Récapitulatif et Validation</span>
@@ -1156,7 +609,7 @@
                   </div>
                   <div class="recap-item">
                     <span class="recap-label">Type de client</span>
-                    <span class="recap-value">{{ conversionForm.client.typeAss === '1' ? 'Particulier' : 'Personnel de PADME' }}</span>
+                    <span class="recap-value">{{ getTypeClientLabel(conversionForm.client.typeAss) }}</span>
                   </div>
                   <div class="recap-item">
                     <span class="recap-label">Adresse</span>
@@ -1178,33 +631,6 @@
               </div>
             </div>
 
-            <!-- Bénéficiaires (CP uniquement) -->
-            <div v-if="conversionForm.contrat.creditType === 'CP'" class="recap-card">
-              <div class="recap-card-header">
-                <i class="fas fa-users"></i>
-                <h5>Bénéficiaires du Contrat</h5>
-              </div>
-              <div class="recap-card-body p-0">
-                <div class="table-responsive">
-                  <table class="table table-hover align-middle mb-0" style="border-collapse: collapse; width: 100%;">
-                    <thead class="bg-light">
-                      <tr>
-                        <th class="ps-4 py-3 text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700; border-bottom: 1px solid #dee2e6;">Nom & prénoms</th>
-                        <th class="py-3 text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700; border-bottom: 1px solid #dee2e6;">Lien de parenté</th>
-                        <th class="pe-4 py-3 text-end text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700; border-bottom: 1px solid #dee2e6;">Part (%)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(b, idx) in conversionForm.contrat.beneficiaries" :key="idx" style="border-bottom: 1px solid #f1f5f9;">
-                        <td class="ps-4 py-3 fw-semibold text-dark">{{ b.nomPrenoms }}</td>
-                        <td class="py-3"><span class="badge bg-light text-dark border px-2 py-1">{{ b.lienParente }}</span></td>
-                        <td class="pe-4 py-3 text-end fw-bold text-success">{{ b.pourcentage }}%</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div class="col-md-5">
@@ -1223,10 +649,6 @@
                   <div class="recap-item">
                     <span class="recap-label">Durée</span>
                     <span class="recap-value">{{ conversionForm.contrat.duration }} mois</span>
-                  </div>
-                  <div class="recap-item">
-                    <span class="recap-label">Taux d'intérêt</span>
-                    <span class="recap-value">{{ conversionForm.contrat.tauxInteret }}%</span>
                   </div>
                   <div class="recap-item">
                     <span class="recap-label">Date d'effet</span>
@@ -1248,22 +670,12 @@
                   </div>
                   <div class="recap-item" style="grid-column: span 2;">
                     <span class="recap-label">Référence dossier</span>
-                    <span class="recap-value">{{ conversionForm.contrat.reference || 'N/A' }}</span>
+                    <span class="recap-value">{{ conversionForm.contrat.reference || 'Générée automatiquement' }}</span>
                   </div>
-                  <template v-if="conversionForm.contrat.creditType === 'CP'">
-                    <div class="recap-item">
-                      <span class="recap-label">Renouvellement auto</span>
-                      <span class="recap-value">{{ conversionForm.contrat.renouvellementAuto ? 'OUI' : 'NON' }}</span>
-                    </div>
-                    <div class="recap-item">
-                      <span class="recap-label">Compte bancaire</span>
-                      <span class="recap-value">{{ conversionForm.contrat.compteBancaire }}</span>
-                    </div>
-                    <div class="recap-item" style="grid-column: span 2;">
-                      <span class="recap-label">Numéro de compte</span>
-                      <span class="recap-value">{{ conversionForm.contrat.numeroCompte }}</span>
-                    </div>
-                  </template>
+                  <div v-if="conversionForm.contrat.creditType === 'AMORT'" class="recap-item">
+                    <span class="recap-label">Perte d'Emploi</span>
+                    <span class="recap-value">{{ conversionForm.contrat.perteEmploi }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1297,7 +709,7 @@
               <span class="parameter-pill">
                 <i class="fas fa-user-tag"></i>
                 <span class="parameter-pill-label">Tarif:</span>
-                <span>{{ conversionForm.client.typeAss === '1' ? 'Particulier' : 'Personnel de PADME' }}</span>
+                <span>{{ getTypeClientLabel(conversionForm.client.typeAss) }}</span>
               </span>
             </div>
 
@@ -1310,24 +722,7 @@
             </div>
             
             <div v-else>
-              <!-- Si CP ou OBA: Afficher uniquement Prime Unique TTC et Prime Décès -->
-              <div v-if="conversionForm.contrat.creditType === 'CP' || conversionForm.contrat.creditType === 'OBA'" class="premium-badges-grid cp-oba">
-                <div class="premium-badge-card primary-premium">
-                  <span class="premium-card-label">
-                    <i class="fas fa-check-double"></i> Prime Unique TTC
-                  </span>
-                  <span class="premium-card-value">{{ formatCurrency(conversionForm.primes.puttc) }}</span>
-                </div>
-                <div class="premium-badge-card">
-                  <span class="premium-card-label">
-                    <i class="fas fa-heartbeat"></i> Prime Décès
-                  </span>
-                  <span class="premium-card-value">{{ formatCurrency(conversionForm.primes.pd) }}</span>
-                </div>
-              </div>
-              
-              <!-- Si AMORT: Afficher les 6 primes -->
-              <div v-else class="premium-badges-grid">
+              <div class="premium-badges-grid">
                 <div class="premium-badge-card primary-premium">
                   <span class="premium-card-label">
                     <i class="fas fa-check-double"></i> Prime Unique TTC
@@ -1533,9 +928,7 @@ export default defineComponent({
     // Refs
     const conversionFormRef = ref(null);
     const currentStep = ref(1);
-    const totalSteps = computed(() => {
-      return conversionForm.value.contrat.creditType === 'CP' ? 4 : 3;
-    });
+    const totalSteps = computed(() => 3);
     const modalValidationError = ref('');
     const conversionSuccess = ref(false);
     const conversionMessage = ref('');
@@ -1583,10 +976,9 @@ export default defineComponent({
         creditType: props.defaultCreditType || '',
         dateEffet: new Date().toISOString().split('T')[0], // Date du jour par défaut
         duration: props.defaultDuration || 12,
-        dureeeDifferee: '0', // Valeur par défaut pour le select
-        idPeriodicite: 1, // Périodicité par défaut (Mensuelle)
+        idPeriodicite: 1, // Périodicité par défaut (Mensuelle) - informatif uniquement (RENACA = Prime Unique)
         capital: props.defaultCapital || 0,
-        tauxInteret: 0,
+        perteEmploi: (props.defaultGarantieCompl === 'OUI' ? 'OUI' : 'NON') as string,
         dateEch1: (() => {
           // Calculer la date de première échéance (1 mois après la date d'effet)
           const nextMonth = new Date();
@@ -1599,20 +991,8 @@ export default defineComponent({
           nextMonth.setMonth(nextMonth.getMonth() + 1);
           return nextMonth.toISOString().split('T')[0];
         })(),
-        garantieCompl: props.defaultGarantieCompl || 'OUI',
         etablissement: '',
-        reference: '',
-        renouvellementAuto: '' as any,
-        compteBancaire: '',
-        numeroCompte: '',
-        beneficiaries: [] as any[],
-        obaOptions: {
-          conjoint: { checked: false, lastname: '', firstname: '', birthdate: '', gender: 'F', capitalAssure: 0, prime: 0 },
-          ascendant1: { checked: false, lastname: '', firstname: '', birthdate: '', gender: 'M', capitalAssure: 0, prime: 0 },
-          ascendant2: { checked: false, lastname: '', firstname: '', birthdate: '', gender: 'F', capitalAssure: 0, prime: 0 },
-          ascendant3: { checked: false, lastname: '', firstname: '', birthdate: '', gender: 'M', capitalAssure: 0, prime: 0 },
-          ascendant4: { checked: false, lastname: '', firstname: '', birthdate: '', gender: 'F', capitalAssure: 0, prime: 0 }
-        }
+        reference: ''
       },
       primes: {
         pd: 0,
@@ -1665,13 +1045,9 @@ export default defineComponent({
             let age = today.getFullYear() - birthDate.getFullYear();
             const monthDiff = today.getMonth() - birthDate.getMonth();
             if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) { age--; }
-            
-            // Calculer l'âge limite selon le type de crédit
-            const creditType = conversionForm.value.contrat.creditType || '';
-            const maxAge = (creditType === 'CP' || creditType === 'OBA') ? 75 : 70;
-            
-            if (age > maxAge) {
-              return this.createError({ message: `L'âge ne peut pas dépasser ${maxAge} ans (PADME)` });
+
+            if (age >= 70) {
+              return this.createError({ message: 'L\'âge de l\'assuré ne peut pas dépasser 70 ans' });
             }
             return true;
           })
@@ -1685,21 +1061,12 @@ export default defineComponent({
         idPeriodicite: Yup.number()
           .nullable()
           .transform((value, originalValue) => originalValue === '' || originalValue === null ? null : Number(originalValue))
-          .test('required-periodicite', 'La périodicité est obligatoire', function(value) {
-            const creditType = conversionForm.value.contrat.creditType;
-            if (creditType === 'CP' || creditType === 'OBA') {
-              return true;
-            }
-            return value !== null && value !== undefined && value >= 1;
-          }),
+          .required('La périodicité est obligatoire')
+          .min(1, 'La périodicité est obligatoire'),
         dateEffet: Yup.string()
           .required('La date d\'effet est obligatoire')
           .test('not-past', 'La date d\'effet ne peut pas être antérieure à aujourd\'hui', function(value) {
             if (!value) return true;
-            const creditType = conversionForm.value.contrat.creditType;
-            if (creditType === 'CP') {
-              return true;
-            }
             const selectedDate = new Date(value);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -1713,61 +1080,48 @@ export default defineComponent({
           .required('La durée en mois est obligatoire')
           .integer('La durée doit être un entier')
           .min(1, 'La durée minimale est 1 mois')
-          .test('max-duration-padme', 'Durée maximale dépassée', function(value) {
+          .max(60, 'La durée maximale est 60 mois')
+          .test('max-duration-renaca', function(value) {
             if (!value) return true;
-            const creditType = conversionForm.value.contrat.creditType || '';
-            if (creditType === 'CP' || creditType === 'OBA') {
-              return true;
-            }
-            // Calcul dynamique selon l'âge (cohérent PADME)
-            const contratForm = this.parent;
-            let birthdate = (contratForm && contratForm.dateNaissance) || (contratForm && contratForm.client && contratForm.client.dateNaissance) || conversionForm.value.client.dateNaissance;
+            const birthdate = conversionForm.value.client.dateNaissance;
             if (!birthdate) return true;
             const today = new Date();
             const date = new Date(birthdate);
             let age = today.getFullYear() - date.getFullYear();
             const m = today.getMonth() - date.getMonth();
             if (m < 0 || (m === 0 && today.getDate() < date.getDate())) { age--; }
-            const maxDuration = (age >= 65 && age <= 70) ? 12 : 60;
-            const message = (age >= 65 && age <= 70)
-                ? 'La durée maximale pour 65-70 ans est 12 mois'
-                : 'La durée maximale est 60 mois (18-65 ans)';
+            const maxDuration = Math.min(60, Math.max(0, (70 - age) * 12));
             if (value > maxDuration) {
-              return this.createError({ message });
+              const years = Math.floor(maxDuration / 12);
+              const months = maxDuration % 12;
+              const durationText = years > 0
+                ? `${years} an(s)${months > 0 ? ` et ${months} mois` : ''}`
+                : `${months} mois`;
+              return this.createError({ message: `L'âge du bénéficiaire (${age} ans) + la durée dépasse la limite de 70 ans. Pour cet âge, la durée conforme est de ${durationText}.` });
             }
             return true;
-          })
-        ,
+          }),
         capital: Yup.number()
           .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : Number(originalValue))
           .typeError('Le capital doit être un nombre')
           .required('Le capital est obligatoire')
           .min(1, 'Le capital doit être supérieur à 0')
-          .max(10000000, 'Le capital maximal est 10 000 000 FCFA'),
-        tauxInteret: Yup.number()
-          .nullable()
-          .transform((value, originalValue) => {
-            // Accepter 0 comme valeur valide
-            if (originalValue === '' || originalValue === null || originalValue === undefined) {
-              return null;
+          .test('max-capital-renaca', function(value) {
+            if (value === undefined || value === null) return true;
+            const creditType = conversionForm.value.contrat.creditType || '';
+            const max = creditType === 'CONST' ? 20000000 : 10000000;
+            if (value > max) {
+              return this.createError({ message: `Le capital maximal ${creditType === 'CONST' ? 'Constant' : 'Amortissable'} est ${max.toLocaleString('fr-FR')} FCFA` });
             }
-            const numValue = Number(originalValue);
-            // Si c'est 0, le retourner tel quel (pas null)
-            if (numValue === 0) {
-              return 0;
-            }
-            return isNaN(numValue) ? null : numValue;
-          })
-          .required('Le taux d\'intérêt est obligatoire')
-          .min(0, 'Le taux d\'intérêt ne peut pas être négatif')
-          .max(100, 'Le taux d\'intérêt ne peut pas dépasser 100%'),
+            return true;
+          }),
         dateEch1: dateEcheanceSchema('contrat'),
-        dureeeDifferee: Yup.string()
-          .oneOf(['0', '1', '2', '3', '4', '5', '6'], 'La durée de différée doit être entre 0 et 6 mois')
-          .required('La durée de différée est obligatoire'),
-        garantieCompl: Yup.string()
-          .oneOf(['OUI', 'NON'], 'Un choix pour la garantie perte d\'emploi est obligatoire')
-          .required('Un choix pour la garantie perte d\'emploi est obligatoire')
+        perteEmploi: Yup.string()
+          .test('required-if-amort', 'Un choix pour Perte d\'Emploi est obligatoire', function(value) {
+            const creditType = conversionForm.value.contrat.creditType;
+            if (creditType !== 'AMORT') return true;
+            return value === 'OUI' || value === 'NON';
+          })
       })
     });
 
@@ -1781,14 +1135,11 @@ export default defineComponent({
       const monthDiff = today.getMonth() - birthDate.getMonth();
       
       // Ajuster l'âge si l'anniversaire n'est pas encore passé cette année
-      const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
-        ? age - 1 
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ? age - 1
         : age;
-      
-      const creditType = conversionForm.value.contrat.creditType || '';
-      const maxAge = (creditType === 'CP' || creditType === 'OBA') ? 75 : 70;
-      
-      return actualAge >= 18 && actualAge <= maxAge;
+
+      return actualAge >= 18 && actualAge <= 69;
     };
 
     // Fonction pour calculer l'âge
@@ -1810,35 +1161,9 @@ export default defineComponent({
 
     // Fonction pour obtenir les limites selon le type de crédit et l'âge
     const getLimits = (creditType: string, age: number) => {
-      const isAmort = creditType === 'AMORT';
-      const isCP = creditType === 'CP';
-      const isOBA = creditType === 'OBA';
-      const isYoungAge = age >= 18 && age <= 59;
-      const isOldAge = age >= 60 && age <= 64;
-
-      if (isAmort) {
-        return {
-          maxCapital: isYoungAge ? 30000000 : (isOldAge ? 10000000 : 0),
-          maxDuration: 120, // Pas de limite spécifique pour AMORT
-          minDuration: 1
-        };
-      } else if (isCP) {
-        return {
-          maxCapital: 1000000,
-          maxDuration: 12,
-          minDuration: 1
-        };
-      } else if (isOBA) {
-        return {
-          maxCapital: 2000000,
-          maxDuration: 12,
-          minDuration: 12
-        };
-      }
-      
       return {
-        maxCapital: 0,
-        maxDuration: 120,
+        maxCapital: creditType === 'CONST' ? 20000000 : 10000000,
+        maxDuration: Math.min(60, Math.max(0, (70 - age) * 12)),
         minDuration: 1
       };
     };
@@ -1883,18 +1208,10 @@ export default defineComponent({
           missing.push('Capital');
         } else if (capitalVal < 1) {
           missing.push('Capital (doit être supérieur à 0)');
-        } else if (capitalVal > 10000000) {
-          missing.push('Capital (dépasse le maximum de 10 000 000 FCFA)');
         } else if (maxCapital.value > 0 && capitalVal > maxCapital.value) {
           missing.push(`Capital (dépasse le maximum de ${maxCapital.value.toLocaleString('fr-FR')} FCFA)`);
         }
 
-        // Le taux d'intérêt peut être 0, donc on vérifie seulement s'il n'est pas null/undefined
-        const tauxInteret = conversionForm.value.contrat.tauxInteret;
-        if (tauxInteret === null || tauxInteret === undefined || (typeof tauxInteret === 'number' && isNaN(tauxInteret))) {
-          missing.push('Taux d\'intérêt');
-        }
-        
         const isYearValid = (dStr?: string) => {
           if (!dStr) return false;
           const y = new Date(dStr).getFullYear();
@@ -1914,72 +1231,12 @@ export default defineComponent({
           missing.push('Date d\'échéance (antérieure à la 1re échéance)');
         }
 
-        if (!conversionForm.value.contrat.garantieCompl) missing.push('Garantie perte d\'emploi');
-        
-        // Validation spécifique CP
-        if (conversionForm.value.contrat.creditType === 'CP') {
-          if (conversionForm.value.contrat.renouvellementAuto === null || conversionForm.value.contrat.renouvellementAuto === undefined || conversionForm.value.contrat.renouvellementAuto === '') {
-            missing.push('Renouvellement automatique');
-          }
-          if (!conversionForm.value.contrat.compteBancaire) {
-            missing.push('Compte bancaire');
-          }
-          if (!conversionForm.value.contrat.numeroCompte || !conversionForm.value.contrat.numeroCompte.trim()) {
-            missing.push('Numéro de compte');
-          }
-        }
-        
-        // Validation spécifique OBA
-        if (conversionForm.value.contrat.creditType === 'OBA') {
-          const opts = conversionForm.value.contrat.obaOptions;
-          if (opts) {
-            if (opts.conjoint?.checked) {
-              if (!opts.conjoint.lastname || !opts.conjoint.lastname.trim()) {
-                missing.push('Nom du conjoint');
-              }
-              if (!opts.conjoint.firstname || !opts.conjoint.firstname.trim()) {
-                missing.push('Prénoms du conjoint');
-              }
-              if (!opts.conjoint.birthdate) {
-                missing.push('Date de naissance du conjoint');
-              }
-            }
-            if (opts.ascendant1?.checked && !opts.ascendant1.birthdate) {
-              missing.push('Date de naissance du père assuré');
-            }
-            if (opts.ascendant2?.checked && !opts.ascendant2.birthdate) {
-              missing.push('Date de naissance de la mère assuré');
-            }
-            if (opts.ascendant3?.checked && !opts.ascendant3.birthdate) {
-              missing.push('Date de naissance du père conjoint');
-            }
-            if (opts.ascendant4?.checked && !opts.ascendant4.birthdate) {
-              missing.push('Date de naissance de la mère conjoint');
-            }
-          }
-        }
-      } else if (currentStep.value === 3 && conversionForm.value.contrat.creditType === 'CP') {
-        const list = conversionForm.value.contrat.beneficiaries;
-        if (list.length === 0) {
-          missing.push('Au moins un bénéficiaire');
-        } else if (list.length > 5) {
-          missing.push('Maximum 5 bénéficiaires');
-        } else {
-          let hasEmptyFields = false;
-          for (const b of list) {
-            if (!b.nomPrenoms || !b.nomPrenoms.trim()) hasEmptyFields = true;
-            if (!b.lienParente) hasEmptyFields = true;
-            if (!b.pourcentage || parseFloat(String(b.pourcentage)) <= 0) hasEmptyFields = true;
-          }
-          if (hasEmptyFields) {
-            missing.push('Champs de bénéficiaire obligatoires');
-          }
-          if (totalPercentage.value !== 100) {
-            missing.push('Somme des parts égale à 100%');
-          }
+        // Perte d'Emploi obligatoire pour Amortissable uniquement
+        if (conversionForm.value.contrat.creditType === 'AMORT' && !conversionForm.value.contrat.perteEmploi) {
+          missing.push('Perte d\'Emploi');
         }
       }
-      
+
       return missing;
     });
 
@@ -2107,39 +1364,6 @@ export default defineComponent({
       resetModal();
     };
 
-    const addBeneficiary = () => {
-      if (conversionForm.value.contrat.beneficiaries.length < 5) {
-        conversionForm.value.contrat.beneficiaries.push({
-          nomPrenoms: '',
-          lienParente: '',
-          pourcentage: 0
-        });
-      }
-    };
-
-    const removeBeneficiary = (index: number) => {
-      conversionForm.value.contrat.beneficiaries.splice(index, 1);
-    };
-
-    const totalPercentage = computed(() => {
-      return conversionForm.value.contrat.beneficiaries.reduce((acc, curr) => {
-        const val = parseFloat(String(curr.pourcentage));
-        return acc + (isNaN(val) ? 0 : val);
-      }, 0);
-    });
-
-    const beneficiaryValidationMessage = computed(() => {
-      const list = conversionForm.value.contrat.beneficiaries;
-      if (list.length === 0) {
-        return "Vous devez ajouter au moins un bénéficiaire.";
-      }
-      const pct = totalPercentage.value;
-      if (pct !== 100) {
-        return `La somme des parts est actuellement de ${pct}%. Elle doit être exactement de 100%.`;
-      }
-      return '';
-    });
-
     const resetModal = () => {
       currentStep.value = 1;
       conversionSuccess.value = false;
@@ -2150,12 +1374,6 @@ export default defineComponent({
       isDownloadingPDF.value = false;
       dateEcheanceManuallyEdited.value = false; // Réinitialiser le flag de modification manuelle
       originalClientData.value = null; // Réinitialiser les données client originales
-      
-      // Réinitialiser les champs CP
-      conversionForm.value.contrat.renouvellementAuto = '' as any;
-      conversionForm.value.contrat.compteBancaire = '';
-      conversionForm.value.contrat.numeroCompte = '';
-      conversionForm.value.contrat.beneficiaries = [];
     };
 
     const validateCapital = (event: Event) => {
@@ -2168,12 +1386,10 @@ export default defineComponent({
       }
 
       conversionForm.value.contrat.capital = value;
-      
-      // Maximum absolu PADME : 10 000 000 FCFA
-      const MAX_CAPITAL_PADME = 10000000;
+
       const limits = currentLimits.value;
-      const effectiveMax = (limits && limits.maxCapital > 0) ? Math.min(MAX_CAPITAL_PADME, limits.maxCapital) : MAX_CAPITAL_PADME;
-      
+      const effectiveMax = (limits && limits.maxCapital > 0) ? limits.maxCapital : 10000000;
+
       if (event.type === 'blur' || event.type === 'change') {
         if (value < 1) {
           conversionForm.value.contrat.capital = 1;
@@ -2202,15 +1418,8 @@ export default defineComponent({
           }
         }
         
-        // Si on passe à l'étape 3 (Bénéficiaires pour CP, Recap pour non-CP)
+        // Si on passe à l'étape 3 (Récapitulatif)
         if (currentStep.value === 3) {
-          if (conversionForm.value.contrat.creditType !== 'CP') {
-            await recalculatePrimes();
-          }
-        }
-        
-        // Si on passe à l'étape 4 (Recap pour CP)
-        if (currentStep.value === 4 && conversionForm.value.contrat.creditType === 'CP') {
           await recalculatePrimes();
         }
       } else {
@@ -2241,23 +1450,6 @@ export default defineComponent({
     };
 
     const updateDatePremiereEcheance = () => {
-      if (conversionForm.value.contrat.creditType === 'CP') {
-        if (conversionForm.value.contrat.dateEffet) {
-          const dEff = new Date(conversionForm.value.contrat.dateEffet);
-          if (!isNaN(dEff.getTime())) {
-            const dEch = new Date(dEff);
-            dEch.setFullYear(dEch.getFullYear() + 1);
-            dEch.setDate(dEch.getDate() - 1);
-            const y = dEch.getFullYear();
-            const m = String(dEch.getMonth() + 1).padStart(2, '0');
-            const day = String(dEch.getDate()).padStart(2, '0');
-            const dateEchCP = `${y}-${m}-${day}`;
-            conversionForm.value.contrat.datePremiereEcheance = dateEchCP;
-            conversionForm.value.contrat.dateEch1 = dateEchCP;
-          }
-        }
-        return;
-      }
       if (conversionForm.value.contrat.dateEffet) {
         if (!datePremiereEcheanceManuallyEdited.value) {
           const dateEffet = new Date(conversionForm.value.contrat.dateEffet);
@@ -2282,10 +1474,7 @@ export default defineComponent({
      * - Le différé
      */
     const calculateDateEcheanceAuto = () => {
-      if (conversionForm.value.contrat.creditType === 'CP') {
-        return;
-      }
-      if (!conversionForm.value.contrat.datePremiereEcheance || 
+      if (!conversionForm.value.contrat.datePremiereEcheance ||
           !conversionForm.value.contrat.duration || 
           !conversionForm.value.contrat.idPeriodicite) {
         return;
@@ -2303,7 +1492,7 @@ export default defineComponent({
 
       const nombreMoisPeriodicite = periodiciteSelected.nombreMois;
       const dureeMois = Number(conversionForm.value.contrat.duration);
-      const differeMois = Number(conversionForm.value.contrat.dureeeDifferee || '0');
+      const differeMois = 0; // RENACA n'a pas de différé
 
       // Calculer la date d'échéance
       const dateEcheanceCalculee = calculateDateEcheance(
@@ -2322,9 +1511,6 @@ export default defineComponent({
      * Gère la modification manuelle de la date d'échéance
      */
     const handleDateEcheanceManualEdit = () => {
-      if (conversionForm.value.contrat.creditType === 'CP') {
-        return;
-      }
       dateEcheanceManuallyEdited.value = true;
     };
 
@@ -2332,18 +1518,11 @@ export default defineComponent({
      * Réinitialise le calcul automatique de la date d'échéance
      */
     const resetDateEcheanceAuto = () => {
-      if (conversionForm.value.contrat.creditType === 'CP') {
-        return;
-      }
       dateEcheanceManuallyEdited.value = false;
       calculateDateEcheanceAuto();
     };
 
     const validateDateEffet = (event: Event) => {
-      const creditType = conversionForm.value.contrat.creditType;
-      if (creditType === 'CP') {
-        return;
-      }
       const target = event.target as HTMLInputElement;
       const selectedDate = new Date(target.value);
       if (isNaN(selectedDate.getTime())) return;
@@ -2382,12 +1561,6 @@ export default defineComponent({
         return;
       }
       datePremiereEcheanceManuallyEdited.value = true;
-      if (conversionForm.value.contrat.creditType === 'CP') {
-        if (!dateEcheanceManuallyEdited.value) {
-          calculateDateEcheanceAuto();
-        }
-        return;
-      }
       handleValidateDatePremiereEcheance(
         event,
         {
@@ -2417,9 +1590,6 @@ export default defineComponent({
         return;
       }
       dateEcheanceManuallyEdited.value = true;
-      if (conversionForm.value.contrat.creditType === 'CP') {
-        return;
-      }
       handleValidateDateEcheance(
         event,
         {
@@ -2430,16 +1600,6 @@ export default defineComponent({
           conversionForm.value.contrat.dateEch1 = correctedDate;
         }
       );
-    };
-
-    const validateTauxInteret = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const value = parseFloat(target.value);
-      if (value < 0) {
-        target.value = '0';
-      } else if (value > 100) {
-        target.value = '100';
-      }
     };
 
     const validateDuration = (event: Event) => {
@@ -2478,122 +1638,43 @@ export default defineComponent({
       
       const limits = getLimits(creditType, age);
       let hasChanges = false;
-      
-      // Ajuster le capital et la durée selon la nature
-      if (creditType === 'CP') {
-        if (conversionForm.value.contrat.capital !== 500000 && conversionForm.value.contrat.capital !== 1000000) {
-          conversionForm.value.contrat.capital = 500000; // option 1 par défaut
-          hasChanges = true;
-        }
-        
-        // Durée fixée à 1 an (12 mois) pour PADME PROTECTION
-        if (conversionForm.value.contrat.duration !== 12) {
-          conversionForm.value.contrat.duration = 12;
-          hasChanges = true;
-        }
 
-        // Périodicité et différée forcées pour CP
-        if (conversionForm.value.contrat.idPeriodicite !== 12) {
-          conversionForm.value.contrat.idPeriodicite = 12;
-          hasChanges = true;
-        }
-        if (conversionForm.value.contrat.dureeeDifferee !== '0') {
-          conversionForm.value.contrat.dureeeDifferee = '0';
-          hasChanges = true;
-        }
-
-        // Date d'effet sera la date du jour plus 1 jour
-        const dateEffCPObj = new Date();
-        dateEffCPObj.setDate(dateEffCPObj.getDate() + 1);
-        const yEffCP = dateEffCPObj.getFullYear();
-        const mEffCP = String(dateEffCPObj.getMonth() + 1).padStart(2, '0');
-        const dEffCP = String(dateEffCPObj.getDate()).padStart(2, '0');
-        const dateEffCPStr = `${yEffCP}-${mEffCP}-${dEffCP}`;
-
-        if (conversionForm.value.contrat.dateEffet !== dateEffCPStr) {
-          conversionForm.value.contrat.dateEffet = dateEffCPStr;
-          hasChanges = true;
-        }
-
-        // Date d'échéance = Date d'effet + 1 an - 1 jour (la veille dans un an)
-        if (conversionForm.value.contrat.dateEffet) {
-          const dEff = new Date(conversionForm.value.contrat.dateEffet);
-          if (!isNaN(dEff.getTime())) {
-            const dEch = new Date(dEff);
-            dEch.setFullYear(dEch.getFullYear() + 1);
-            dEch.setDate(dEch.getDate() - 1);
-            const yCP = dEch.getFullYear();
-            const mCP = String(dEch.getMonth() + 1).padStart(2, '0');
-            const dayCP = String(dEch.getDate()).padStart(2, '0');
-            const dateEchCP = `${yCP}-${mCP}-${dayCP}`;
-
-            if (conversionForm.value.contrat.datePremiereEcheance !== dateEchCP) {
-              conversionForm.value.contrat.datePremiereEcheance = dateEchCP;
-              hasChanges = true;
-            }
-            if (conversionForm.value.contrat.dateEch1 !== dateEchCP) {
-              conversionForm.value.contrat.dateEch1 = dateEchCP;
-              hasChanges = true;
-            }
-          }
-        }
-      } else if (creditType === 'OBA') {
-        
-        // Durée forcée pour Obsèques Alafia (toujours 12 mois)
-        if (conversionForm.value.contrat.duration !== 12) {
-          conversionForm.value.contrat.duration = 12;
-          hasChanges = true;
-        }
-
-        // Périodicité et différée forcées pour OBA
-        if (conversionForm.value.contrat.idPeriodicite !== 12) {
-          conversionForm.value.contrat.idPeriodicite = 12;
-          hasChanges = true;
-        }
-        if (conversionForm.value.contrat.dureeeDifferee !== '0') {
-          conversionForm.value.contrat.dureeeDifferee = '0';
-          hasChanges = true;
-        }
-      } else {
-        // AMORT / Autre
-        if (conversionForm.value.contrat.capital > limits.maxCapital) {
-          conversionForm.value.contrat.capital = limits.maxCapital;
-          hasChanges = true;
-        }
-        if (conversionForm.value.contrat.duration > limits.maxDuration) {
-          conversionForm.value.contrat.duration = limits.maxDuration;
-          hasChanges = true;
-        }
-        if (conversionForm.value.contrat.duration < limits.minDuration) {
-          conversionForm.value.contrat.duration = limits.minDuration;
-          hasChanges = true;
-        }
+      // Ajuster le capital et la durée selon les limites RENACA
+      if (conversionForm.value.contrat.capital > limits.maxCapital) {
+        conversionForm.value.contrat.capital = limits.maxCapital;
+        hasChanges = true;
       }
-      
-      // Si la nature n'est pas CP, on valide que la date d'effet n'est pas antérieure à aujourd'hui,
+      if (conversionForm.value.contrat.duration > limits.maxDuration) {
+        conversionForm.value.contrat.duration = limits.maxDuration;
+        hasChanges = true;
+      }
+      if (conversionForm.value.contrat.duration < limits.minDuration) {
+        conversionForm.value.contrat.duration = limits.minDuration;
+        hasChanges = true;
+      }
+
+      // Valider que la date d'effet n'est pas antérieure à aujourd'hui,
       // et que la date de la 1re échéance n'est pas antérieure à la date d'effet.
-      if (creditType !== 'CP') {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const currentEffet = conversionForm.value.contrat.dateEffet;
-        
-        // Si la date d'effet est vide ou antérieure à aujourd'hui, on la remet à aujourd'hui
-        if (!currentEffet || currentEffet < todayStr) {
-          conversionForm.value.contrat.dateEffet = todayStr;
-          hasChanges = true;
-        }
+      const todayStr = new Date().toISOString().split('T')[0];
+      const currentEffet = conversionForm.value.contrat.dateEffet;
 
-        const currentEffetDate = new Date(conversionForm.value.contrat.dateEffet);
-        const currentPremiere = conversionForm.value.contrat.datePremiereEcheance;
-        
-        // Si la date de la 1re échéance est vide ou antérieure à la date d'effet, on la recalcule (1 mois après la date d'effet)
-        if (!currentPremiere || new Date(currentPremiere) < currentEffetDate) {
-          const nextMonth = new Date(currentEffetDate);
-          nextMonth.setMonth(nextMonth.getMonth() + 1);
-          conversionForm.value.contrat.datePremiereEcheance = nextMonth.toISOString().split('T')[0];
-          hasChanges = true;
-        }
+      // Si la date d'effet est vide ou antérieure à aujourd'hui, on la remet à aujourd'hui
+      if (!currentEffet || currentEffet < todayStr) {
+        conversionForm.value.contrat.dateEffet = todayStr;
+        hasChanges = true;
       }
-      
+
+      const currentEffetDate = new Date(conversionForm.value.contrat.dateEffet);
+      const currentPremiere = conversionForm.value.contrat.datePremiereEcheance;
+
+      // Si la date de la 1re échéance est vide ou antérieure à la date d'effet, on la recalcule (1 mois après la date d'effet)
+      if (!currentPremiere || new Date(currentPremiere) < currentEffetDate) {
+        const nextMonth = new Date(currentEffetDate);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        conversionForm.value.contrat.datePremiereEcheance = nextMonth.toISOString().split('T')[0];
+        hasChanges = true;
+      }
+
       if (hasChanges) {
         // Notification optionnelle
       }
@@ -2619,73 +1700,23 @@ export default defineComponent({
           throw new Error('La date de naissance est obligatoire pour le recalcul des primes.');
         }
         
-        const isCPorOBA = conversionForm.value.contrat.creditType === 'CP' || conversionForm.value.contrat.creditType === 'OBA';
-        
-        let idNatureCredit = 1;
-        if (conversionForm.value.contrat.creditType === 'CP') idNatureCredit = 2;
-        else if (conversionForm.value.contrat.creditType === 'OBA') idNatureCredit = 3;
+        const selectedNature = natureCredits.value.find(nc => nc.code === conversionForm.value.contrat.creditType);
+        const idNatureCredit = selectedNature ? selectedNature.id : 1;
 
-        // Préparer les données pour le recalcul PADME
+        // Préparer les données pour le recalcul RENACA
         const recalculationData: any = {
-          creditType: conversionForm.value.contrat.creditType,
           idNatureCredit: idNatureCredit,
           capital: Number(conversionForm.value.contrat.capital),
-          birthdate: conversionForm.value.client.dateNaissance, // birthdate au lieu de dateNaissance
-          duration: Number(conversionForm.value.contrat.duration), // duration au lieu de duree
-          idPeriodicite: isCPorOBA ? 12 : Number(conversionForm.value.contrat.idPeriodicite || 1),
-          differe: isCPorOBA ? 0 : Number(conversionForm.value.contrat.dureeeDifferee || '0'),
-          typeAss: String(conversionForm.value.client.typeAss), // typeAss au lieu de typeContrat pour correspondre à l'entité
-          typeContrat: String(conversionForm.value.client.typeAss), // Garder aussi typeContrat pour compatibilité
-          garantieCompl: isCPorOBA ? "NON" : (conversionForm.value.contrat.garantieCompl || "OUI")
+          birthdate: conversionForm.value.client.dateNaissance,
+          duration: Number(conversionForm.value.contrat.duration),
+          perteEmploi: conversionForm.value.contrat.creditType === 'AMORT' && conversionForm.value.contrat.perteEmploi === 'OUI',
+          tauxSurprime: 0
         };
-
-        if (conversionForm.value.contrat.creditType === 'OBA') {
-          const rawOpts = conversionForm.value.contrat.obaOptions;
-          const configMap: Record<string, { capital: number, prime: number }> = {
-            conjoint: { capital: 500000, prime: 2000 },
-            ascendant1: { capital: 500000, prime: 2500 },
-            ascendant2: { capital: 500000, prime: 2500 },
-            ascendant3: { capital: 500000, prime: 2500 },
-            ascendant4: { capital: 500000, prime: 2500 },
-            assure: { capital: 500000, prime: 2000 }
-          };
-
-          const mappedOpts: any = {};
-          
-          // Assuré principal
-          mappedOpts.assure = {
-            checked: true,
-            birthdate: conversionForm.value.client.dateNaissance,
-            lastname: conversionForm.value.client.nom,
-            firstname: conversionForm.value.client.prenoms,
-            gender: conversionForm.value.client.sexe === 'Homme' ? 'M' : 'F',
-            capitalAssure: configMap.assure.capital,
-            prime: configMap.assure.prime
-          };
-
-          // Membres secondaires
-          for (const key of ['conjoint', 'ascendant1', 'ascendant2', 'ascendant3', 'ascendant4']) {
-            const opt = rawOpts[key];
-            if (opt) {
-              mappedOpts[key] = {
-                checked: !!opt.checked,
-                lastname: opt.lastname || '',
-                firstname: opt.firstname || '',
-                birthdate: opt.birthdate || '',
-                gender: opt.gender || (key.endsWith('2') || key.endsWith('4') || key === 'conjoint' ? 'F' : 'M'),
-                capitalAssure: opt.checked ? configMap[key].capital : 0,
-                prime: opt.checked ? configMap[key].prime : 0
-              };
-            }
-          }
-
-          recalculationData.obaOptions = mappedOpts;
-        }
 
         console.log('📤 Données envoyées pour recalcul:', recalculationData);
 
-        // Appel API PADME pour calculer uniquement les primes (sans créer de cotation)
-        const response = await ApiService.post('/cotations/padme/calculate', recalculationData);
+        // Appel API RENACA pour calculer uniquement les primes (sans créer de cotation)
+        const response = await ApiService.post('/cotations/renaca/calculate', recalculationData);
 
         console.log('📥 Réponse API recalcul:', response.data);
 
@@ -2707,12 +1738,13 @@ export default defineComponent({
 
         if (primesData && !response.data.data?.error) {
           // Mettre à jour les primes recalculées avec les valeurs directes du backend
+          // (RENACA renvoie primePE, pas pc ; pas de frais médicaux)
           conversionForm.value.primes = {
             pd: Number(primesData.pd) || 0,
-            pc: Number(primesData.pc) || 0,
+            pc: Number(primesData.primePE) || 0,
             surp: Number(primesData.surp) || 0,
             acc: Number(primesData.acc) || 0,
-            fm: Number(primesData.fm) || 0,
+            fm: 0,
             puttc: Number(primesData.puttc) || 0
           };
 
@@ -2732,6 +1764,11 @@ export default defineComponent({
     const getCreditTypeLabel = (code: string) => {
       const natureCredit = natureCredits.value.find(nc => nc.code === code);
       return natureCredit ? natureCredit.libelle : code;
+    };
+
+    const getTypeClientLabel = (id: string) => {
+      const typeCustomer = typeCustomers.value.find(tc => String(tc.id) === String(id));
+      return typeCustomer ? typeCustomer.libelle : id;
     };
 
     const formatCurrency = (amount: number) => {
@@ -2760,19 +1797,48 @@ export default defineComponent({
         const response = await ApiService.get('/nature-credits');
         const raw = response.data?.data?.data || response.data?.data?.natureCredits || response.data?.data || response.data?.natureCredits;
         if (Array.isArray(raw)) {
-          natureCredits.value = raw.filter((nc: any) => nc.code === 'AMORT' || nc.code === 'CP' || nc.code === 'OBA');
+          natureCredits.value = raw.filter((nc: any) => nc.code === 'AMORT' || nc.code === 'CONST');
         } else {
           natureCredits.value = [
-            { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' }
+            { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' },
+            { id: 2, libelle: 'CONSTANT', code: 'CONST' }
           ];
         }
       } catch (err: any) {
         console.error('Erreur lors du chargement des types de crédit:', err);
         natureCredits.value = [
-          { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' }
+          { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' },
+          { id: 2, libelle: 'CONSTANT', code: 'CONST' }
         ];
       } finally {
         loadingNatureCredits.value = false;
+      }
+    };
+
+    const typeCustomers = ref<any[]>([]);
+    const loadingTypeCustomers = ref(false);
+
+    const loadTypeCustomers = async () => {
+      try {
+        loadingTypeCustomers.value = true;
+        const response = await ApiService.get('/type-customers');
+        const raw = response.data?.data?.data || response.data?.data || response.data;
+        if (Array.isArray(raw)) {
+          typeCustomers.value = raw;
+        } else {
+          typeCustomers.value = [
+            { id: 1, libelle: 'PARTICULIER' },
+            { id: 2, libelle: 'PERSONNEL RENACA' }
+          ];
+        }
+      } catch (err: any) {
+        console.error('Erreur lors du chargement des types de client:', err);
+        typeCustomers.value = [
+          { id: 1, libelle: 'PARTICULIER' },
+          { id: 2, libelle: 'PERSONNEL RENACA' }
+        ];
+      } finally {
+        loadingTypeCustomers.value = false;
       }
     };
 
@@ -2894,8 +1960,7 @@ export default defineComponent({
         // Pré-remplir les données du contrat
         conversionForm.value.contrat.capital = contractData.capital || 0;
         conversionForm.value.contrat.duration = contractData.duration || contractData.duree || 12;
-        conversionForm.value.contrat.tauxInteret = contractData.taux || contractData.tauxInteret || 0;
-        
+
         // Mapper les dates selon la structure du backend :
         // - dateEff = Date d'effet
         // - dateEch1 = Date de première échéance
@@ -2913,23 +1978,16 @@ export default defineComponent({
         }
 
         // Date d'effet : utiliser dateEff (format backend) ou dateEffet (format alternatif)
-        if (cType === 'CP') {
-          const dateEffCPObj = new Date();
-          dateEffCPObj.setDate(dateEffCPObj.getDate() + 1);
-          conversionForm.value.contrat.dateEffet = dateEffCPObj.toISOString().split('T')[0];
-          console.log('📅 [CP] Date d\'effet forcée:', conversionForm.value.contrat.dateEffet);
+        const dateEffet = contractData.dateEff || contractData.dateEffet;
+        if (dateEffet) {
+          // S'assurer que la date est au format YYYY-MM-DD pour les champs input type="date"
+          const dateEffetFormatted = dateEffet.includes('T') ? dateEffet.split('T')[0] : dateEffet.split(' ')[0];
+          conversionForm.value.contrat.dateEffet = dateEffetFormatted;
+          console.log('📅 Date d\'effet chargée:', dateEffetFormatted);
         } else {
-          const dateEffet = contractData.dateEff || contractData.dateEffet;
-          if (dateEffet) {
-            // S'assurer que la date est au format YYYY-MM-DD pour les champs input type="date"
-            const dateEffetFormatted = dateEffet.includes('T') ? dateEffet.split('T')[0] : dateEffet.split(' ')[0];
-            conversionForm.value.contrat.dateEffet = dateEffetFormatted;
-            console.log('📅 Date d\'effet chargée:', dateEffetFormatted);
-          } else {
-            conversionForm.value.contrat.dateEffet = new Date().toISOString().split('T')[0];
-          }
+          conversionForm.value.contrat.dateEffet = new Date().toISOString().split('T')[0];
         }
-        
+
         // Date de première échéance : utiliser dateEch1 (format backend) ou datePremiereEcheance (format alternatif)
         const datePremiereEch = contractData.dateEch1 || contractData.datePremiereEcheance;
         if (datePremiereEch) {
@@ -2952,29 +2010,11 @@ export default defineComponent({
           conversionForm.value.contrat.dateEch1 = dateEchFinaleFormatted;
           console.log('📅 Date d\'échéance finale chargée:', dateEchFinaleFormatted);
         }
-        conversionForm.value.contrat.garantieCompl = contractData.garantieCompl || 'OUI';
+        conversionForm.value.contrat.perteEmploi = contractData.garantieCompl === 'OUI' ? 'OUI' : 'NON';
         conversionForm.value.contrat.etablissement = contractData.etablissement || contractData.ets || '';
         conversionForm.value.contrat.reference = contractData.reference || '';
         conversionForm.value.contrat.idPeriodicite = contractData.idPeriodicite || 1;
-        conversionForm.value.contrat.dureeeDifferee = String(contractData.differe || contractData.dureeeDifferee || 0);
-        
-        // CP fields
-        conversionForm.value.contrat.renouvellementAuto = contractData.renouvellementAuto ?? false;
-        conversionForm.value.contrat.compteBancaire = contractData.compteBancaire || '';
-        conversionForm.value.contrat.numeroCompte = contractData.numeroCompte || '';
-        
-        // Mapper les bénéficiaires si existants (pour l'affichage en mode modification)
-        if (contractData.beneficiaries && Array.isArray(contractData.beneficiaries)) {
-          conversionForm.value.contrat.beneficiaries = contractData.beneficiaries.map((b: any) => ({
-            id: b.id,
-            nomPrenoms: b.nomPrenoms,
-            lienParente: b.lienParente,
-            pourcentage: Number(b.pourcentage)
-          }));
-        } else {
-          conversionForm.value.contrat.beneficiaries = [];
-        }
-        
+
         // Mapper le type de crédit depuis natureCredit
         if (contractData.natureCredit) {
           conversionForm.value.contrat.creditType = contractData.natureCredit.code || 'AMORT';
@@ -3040,77 +2080,17 @@ export default defineComponent({
           dateEff: conversionForm.value.contrat.dateEffet,
           dateEch1: conversionForm.value.contrat.datePremiereEcheance,
           dateEch: conversionForm.value.contrat.dateEch1,
-          garantieCompl: conversionForm.value.contrat.garantieCompl,
           idNatureCredit: idNatureCredit, // Mappé depuis creditType
-          taux: Number(conversionForm.value.contrat.tauxInteret),
           commission: 0,
           description: isEditMode.value ? `Contrat modifié` : `Contrat créé depuis cotation`,
           isActive: true,
           etablissement: conversionForm.value.contrat.etablissement,
-          reference: conversionForm.value.contrat.reference,
-          idPeriodicite: (conversionForm.value.contrat.creditType === 'CP' || conversionForm.value.contrat.creditType === 'OBA')
-            ? 12
-            : Number(conversionForm.value.contrat.idPeriodicite),
-          differe: (conversionForm.value.contrat.creditType === 'CP' || conversionForm.value.contrat.creditType === 'OBA')
-            ? 0
-            : Number(conversionForm.value.contrat.dureeeDifferee || '0')
+          reference: conversionForm.value.contrat.reference || undefined, // généré automatiquement si vide
+          idPeriodicite: Number(conversionForm.value.contrat.idPeriodicite),
+          perteEmploi: conversionForm.value.contrat.creditType === 'AMORT' && conversionForm.value.contrat.perteEmploi === 'OUI',
+          tauxSurprime: 0,
+          beneficiaire: null
         };
-
-        // Remplir les champs spécifiques CP
-        if (conversionForm.value.contrat.creditType === 'CP') {
-          contractData.renouvellementAuto = conversionForm.value.contrat.renouvellementAuto;
-          contractData.compteBancaire = conversionForm.value.contrat.compteBancaire;
-          contractData.numeroCompte = conversionForm.value.contrat.numeroCompte;
-          contractData.beneficiaries = conversionForm.value.contrat.beneficiaries.map((b: any) => ({
-            nomPrenoms: b.nomPrenoms,
-            lienParente: b.lienParente,
-            pourcentage: Number(b.pourcentage)
-          }));
-        }
-        
-        // Remplir les champs spécifiques OBA
-        if (conversionForm.value.contrat.creditType === 'OBA') {
-          const rawOpts = conversionForm.value.contrat.obaOptions;
-          const configMap: Record<string, { capital: number, prime: number }> = {
-            conjoint: { capital: 500000, prime: 2000 },
-            ascendant1: { capital: 500000, prime: 2500 },
-            ascendant2: { capital: 500000, prime: 2500 },
-            ascendant3: { capital: 500000, prime: 2500 },
-            ascendant4: { capital: 500000, prime: 2500 },
-            assure: { capital: 500000, prime: 2000 }
-          };
-
-          const mappedOpts: any = {};
-          
-          // Assuré principal
-          mappedOpts.assure = {
-            checked: true,
-            birthdate: conversionForm.value.client.dateNaissance,
-            lastname: conversionForm.value.client.nom,
-            firstname: conversionForm.value.client.prenoms,
-            gender: conversionForm.value.client.sexe === 'Homme' ? 'M' : 'F',
-            capitalAssure: configMap.assure.capital,
-            prime: configMap.assure.prime
-          };
-
-          // Membres secondaires
-          for (const key of ['conjoint', 'ascendant1', 'ascendant2', 'ascendant3', 'ascendant4']) {
-            const opt = rawOpts[key];
-            if (opt) {
-              mappedOpts[key] = {
-                checked: !!opt.checked,
-                lastname: opt.lastname || '',
-                firstname: opt.firstname || '',
-                birthdate: opt.birthdate || '',
-                gender: opt.gender || (key.endsWith('2') || key.endsWith('4') || key === 'conjoint' ? 'F' : 'M'),
-                capitalAssure: opt.checked ? configMap[key].capital : 0,
-                prime: opt.checked ? configMap[key].prime : 0
-              };
-            }
-          }
-
-          contractData.obaOptions = mappedOpts;
-        }
 
         // Préparer les données du client
         const currentClientData = {
@@ -3151,8 +2131,8 @@ export default defineComponent({
           // Mode modification : PUT
           response = await ApiService.put(`/contracts/${props.contractToEdit.id}`, contractData);
         } else {
-          // Mode création : POST
-          response = await ApiService.post('/contracts', contractData);
+          // Mode création : POST (endpoint RENACA)
+          response = await ApiService.post('/contracts/renaca', contractData);
         }
         console.log('📥 Réponse complète de création de contrat:', response);
         console.log('📥 response.data:', response.data);
@@ -3289,32 +2269,7 @@ export default defineComponent({
       if (newCreditType && newCreditType !== oldCreditType && currentStep.value >= 2) {
         adjustValuesToLimits();
       }
-      if (newCreditType === 'OBA') {
-        let total = 500000; // Assuré principal toujours inclus (500 000 FCFA)
-        const opts = conversionForm.value.contrat.obaOptions;
-        if (opts) {
-          if (opts.conjoint?.checked) total += 500000;
-          if (opts.ascendant1?.checked) total += 500000;
-          if (opts.ascendant2?.checked) total += 500000;
-          if (opts.ascendant3?.checked) total += 500000;
-          if (opts.ascendant4?.checked) total += 500000;
-        }
-        conversionForm.value.contrat.capital = total;
-      }
     });
-
-    // Watcher pour calculer automatiquement le capital pour OBA en fonction des membres cochés
-    watch(() => conversionForm.value.contrat.obaOptions, (newOpts) => {
-      if (conversionForm.value.contrat.creditType === 'OBA' && newOpts) {
-        let total = 500000; // Assuré principal toujours inclus (500 000 FCFA)
-        if (newOpts.conjoint?.checked) total += 500000;
-        if (newOpts.ascendant1?.checked) total += 500000;
-        if (newOpts.ascendant2?.checked) total += 500000;
-        if (newOpts.ascendant3?.checked) total += 500000;
-        if (newOpts.ascendant4?.checked) total += 500000;
-        conversionForm.value.contrat.capital = total;
-      }
-    }, { deep: true, immediate: true });
 
     // Watcher pour ajuster automatiquement les valeurs quand l'âge change
     watch(() => conversionForm.value.client.dateNaissance, (newBirthdate, oldBirthdate) => {
@@ -3342,12 +2297,6 @@ export default defineComponent({
       }
     });
 
-    watch(() => conversionForm.value.contrat.dureeeDifferee, (newDiffere, oldDiffere) => {
-      if (newDiffere !== undefined && newDiffere !== oldDiffere && !dateEcheanceManuallyEdited.value && currentStep.value >= 2) {
-        calculateDateEcheanceAuto();
-      }
-    });
-
     // Watcher pour pré-remplir le formulaire avec les props par défaut
     watch(() => props.visible, async (isVisible) => {
       if (isVisible) {
@@ -3364,22 +2313,15 @@ export default defineComponent({
         if (props.selectedCotation) {
           conversionForm.value.contrat.capital = props.selectedCotation.capital || props.defaultCapital || 0;
           conversionForm.value.contrat.duration = props.selectedCotation.duration || props.defaultDuration || 12;
-          conversionForm.value.contrat.tauxInteret = props.selectedCotation.taux || 0;
-          conversionForm.value.contrat.garantieCompl = props.selectedCotation.garantieCompl || props.defaultGarantieCompl || 'OUI';
           const idNC = props.selectedCotation.idNatureCredit || props.selectedCotation.natureCredit?.id;
-          const codeNC = props.selectedCotation.natureCredit?.code;
-          let mappedCreditType = props.selectedCotation.creditType || codeNC;
-          if (!mappedCreditType && idNC) {
-            mappedCreditType = idNC === 2 ? 'CP' : idNC === 3 ? 'OBA' : 'AMORT';
-          }
+          const codeNC = props.selectedCotation.natureCredit?.code || natureCredits.value.find(nc => nc.id === idNC)?.code;
+          const mappedCreditType = props.selectedCotation.creditType || codeNC;
           conversionForm.value.contrat.creditType = mappedCreditType || props.defaultCreditType || 'AMORT';
           conversionForm.value.contrat.reference = props.selectedCotation.reference || '';
           conversionForm.value.contrat.etablissement = props.selectedCotation.etablissement || '';
-          
-          const isCPorOBA = conversionForm.value.contrat.creditType === 'CP' || conversionForm.value.contrat.creditType === 'OBA';
-          conversionForm.value.contrat.dureeeDifferee = isCPorOBA ? '0' : String(props.selectedCotation.differe || 0);
-          conversionForm.value.contrat.idPeriodicite = isCPorOBA ? 12 : (props.selectedCotation.idPeriodicite || 1);
-          
+          conversionForm.value.contrat.perteEmploi = props.selectedCotation.garantieCompl === 'OUI' ? 'OUI' : 'NON';
+          conversionForm.value.contrat.idPeriodicite = props.selectedCotation.idPeriodicite || 1;
+
           // Pré-remplir les primes calculées
           if (props.selectedCotation.pd !== undefined) {
             conversionForm.value.primes.pd = props.selectedCotation.pd || 0;
@@ -3389,77 +2331,17 @@ export default defineComponent({
             conversionForm.value.primes.fm = props.selectedCotation.fm || 0;
             conversionForm.value.primes.puttc = props.selectedCotation.puttc || 0;
           }
-
-          // Charger les options OBA
-          if (props.selectedCotation.obaOptions) {
-            const opts = props.selectedCotation.obaOptions;
-            conversionForm.value.contrat.obaOptions = {
-              conjoint: { 
-                checked: !!opts.conjoint?.checked, 
-                lastname: opts.conjoint?.lastname || '', 
-                firstname: opts.conjoint?.firstname || '', 
-                birthdate: opts.conjoint?.birthdate || '', 
-                gender: opts.conjoint?.gender || 'F',
-                capitalAssure: opts.conjoint?.capitalAssure || 0,
-                prime: opts.conjoint?.prime || 0
-              },
-              ascendant1: { 
-                checked: !!opts.ascendant1?.checked, 
-                lastname: opts.ascendant1?.lastname || '', 
-                firstname: opts.ascendant1?.firstname || '', 
-                birthdate: opts.ascendant1?.birthdate || '', 
-                gender: opts.ascendant1?.gender || 'M',
-                capitalAssure: opts.ascendant1?.capitalAssure || 0,
-                prime: opts.ascendant1?.prime || 0
-              },
-              ascendant2: { 
-                checked: !!opts.ascendant2?.checked, 
-                lastname: opts.ascendant2?.lastname || '', 
-                firstname: opts.ascendant2?.firstname || '', 
-                birthdate: opts.ascendant2?.birthdate || '', 
-                gender: opts.ascendant2?.gender || 'F',
-                capitalAssure: opts.ascendant2?.capitalAssure || 0,
-                prime: opts.ascendant2?.prime || 0
-              },
-              ascendant3: { 
-                checked: !!opts.ascendant3?.checked, 
-                lastname: opts.ascendant3?.lastname || '', 
-                firstname: opts.ascendant3?.firstname || '', 
-                birthdate: opts.ascendant3?.birthdate || '', 
-                gender: opts.ascendant3?.gender || 'M',
-                capitalAssure: opts.ascendant3?.capitalAssure || 0,
-                prime: opts.ascendant3?.prime || 0
-              },
-              ascendant4: { 
-                checked: !!opts.ascendant4?.checked, 
-                lastname: opts.ascendant4?.lastname || '', 
-                firstname: opts.ascendant4?.firstname || '', 
-                birthdate: opts.ascendant4?.birthdate || '', 
-                gender: opts.ascendant4?.gender || 'F',
-                capitalAssure: opts.ascendant4?.capitalAssure || 0,
-                prime: opts.ascendant4?.prime || 0
-              }
-            };
-          }
         } else {
           // Sinon, utiliser les valeurs par défaut
           conversionForm.value.contrat.creditType = props.defaultCreditType || '';
           conversionForm.value.contrat.duration = props.defaultDuration || 12;
           conversionForm.value.contrat.capital = props.defaultCapital || 0;
-          conversionForm.value.contrat.garantieCompl = props.defaultGarantieCompl || 'OUI';
+          conversionForm.value.contrat.perteEmploi = props.defaultGarantieCompl === 'OUI' ? 'OUI' : 'NON';
           conversionForm.value.contrat.idPeriodicite = 1; // Périodicité par défaut (Mensuelle)
-          conversionForm.value.contrat.dureeeDifferee = '0'; // Différée par défaut
         }
-        
+
         // Définir la date d'effet par défaut
-        if (conversionForm.value.contrat.creditType === 'CP') {
-          const dateEffCPObj = new Date();
-          dateEffCPObj.setDate(dateEffCPObj.getDate() + 1);
-          conversionForm.value.contrat.dateEffet = dateEffCPObj.toISOString().split('T')[0];
-        } else {
-          const today = new Date().toISOString().split('T')[0];
-          conversionForm.value.contrat.dateEffet = today;
-        }
+        conversionForm.value.contrat.dateEffet = new Date().toISOString().split('T')[0];
         
         // Mettre à jour la date de première échéance automatiquement
         updateDatePremiereEcheance();
@@ -3517,32 +2399,10 @@ export default defineComponent({
       }
     });
 
-    const liensParenteList = ref<any[]>([
-      { libelle: 'PERE' },
-      { libelle: 'MERE' },
-      { libelle: 'ENFANT' },
-      { libelle: 'CONJOINT' },
-      { libelle: 'FRERE' },
-      { libelle: 'SOEUR' },
-      { libelle: 'AUTRE' }
-    ]);
-
-    const fetchLiensParenteModal = async () => {
-      try {
-        const res = await ApiService.get('/lien-parente');
-        const list = res.data.liensParente || res.data.data?.liensParente || res.data.data || res.data || [];
-        if (Array.isArray(list) && list.length > 0) {
-          liensParenteList.value = list.filter((i: any) => i.isActive !== false);
-        }
-      } catch (e) {
-        console.warn('Fallback liens parente modal');
-      }
-    };
-
     // Lifecycle
     loadNatureCredits();
     loadPeriodicites();
-    fetchLiensParenteModal();
+    loadTypeCustomers();
 
     return {
       // Refs
@@ -3557,10 +2417,11 @@ export default defineComponent({
       isConverting,
       natureCredits,
       loadingNatureCredits,
+      typeCustomers,
+      loadingTypeCustomers,
       isRecalculatingPrimes,
       periodicites,
       loadingPeriodicites,
-      liensParenteList,
       conversionForm,
       conversionSchema,
       
@@ -3597,7 +2458,6 @@ export default defineComponent({
       validateDateEffet,
       validateDatePremiereEcheance,
       validateDateEcheance,
-      validateTauxInteret,
       validateDuration,
       adjustValuesToLimits,
       recalculatePrimes,
@@ -3611,18 +2471,13 @@ export default defineComponent({
       isValidAge,
       calculateAge,
       getLimits,
+      getTypeClientLabel,
       loadPeriodicites,
       loadContractForEdit,
       calculateDateEcheanceAuto,
       resetDateEcheanceAuto,
       handleDateEcheanceManualEdit,
-      dateEcheanceManuallyEdited,
-      
-      // Beneficiary helpers & state
-      addBeneficiary,
-      removeBeneficiary,
-      totalPercentage,
-      beneficiaryValidationMessage
+      dateEcheanceManuallyEdited
     };
   }
 });
