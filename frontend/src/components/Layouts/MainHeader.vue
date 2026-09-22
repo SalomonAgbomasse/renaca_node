@@ -26,8 +26,8 @@
             <img
               src="../../assets/images/logo-renaca.jpeg"
               class="rectangle"
-              width="50"
-              height="50"
+              width="40"
+              height="40"
               alt="RENACA"
             />
             <span class="ms-2 d-none d-sm-block fw-bold text-dark">RENACA</span>
@@ -164,9 +164,9 @@ export default defineComponent({
 <style scoped>
 /* Logo RENACA */
 .rectangle {
-  border-radius: 30%;
+  border-radius: 40%;
   object-fit: cover;
-}
+} 
 
 /* Styles pour l'en-tête mobile */
 @media (max-width: 768px) {
