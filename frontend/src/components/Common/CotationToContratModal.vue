@@ -439,13 +439,13 @@
               <label class="form-label">Perte d'Emploi <span class="text-danger">*</span></label>
               <div class="d-flex gap-3">
                 <label class="d-flex align-items-center gap-2">
-                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-slot="{ field }">
+                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
                     <input type="radio" v-bind="field" value="OUI" />
                   </Field>
                   OUI
                 </label>
                 <label class="d-flex align-items-center gap-2">
-                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-slot="{ field }">
+                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
                     <input type="radio" v-bind="field" value="NON" />
                   </Field>
                   NON
