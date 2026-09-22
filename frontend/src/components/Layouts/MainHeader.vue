@@ -21,16 +21,16 @@
       <!-- Logo et mode switcher - à droite -->
       <div class="col d-flex align-items-center justify-content-end">
         <div class="d-flex align-items-center gap-3">
-          <!-- Logo PADME -->
+          <!-- Logo RENACA -->
           <div class="d-flex align-items-center">
             <img
-              src="../../assets/images/padme.png"
+              src="../../assets/images/logo-renaca.jpeg"
               class="rectangle"
-              width="80"
-              height="80"
-              alt="PADME S.A"
+              width="50"
+              height="50"
+              alt="RENACA"
             />
-            <span class="ms-2 d-none d-sm-block fw-bold text-dark">PADME S.A</span>
+            <span class="ms-2 d-none d-sm-block fw-bold text-dark">RENACA</span>
           </div>
           
           <!-- Sélecteur de taille de police -->
@@ -162,6 +162,12 @@ export default defineComponent({
 </script>
 
 <style scoped>
+/* Logo RENACA */
+.rectangle {
+  border-radius: 30%;
+  object-fit: cover;
+}
+
 /* Styles pour l'en-tête mobile */
 @media (max-width: 768px) {
   .header-area {
@@ -184,7 +190,7 @@ export default defineComponent({
     gap: 0.75rem !important;
   }
   
-  /* Logo PADME */
+  /* Logo RENACA */
   .d-flex.align-items-center img {
     width: 32px !important;
     height: 32px !important;
