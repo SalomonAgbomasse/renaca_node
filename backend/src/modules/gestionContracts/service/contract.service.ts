@@ -815,6 +815,106 @@ export class ContractService {
   }
 
   /**
+   * Création d'un contrat Hors Convention (HLA) avec création/réutilisation
+   * simultanée du client. Contrairement à createRenacaContract, les primes
+   * sont saisies manuellement par l'utilisateur (pas d'appel à primeRENACA) :
+   * c'est la raison d'être de "Hors Convention" — déroger volontairement aux
+   * règles RENACA (âge, capital, tarification automatique).
+   */
+  async createHorsConventionWithCustomer(
+    contractData: Partial<Contract> & { clientData?: any; perteEmploi?: boolean },
+    idUser: number,
+    idAgency: number
+  ): Promise<Contract> {
+    if (!contractData.capital || !contractData.duration || !contractData.idNatureCredit || !contractData.clientData?.lastname || !contractData.clientData?.firstname || !contractData.clientData?.birthdate) {
+      throw new BadRequestException('Champs requis manquants pour le contrat Hors Convention (capital, durée, nature de crédit, nom/prénom/date de naissance du client).');
+    }
+
+    const typeCapital = await this.resolveRenacaTypeCapital(contractData.idNatureCredit);
+
+    const dateEff = contractData.dateEff ? new Date(contractData.dateEff) : new Date();
+
+    contractData.idUser = idUser;
+    contractData.idAgency = idAgency;
+
+    // Gestion client (recherche ou création) — même logique que createRenacaContract
+    const existing = await this.customerService.findByPersonalInfo(
+      contractData.clientData.lastname.trim(),
+      contractData.clientData.firstname.trim(),
+      contractData.clientData.birthdate.trim()
+    );
+    if (existing) {
+      contractData.idCustomer = existing.id;
+    } else {
+      const newClient = await this.customerService.create({
+        ...contractData.clientData,
+        idUser
+      });
+      contractData.idCustomer = newClient.id;
+    }
+
+    // Vérifier la limite de contrats par nature et par période pour le client
+    await this.checkContractLimits(contractData, contractData.dateEff);
+
+    contractData.police = contractData.police || await this.policyNumberService.generateStandardPolice(idAgency, typeCapital);
+    contractData.reference = contractData.reference || await this.policyNumberService.generateStandardReference(idUser, typeCapital);
+
+    const existingContractReference = await this.findByReference(contractData.reference || '');
+    if (existingContractReference.length > 0) {
+      throw new BadRequestException(`Cette référence est déjà utilisée pour un autre contrat. Veuillez le rechercher par la police ${existingContractReference[0].police} ou la référence ${existingContractReference[0].reference}`);
+    }
+
+    const dateEch1 = contractData.dateEch1
+      ? new Date(contractData.dateEch1)
+      : (() => {
+          const d = new Date(dateEff);
+          d.setMonth(d.getMonth() + 1);
+          return d;
+        })();
+    const dateEch = contractData.dateEch
+      ? new Date(contractData.dateEch)
+      : await this.calculerDateEch(dateEch1, contractData.duration || 0);
+
+    contractData.dateEff = dateEff;
+    contractData.dateEch1 = dateEch1;
+    contractData.dateEch = dateEch;
+    contractData.differe = 0;
+
+    // Primes saisies manuellement — aucun recalcul automatique
+    contractData.pd = Number(contractData.pd) || 0;
+    contractData.pc = Number(contractData.pc) || 0;
+    contractData.acc = Number(contractData.acc) || 0;
+    contractData.surp = Number(contractData.surp) || 0;
+    contractData.fm = Number(contractData.fm) || 0;
+    contractData.puttc = Number(contractData.puttc) || 0;
+    (contractData as any).commission = 0;
+
+    contractData.garantieCompl = contractData.perteEmploi ? 'OUI' : 'NON';
+    contractData.contractType = ContractType.HORS_CONVENTION;
+
+    contractData.keyCont = await this.generateKeyCont(
+      contractData.idCustomer || 0,
+      typeCapital,
+      contractData.capital || 0,
+      contractData.duration || 0,
+      contractData.garantieCompl
+    );
+
+    const { beneficiaries, ...rest } = contractData;
+    const contract = this.contractRepository.create(rest);
+    const savedContract = await this.contractRepository.save(contract);
+
+    await this.createHistoryRecord(
+      savedContract,
+      null,
+      rest,
+      ContractHistoryAction.CREATE
+    );
+
+    return savedContract;
+  }
+
+  /**
    * Mise à jour administrative LIBRE d'un contrat.
    * Réservée aux rôles Admin (1) et Super Admin (5).
    *

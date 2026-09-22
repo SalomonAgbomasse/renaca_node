@@ -79,6 +79,40 @@ export class ContractController {
     }
   }
 
+  // Création d'un contrat Hors Convention (HLA) avec création simultanée du client.
+  // Primes saisies manuellement (pas de calcul RENACA automatique) — réservé Admin/Super Admin.
+  @Post('hors-convention-with-customer')
+  @RequirePermissions(ContractPermission.CREATE)
+  async createHorsConventionWithCustomer(@Body() contractData: any, @Req() request: Request): Promise<{ success: boolean; message: string; contract?: Contract }> {
+    const user = (request as any).user;
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur non authentifié');
+    }
+    if (user.idRole !== 1 && user.idRole !== 5) {
+      throw new ForbiddenException('Seuls les administrateurs peuvent créer un contrat Hors Convention');
+    }
+
+    try {
+      contractData.idProduct = contractData.idProduct || 1;
+      contractData.idContractState = contractData.idContractState || 1;
+      contractData.dateEff = contractData.dateEff || new Date().toISOString();
+
+      const contract = await this.contractService.createHorsConventionWithCustomer(
+        contractData,
+        user.id,
+        user.idAgency
+      );
+
+      return {
+        success: true,
+        message: `Contrat Hors Convention "${contract.reference}" créé avec succès`,
+        contract
+      };
+    } catch (error) {
+      return { success: false, message: error.message || 'Erreur création contrat Hors Convention' };
+    }
+  }
+
   @Get()
   @RequirePermissions(ContractPermission.READ)
   async findAll(

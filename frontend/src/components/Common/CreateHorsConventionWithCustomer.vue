@@ -69,8 +69,7 @@
             <label class="form-label fw-bold">Type de client <span class="text-danger">*</span></label>
             <Field name="client.idTypeCustomer" as="select" v-model="formModel.client.idTypeCustomer" class="form-select">
               <option value="">Sélectionner</option>
-              <option value="1">Particulier</option>
-              <option value="2">Personnel PADME</option>
+              <option v-for="tc in typeCustomers" :key="tc.id" :value="String(tc.id)">{{ tc.libelle }}</option>
             </Field>
             <ErrorMessage name="client.idTypeCustomer" class="text-danger small" />
           </div>
@@ -98,14 +97,35 @@
           Informations du contrat
         </h5>
         <div class="row">
-          <div class="col-md-4">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
+              <Field
+                name="contrat.idNatureCredit"
+                v-model="formModel.contrat.idNatureCredit"
+                as="select"
+                class="form-control"
+                :disabled="loadingNatureCredits"
+                required
+              >
+                <option value="">
+                  {{ loadingNatureCredits ? 'Chargement...' : 'Sélectionner la nature de crédit' }}
+                </option>
+                <option v-for="nc in natureCredits" :key="nc.id" :value="nc.id">
+                  {{ nc.libelle }}
+                </option>
+              </Field>
+              <ErrorMessage name="contrat.idNatureCredit" class="text-danger" />
+            </div>
+          </div>
+          <div class="col-md-6">
             <div class="form-group mb-3">
               <label class="form-label">Capital <span class="text-danger">*</span></label>
               <Field
                 name="contrat.capital"
                 v-model="formModel.contrat.capital"
-                type="number" 
-                class="form-control" 
+                type="number"
+                class="form-control"
                 placeholder="Capital"
                 :min="1"
                 @input="handleCapitalInput"
@@ -128,9 +148,9 @@
                 <option value="">
                   {{ loadingPeriodicites ? 'Chargement...' : 'Sélectionner la périodicité' }}
                 </option>
-                <option 
-                  v-for="periodicite in periodicites" 
-                  :key="periodicite.id" 
+                <option
+                  v-for="periodicite in periodicites"
+                  :key="periodicite.id"
                   :value="periodicite.id"
                 >
                   {{ periodicite.libelle }}
@@ -145,8 +165,8 @@
               <Field
                 name="contrat.duration"
                 v-model="formModel.contrat.duration"
-                type="number" 
-                class="form-control" 
+                type="number"
+                class="form-control"
                 placeholder="Durée en mois"
                 :min="1"
                 @input="handleDurationInput"
@@ -155,7 +175,7 @@
               <ErrorMessage name="contrat.duration" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div class="form-group mb-3">
               <label class="form-label">Taux d'intérêt <span class="text-danger">*</span></label>
               <Field
@@ -180,25 +200,33 @@
               </div>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-6" v-if="formModel.contrat.idNatureCredit && natureCreditCode === 'AMORT'">
+            <label class="form-label fw-bold d-block">Perte d'Emploi <span class="text-danger">*</span></label>
+            <div class="d-flex gap-3 mt-2">
+              <label class="d-flex align-items-center gap-2">
+                <input type="radio" v-model="formModel.contrat.perteEmploi" value="OUI" />
+                OUI
+              </label>
+              <label class="d-flex align-items-center gap-2">
+                <input type="radio" v-model="formModel.contrat.perteEmploi" value="NON" />
+                NON
+              </label>
+            </div>
+          </div>
+          <div class="col-md-6" v-if="formModel.contrat.perteEmploi === 'OUI'">
             <div class="form-group mb-3">
-              <label class="form-label">Durée de différée (en mois) <span class="text-danger">*</span></label>
+              <label class="form-label">Prime Complémentaire Perte d'Emploi (PC) <span class="text-danger">*</span></label>
               <Field
-                name="contrat.dureeeDifferee"
-                v-model="formModel.contrat.dureeeDifferee"
-                as="select"
+                name="primes.pc"
+                v-model="formModel.primes.pc"
+                type="number"
                 class="form-control"
-                required
-              >
-                <option value="0">0 mois</option>
-                <option value="1">1 mois</option>
-                <option value="2">2 mois</option>
-                <option value="3">3 mois</option>
-                <option value="4">4 mois</option>
-                <option value="5">5 mois</option>
-                <option value="6">6 mois</option>
-              </Field>
-              <ErrorMessage name="contrat.dureeeDifferee" class="text-danger" />
+                :min="0"
+                step="0.01"
+                placeholder="0"
+                @input="handlePrimeInput"
+              />
+              <ErrorMessage name="primes.pc" class="text-danger" />
             </div>
           </div>
         </div>
@@ -328,31 +356,6 @@
           </div>
         </div>
 
-        <!-- Prime Complémentaire (PC) - Cachée -->
-        <div class="row" style="display: none;">
-          <div class="col-md-12">
-            <div class="form-group mb-3">
-              <label class="form-label">Prime Complémentaire (PC)</label>
-              <Field
-                name="primes.pc"
-                v-model="formModel.primes.pc"
-                type="number" 
-                class="form-control" 
-                :min="0"
-                step="0.01"
-                placeholder="0"
-                :disabled="formModel.contrat.garantieCompl !== 'OUI'"
-                @input="handlePrimeInput"
-              />
-              <div v-if="formModel.contrat.garantieCompl !== 'OUI'" class="form-text text-muted">
-                <i class="fas fa-info-circle me-1"></i>
-                Désactivée si garantie = NON
-              </div>
-              <ErrorMessage name="primes.pc" class="text-danger" />
-            </div>
-          </div>
-        </div>
-        
         <!-- Deuxième ligne des primes : ACC, FM, PUTTC -->
         <div class="row">
           <div class="col-md-4">
@@ -407,32 +410,6 @@
           </div>
         </div>
 
-        <!-- Garantie Perte d'Emploi cachée -->
-        <div class="row" style="display: none;">
-          <div class="col-md-12">
-            <div class="form-group mb-3">
-              <label class="form-label">Garantie Perte d'Emploi <span class="text-danger">*</span></label>
-              <div class="d-flex gap-3">
-                <label class="d-flex align-items-center gap-2">
-                  <input 
-                    v-model="formModel.contrat.garantieCompl"
-                    type="radio" 
-                    value="OUI"
-                  />
-                  <span>Oui</span>
-                </label>
-                <label class="d-flex align-items-center gap-2">
-                  <input 
-                    v-model="formModel.contrat.garantieCompl"
-                    type="radio" 
-                    value="NON"
-                  />
-                  <span>Non</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div v-if="currentStep === 3 && !creationSuccess" class="form-step">
@@ -463,11 +440,12 @@
             <h6 class="mb-3">Informations Contrat</h6>
             <div class="row">
               <div class="col-md-6">
+                <p><strong>Nature de crédit:</strong> {{ natureCredits.find(nc => nc.id === formModel.contrat.idNatureCredit)?.libelle || '-' }}</p>
                 <p><strong>Capital:</strong> {{ formatNumber(formModel.contrat.capital) }} FCFA</p>
                 <p><strong>Durée:</strong> {{ formModel.contrat.duration }} mois</p>
                 <p><strong>Taux d'intérêt:</strong> {{ formModel.contrat.tauxInteret }}%</p>
                 <p><strong>Périodicité:</strong> {{ periodicites.find(p => p.id === formModel.contrat.idPeriodicite)?.libelle || '-' }}</p>
-                <p><strong>Différé:</strong> {{ formModel.contrat.dureeeDifferee }} mois</p>
+                <p v-if="natureCreditCode === 'AMORT'"><strong>Perte d'Emploi:</strong> {{ formModel.contrat.perteEmploi }}</p>
               </div>
               <div class="col-md-6">
                 <p><strong>Date d'effet:</strong> {{ formatDate(formModel.contrat.dateEffet) }}</p>
@@ -590,6 +568,9 @@ export default defineComponent({
     const isSubmitting = ref(false);
     const periodicites = ref<any[]>([]);
     const loadingPeriodicites = ref(false);
+    const natureCredits = ref<any[]>([]);
+    const loadingNatureCredits = ref(false);
+    const typeCustomers = ref<any[]>([]);
     const dateEcheanceManuallyEdited = ref(false);
     const datePremiereEcheanceManuallyEdited = ref(false);
     const stepValidationError = ref('');
@@ -600,6 +581,11 @@ export default defineComponent({
 
     const todayDate = computed(() => {
       return new Date().toISOString().split('T')[0];
+    });
+
+    const natureCreditCode = computed(() => {
+      const nc = natureCredits.value.find(n => n.id === formModel.value.contrat.idNatureCredit);
+      return nc?.code || '';
     });
 
     const getMinDateEcheance = computed(() => {
@@ -625,6 +611,7 @@ export default defineComponent({
         idTypeCustomer: ''
       },
       contrat: {
+        idNatureCredit: '' as any,
         capital: 1000000,
         duration: 12,
         tauxInteret: 12.5,
@@ -636,11 +623,10 @@ export default defineComponent({
         })(),
         dateEch1: '',
         dateEcheance: '',
-        dureeeDifferee: '0',
         idPeriodicite: 1,
         reference: '',
         etablissement: '',
-        garantieCompl: 'OUI'
+        perteEmploi: 'NON' as string
       },
       primes: {
         pd: 0,
@@ -672,6 +658,9 @@ export default defineComponent({
         idTypeCustomer: Yup.string().required('Le type de client est obligatoire')
       }),
       contrat: Yup.object({
+        idNatureCredit: Yup.number()
+          .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : Number(originalValue))
+          .required('La nature de crédit est obligatoire'),
         capital: Yup.number()
           .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : Number(originalValue))
           .typeError('Le capital doit être un nombre')
@@ -704,12 +693,11 @@ export default defineComponent({
           .min(0, 'Le taux d\'intérêt ne peut pas être négatif')
           .max(100, 'Le taux d\'intérêt ne peut pas dépasser 100%'),
         dateEch1: dateEcheanceSchema('contrat'),
-        dureeeDifferee: Yup.string()
-          .oneOf(['0', '1', '2', '3', '4', '5', '6'], 'La durée de différée doit être entre 0 et 6 mois')
-          .required('La durée de différée est obligatoire'),
-        garantieCompl: Yup.string()
-          .oneOf(['OUI', 'NON'], 'Un choix pour la garantie perte d\'emploi est obligatoire')
-          .required('Un choix pour la garantie perte d\'emploi est obligatoire')
+        perteEmploi: Yup.string()
+          .test('required-if-amort', 'Un choix pour Perte d\'Emploi est obligatoire', function(value) {
+            if (natureCreditCode.value !== 'AMORT') return true;
+            return value === 'OUI' || value === 'NON';
+          })
       }),
       primes: Yup.object({
         pd: Yup.number()
@@ -774,6 +762,51 @@ export default defineComponent({
       }
     };
 
+    const loadNatureCredits = async () => {
+      try {
+        loadingNatureCredits.value = true;
+        const response = await ApiService.get('/nature-credits');
+        const raw = response.data?.data?.data || response.data?.data || response.data;
+        if (Array.isArray(raw)) {
+          natureCredits.value = raw.filter((nc: any) => nc.code === 'AMORT' || nc.code === 'CONST');
+        } else {
+          natureCredits.value = [
+            { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' },
+            { id: 2, libelle: 'CONSTANT', code: 'CONST' }
+          ];
+        }
+      } catch (err) {
+        console.error('❌ Erreur lors du chargement des natures de crédit:', err);
+        natureCredits.value = [
+          { id: 1, libelle: 'AMORTISSABLE', code: 'AMORT' },
+          { id: 2, libelle: 'CONSTANT', code: 'CONST' }
+        ];
+      } finally {
+        loadingNatureCredits.value = false;
+      }
+    };
+
+    const loadTypeCustomers = async () => {
+      try {
+        const response = await ApiService.get('/type-customers');
+        const raw = response.data?.data?.data || response.data?.data || response.data;
+        if (Array.isArray(raw)) {
+          typeCustomers.value = raw;
+        } else {
+          typeCustomers.value = [
+            { id: 1, libelle: 'PARTICULIER' },
+            { id: 2, libelle: 'PERSONNEL RENACA' }
+          ];
+        }
+      } catch (err) {
+        console.error('❌ Erreur lors du chargement des types de client:', err);
+        typeCustomers.value = [
+          { id: 1, libelle: 'PARTICULIER' },
+          { id: 2, libelle: 'PERSONNEL RENACA' }
+        ];
+      }
+    };
+
     const calculateDateEcheanceAuto = () => {
       if (!formModel.value.contrat.datePremiereEcheance || 
           !formModel.value.contrat.duration || 
@@ -791,7 +824,7 @@ export default defineComponent({
 
       const nombreMoisPeriodicite = periodiciteSelected.nombreMois;
       const dureeMois = Number(formModel.value.contrat.duration);
-      const differeMois = Number(formModel.value.contrat.dureeeDifferee || '0');
+      const differeMois = 0; // RENACA n'a pas de différé
 
       const dateEcheanceCalculee = calculateDateEcheance(
         formModel.value.contrat.datePremiereEcheance,
@@ -1000,6 +1033,7 @@ export default defineComponent({
         const contrat = formModel.value.contrat;
         const primes = formModel.value.primes;
         
+        if (!contrat.idNatureCredit) missingFields.push('Nature de crédit');
         if (!contrat.capital || Number(contrat.capital) <= 0) missingFields.push('Capital');
         if (!contrat.duration || Number(contrat.duration) <= 0) missingFields.push('Durée');
         if (!contrat.idPeriodicite) missingFields.push('Périodicité');
@@ -1009,8 +1043,8 @@ export default defineComponent({
         if (!contrat.dateEffet) missingFields.push('Date d\'effet');
         if (!contrat.datePremiereEcheance && !contrat.dateEch1) missingFields.push('Date de première échéance');
         if (!contrat.dateEch1) missingFields.push('Date d\'échéance');
-        if (!contrat.dureeeDifferee && contrat.dureeeDifferee !== '0') missingFields.push('Différé');
-        
+        if (natureCreditCode.value === 'AMORT' && contrat.perteEmploi !== 'OUI' && contrat.perteEmploi !== 'NON') missingFields.push('Perte d\'Emploi');
+
         // Validation des primes
         if (primes.pd === null || primes.pd === undefined || Number(primes.pd) < 0) missingFields.push('Prime Décès (PD)');
         if (primes.surp === null || primes.surp === undefined || Number(primes.surp) < 0) missingFields.push('Surprime (SURP)');
@@ -1047,15 +1081,16 @@ export default defineComponent({
       } else if (step === 2) {
         const contrat = formModel.value.contrat;
         const primes = formModel.value.primes;
-        return !!(contrat.capital && Number(contrat.capital) > 0 &&
+        return !!(contrat.idNatureCredit &&
+                  contrat.capital && Number(contrat.capital) > 0 &&
                   contrat.duration && Number(contrat.duration) > 0 &&
                   contrat.idPeriodicite &&
-                  contrat.tauxInteret !== null && contrat.tauxInteret !== undefined && 
+                  contrat.tauxInteret !== null && contrat.tauxInteret !== undefined &&
                     !isNaN(Number(contrat.tauxInteret)) && Number(contrat.tauxInteret) >= 0 &&
                   contrat.dateEffet &&
                   (contrat.datePremiereEcheance || contrat.dateEch1) &&
                   contrat.dateEch1 &&
-                  contrat.dureeeDifferee !== null && contrat.dureeeDifferee !== undefined && contrat.dureeeDifferee !== '' &&
+                  (natureCreditCode.value !== 'AMORT' || contrat.perteEmploi === 'OUI' || contrat.perteEmploi === 'NON') &&
                   primes.pd !== null && primes.pd !== undefined && Number(primes.pd) >= 0 &&
                   primes.surp !== null && primes.surp !== undefined && Number(primes.surp) >= 0 &&
                   primes.acc !== null && primes.acc !== undefined && Number(primes.acc) >= 0 &&
@@ -1277,13 +1312,11 @@ export default defineComponent({
           dateEff: formModel.value.contrat.dateEffet,
           dateEch1: formModel.value.contrat.datePremiereEcheance || formModel.value.contrat.dateEch1,
           dateEch: formModel.value.contrat.dateEcheance || formModel.value.contrat.dateEch1,
-          idNatureCredit: 1, // AMORTISSABLE (seule nature de crédit disponible)
+          idNatureCredit: Number(formModel.value.contrat.idNatureCredit),
           idPeriodicite: Number(formModel.value.contrat.idPeriodicite),
-          differe: Number(formModel.value.contrat.dureeeDifferee) || 0,
-          garantieCompl: formModel.value.contrat.garantieCompl || 'OUI',
+          perteEmploi: natureCreditCode.value === 'AMORT' && formModel.value.contrat.perteEmploi === 'OUI',
           reference: formModel.value.contrat.reference || undefined,
           etablissement: formModel.value.contrat.etablissement || undefined,
-          isHorsConvention: true,
           // Primes d'assurance
           pd: validateNumericValue(formModel.value.primes.pd, 0),
           pc: validateNumericValue(formModel.value.primes.pc, 0),
@@ -1417,12 +1450,6 @@ export default defineComponent({
       }
     });
 
-    watch(() => formModel.value.contrat.dureeeDifferee, (newDiffere, oldDiffere) => {
-      if (newDiffere !== undefined && newDiffere !== oldDiffere && !dateEcheanceManuallyEdited.value && currentStep.value >= 2) {
-        calculateDateEcheanceAuto();
-      }
-    });
-
     // Watcher pour recalculer PUTTC quand le modal s'ouvre
     watch(() => props.visible, (isVisible) => {
       if (isVisible) {
@@ -1457,6 +1484,8 @@ export default defineComponent({
     // Charger les périodicités au montage et initialiser PUTTC
     onMounted(() => {
       loadPeriodicites();
+      loadNatureCredits();
+      loadTypeCustomers();
       calculatePutcc();
     });
 
@@ -1482,6 +1511,10 @@ export default defineComponent({
       formatNumber,
       periodicites,
       loadingPeriodicites,
+      natureCredits,
+      loadingNatureCredits,
+      natureCreditCode,
+      typeCustomers,
       todayDate,
       getMinDateEcheance,
       dateEcheanceManuallyEdited,
