@@ -166,11 +166,23 @@ export class CotationService {
     }
   }
 
-  async generateReference(typeCredit: string): Promise<string> {  
-    //get the count of all cotations
-    const count = await this.cotationRepository.count();
-    console.log('🔢 Total cotations count:', count);
-    return `${typeCredit}-${count + 1}`;
+  /**
+   * Génère une référence unique COT-{4 caractères alphanumériques aléatoires}{AMORT|CONST}.
+   * Régénère en cas de collision (référence unique en base).
+   */
+  async generateReference(typeCredit: 'AMORT' | 'CONST'): Promise<string> {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let reference: string;
+    let alreadyExists: boolean;
+    do {
+      let random = '';
+      for (let i = 0; i < 4; i++) {
+        random += chars[Math.floor(Math.random() * chars.length)];
+      }
+      reference = `COT-${random}${typeCredit}`;
+      alreadyExists = !!(await this.cotationRepository.findOne({ where: { reference } }));
+    } while (alreadyExists);
+    return reference;
   }
 
   /**
@@ -215,7 +227,7 @@ export class CotationService {
       throw new BadRequestException(primeData.message || 'Erreur lors du calcul de la prime RENACA');
     }
 
-    const reference = await this.generateReference('RENACA');
+    const reference = await this.generateReference(typeCapital);
 
     const cotationDataWithPrimes: any = {
       ...cotationData,
