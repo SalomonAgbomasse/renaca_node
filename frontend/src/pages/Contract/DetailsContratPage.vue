@@ -1289,8 +1289,7 @@ export default defineComponent({
         console.error('❌ Erreur lors du chargement des natures de crédit:', err);
         natureCredits.value = [
           { id: 1, code: 'AMORT', libelle: 'Amortissable' },
-          { id: 2, code: 'CP', libelle: 'Crédit de Campagne' },
-          { id: 3, code: 'OBA', libelle: 'Obligation Cautionnée' }
+          { id: 2, code: 'CONST', libelle: 'Constant' }
         ];
       }
     }
