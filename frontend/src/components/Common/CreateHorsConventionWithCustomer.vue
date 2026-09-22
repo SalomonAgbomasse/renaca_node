@@ -1334,7 +1334,7 @@ export default defineComponent({
         const response = await ApiService.post('/contracts/hors-convention-with-customer', contractPayload);
         
         // Gérer la structure de réponse encapsulée par l'intercepteur
-        // Structure possible: { code: 200/400/500, message: '...', data: { success: true/false, message: '...', contract: {...}, customer: {...} }, timestamp: '...' }
+        // Structure possible: { code: 200/400/500, message: '...', data: { success: true/false, message: '...', contract: {...} }, timestamp: '...' }
         let result = response?.data;
         
         // Si la réponse a une structure data.data, l'utiliser
@@ -1355,25 +1355,27 @@ export default defineComponent({
         }
 
         const contract = result.contract;
-        const customer = result.customer || contract?.customer;
-        
+
         if (!contract) throw new Error('Contrat non créé');
-        if (!customer) throw new Error('Client non créé');
+
+        // Note : l'endpoint hors-convention-with-customer ne renvoie que le contrat
+        // (pas d'objet customer séparé). La création/réutilisation du client est
+        // garantie côté serveur : si le contrat existe, idCustomer a été résolu.
 
         // Stocker l'ID du contrat pour le téléchargement
         createdContractId.value = contract.id;
         creationSuccess.value = true;
-        
+
         // Utiliser le message de succès du backend s'il existe, sinon créer un message par défaut
-        const successMessage = result.message || 
+        const successMessage = result.message ||
                               `Client et contrat "${contract.reference || contract.id}" créés avec succès !`;
         creationMessage.value = successMessage;
-        
+
         // Afficher une notification de succès
         success(successMessage);
-        
+
         // Émettre l'événement de succès
-        emit('create-success', { client: customer, contract });
+        emit('create-success', { contract });
         
         // Ne pas fermer automatiquement le modal - permettre le téléchargement du PDF
       } catch (err: any) {
