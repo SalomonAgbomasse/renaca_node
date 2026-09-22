@@ -933,6 +933,12 @@ export class ContractService {
     }
 
     // Appliquer toutes les modifications directement
+    // Si la nature de crédit change, purger la relation déjà chargée par findOneWithRelations :
+    // sinon TypeORM persiste l'id de l'objet de relation obsolète au lieu de la colonne
+    // idNatureCredit qu'on vient de modifier (même correctif que sur update()).
+    if (adminUpdateData.idNatureCredit !== undefined && adminUpdateData.idNatureCredit !== existingContract.idNatureCredit) {
+      (existingContract as any).natureCredit = undefined;
+    }
     Object.assign(existingContract, adminUpdateData);
     const updatedContract = await this.contractRepository.save(existingContract);
 
