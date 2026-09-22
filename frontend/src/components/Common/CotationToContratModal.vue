@@ -382,7 +382,7 @@
             <div class="form-group mb-4">
               <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
               <Field
-                v-if="!conversionForm.contrat.creditType"
+                v-if="!creditTypeLocked"
                 name="contrat.creditType"
                 v-model="conversionForm.contrat.creditType"
                 as="select"
@@ -982,6 +982,7 @@ export default defineComponent({
     const datePremiereEcheanceManuallyEdited = ref(false); // Indique si l'utilisateur a modifié manuellement la date de 1re échéance
     const isLoadingContract = ref(false);
     const originalClientData = ref<any>(null); // Stocker les données client originales pour détecter les changements
+    const creditTypeLocked = ref(false); // true si la nature de crédit vient d'une cotation/d'un contrat existant (non modifiable)
     
     // Props réactifs
     const clientEditable = toRef(props, 'clientEditable');
@@ -1428,6 +1429,7 @@ export default defineComponent({
       isDownloadingPDF.value = false;
       dateEcheanceManuallyEdited.value = false; // Réinitialiser le flag de modification manuelle
       originalClientData.value = null; // Réinitialiser les données client originales
+      creditTypeLocked.value = false; // Réinitialiser le verrouillage de la nature de crédit
     };
 
     const validateCapital = (event: Event) => {
@@ -2087,6 +2089,7 @@ export default defineComponent({
           const matchingNature = natureCredits.value.find(nc => nc.id === contractData.idNatureCredit);
           conversionForm.value.contrat.creditType = matchingNature ? matchingNature.code : 'AMORT';
         }
+        creditTypeLocked.value = true; // Contrat existant : nature de crédit non modifiable
 
         // Pré-remplir les primes si disponibles
         if (contractData.puttc !== undefined) {
@@ -2383,6 +2386,7 @@ export default defineComponent({
           const codeNC = props.selectedCotation.natureCredit?.code || natureCredits.value.find(nc => nc.id === idNC)?.code;
           const mappedCreditType = props.selectedCotation.creditType || codeNC;
           conversionForm.value.contrat.creditType = mappedCreditType || props.defaultCreditType || 'AMORT';
+          creditTypeLocked.value = true; // Cotation source : nature de crédit non modifiable
           conversionForm.value.contrat.reference = props.selectedCotation.reference || '';
           conversionForm.value.contrat.etablissement = props.selectedCotation.etablissement || '';
           conversionForm.value.contrat.perteEmploi = props.selectedCotation.garantieCompl === 'OUI' ? 'OUI' : 'NON';
@@ -2398,8 +2402,9 @@ export default defineComponent({
             conversionForm.value.primes.puttc = props.selectedCotation.puttc || 0;
           }
         } else {
-          // Sinon, utiliser les valeurs par défaut
+          // Sinon, utiliser les valeurs par défaut (création libre, nature de crédit modifiable)
           conversionForm.value.contrat.creditType = props.defaultCreditType || '';
+          creditTypeLocked.value = false;
           conversionForm.value.contrat.duration = props.defaultDuration || 12;
           conversionForm.value.contrat.capital = props.defaultCapital || 0;
           conversionForm.value.contrat.perteEmploi = props.defaultGarantieCompl === 'OUI' ? 'OUI' : 'NON';
@@ -2544,7 +2549,8 @@ export default defineComponent({
       calculateDateEcheanceAuto,
       resetDateEcheanceAuto,
       handleDateEcheanceManualEdit,
-      dateEcheanceManuallyEdited
+      dateEcheanceManuallyEdited,
+      creditTypeLocked
     };
   }
 });
