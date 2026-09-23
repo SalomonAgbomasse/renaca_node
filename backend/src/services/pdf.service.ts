@@ -226,7 +226,7 @@ export class PdfService {
 
     const productName = contractData.natureCredit?.libelle || 'BOUCLIER EMPRUNTEUR';
 
-    const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 75px; object-fit: contain;" />`;
+    const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 52px; object-fit: contain;" />`;
 
     const templateData = {
       contract: contractData,
@@ -326,7 +326,7 @@ export class PdfService {
     const creditTypeLabel = creditType === 'CONST' ? 'CAPITAL CONSTANT' : 'AMORTISSABLE';
     const productName = cotationData.natureCredit?.libelle || 'BOUCLIER EMPRUNTEUR';
 
-    const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 75px; object-fit: contain;" />`;
+    const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 52px; object-fit: contain;" />`;
 
     const obaMembers: any[] = [];
 
