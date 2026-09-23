@@ -1314,20 +1314,6 @@ export default defineComponent({
       return new Date().toISOString().split('T')[0];
     });
 
-    const minBirthDate = computed(() => {
-      const today = new Date();
-      const maxAge = 64;
-      const minAge = 18;
-      
-      // Date minimum (18 ans aujourd'hui)
-      const minDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
-      
-      // Date maximum (64 ans aujourd'hui)
-      const maxDate = new Date(today.getFullYear() - maxAge, today.getMonth(), today.getDate());
-      
-      return maxDate.toISOString().split('T')[0];
-    });
-
     const maxBirthDate = computed(() => {
       const today = new Date();
       const minAge = 18;
@@ -2151,7 +2137,9 @@ export default defineComponent({
           idNatureCredit: idNatureCredit, // Mappé depuis creditType
           taux: Number(conversionForm.value.contrat.tauxInteret),
           commission: 0,
-          description: isEditMode.value ? `Contrat modifié` : `Contrat créé depuis cotation`,
+          description: isEditMode.value
+            ? `Contrat modifié`
+            : (props.selectedCotation ? `Contrat créé depuis cotation` : `Contrat créé directement`),
           isActive: true,
           etablissement: conversionForm.value.contrat.etablissement,
           reference: conversionForm.value.contrat.reference || undefined, // généré automatiquement si vide
@@ -2504,7 +2492,6 @@ export default defineComponent({
       missingRequiredFields,
       canCreateContract,
       todayDate,
-      minBirthDate,
       maxBirthDate,
       currentAge,
       currentLimits,
