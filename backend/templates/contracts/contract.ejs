@@ -324,7 +324,7 @@
     </div>
     
     <div class="guarantee-row">
-        <div>Souscripteur : <strong><%= (contract.contractType === 'HORS_CONVENTION') ? (contract.etablissement || 'HORS CONVENTION') : 'RENACA/FNDA' %></strong></div>
+        <div>Souscripteur : <strong><%= (contract.contractType === 'HORS_CONVENTION') ? (contract.etablissement || 'HORS CONVENTION') : 'RENACA' %></strong></div>
         <div>Téléphone : <strong><%= (agency.phone || contract.user.phone) ? '(00229) ' + (agency.phone || contract.user.phone) : '-' %></strong></div>
     </div>
     
@@ -399,7 +399,7 @@
     <div style="border-bottom: 1px solid #ccc; margin-top: -6px; width: 100%;"></div>
     
     <div style="font-size: 12px; margin: 6px 0;">
-       En cas de Décès ou d’Invalidité Absolue et Définitive : <strong>RENACA/FNDA</strong> jusqu'à concurrence du capital restant dû.
+       En cas de Décès ou d’Invalidité Absolue et Définitive : <strong>RENACA</strong> jusqu'à concurrence du capital restant dû.
     </div>
 
     <!-- Questionnaire de santé -->
@@ -412,7 +412,7 @@
         <table border="0"  width="100%" style="font-size: 9pt;  border-collapse: collapse;"  >
             <tr>
                 <td width="33%"><b><u>L'ASSURE(E)</u></b><br><small>Préceder de "Lu et Approuvé"</small></td>
-                <td width="33%" style="text-align: center;"><b><u><%= (contract.contractType === 'HORS_CONVENTION') ? (contract.etablissement || 'HORS CONVENTION') : 'RENACA/FNDA' %></u></b></td>
+                <td width="33%" style="text-align: center;"><b><u><%= (contract.contractType === 'HORS_CONVENTION') ? (contract.etablissement || 'HORS CONVENTION') : 'RENACA' %></u></b></td>
                 <td width="33%" style="text-align: right;"><b><u>L'AFRICAINE VIE BENIN</u></b></td>
             </tr>
         </table>
