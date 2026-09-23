@@ -1148,7 +1148,7 @@ export class ContractService {
       }
     }
 
-    // 3-4. Recalculer la prime si nécessaire (RENACA uniquement — le moteur PADME a été retiré,
+    // 3-4. Recalculer la prime si nécessaire (contrats STANDARD uniquement —
     // cf. recalculatePremiumIfNeeded qui rejette explicitement toute autre nature de contrat).
     const customer = await this.customerService.findOne(existingContract.idCustomer);
     const birthdate = customer?.birthdate || '';
@@ -1229,8 +1229,10 @@ export class ContractService {
 
   /**
    * Recalcule la prime du contrat si un critère de calcul a changé.
-   * RENACA uniquement : toute autre nature de contrat
-   * (existingContract.contractType !== 'RENACA') est explicitement rejetée.
+   * Contrats STANDARD uniquement : toute autre nature de contrat
+   * (existingContract.contractType !== ContractType.STANDARD) est explicitement
+   * rejetée — ces contrats (Hors Convention, etc.) doivent passer par la
+   * modification Admin (adminUpdate), qui ne recalcule jamais automatiquement.
    */
   private async recalculatePremiumIfNeeded(
     id: number,
@@ -1265,8 +1267,8 @@ export class ContractService {
       return;
     }
 
-    if (existingContract.contractType !== 'RENACA') {
-      throw new BadRequestException("Le moteur de calcul PADME a été retiré — la modification de ce contrat n'est plus disponible.");
+    if (existingContract.contractType !== ContractType.STANDARD) {
+      throw new BadRequestException("La modification de ces informations n'est pas disponible pour ce contrat via ce formulaire. Utilisez la modification Admin pour ce type de contrat.");
     }
 
     console.log(`🔄 Recalcul automatique de la prime RENACA requis pour le contrat ${id}`);
