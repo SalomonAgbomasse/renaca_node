@@ -379,12 +379,8 @@
     <div class="guarantees-section" style="margin-top: -6px;">
         <div class="guarantee-row" style="width: 100%;">
             <span style="flex: 1.2; white-space: nowrap;">Capital assuré : <strong><%= new Intl.NumberFormat('fr-FR').format(contract.capital) %></strong></span>
-            <span style="flex: 1; text-align: center; white-space: nowrap;">Durée différée : <strong><%= contract.differe || 0 %> mois</strong></span>
+            <span style="flex: 1; text-align: center; white-space: nowrap;">Taux : <strong><%= contract.taux %> %</strong></span>
             <span style="flex: 1.3; text-align: right; white-space: nowrap;">Prime TTC : <strong><%= new Intl.NumberFormat('fr-FR').format(contract.puttc) %> FCFA</strong></span>
-        </div>
-        <div class="guarantee-row" style="width: 100%;">
-            <span style="flex: 1.2; white-space: nowrap;"></span>
-            <span style="flex: 1.3; text-align: right; white-space: nowrap;">Taux : <strong><%= contract.taux %> %</strong></span>
         </div>
         <div class="guarantee-row" style="width: 100%;">
             <span style="flex: 1.2; white-space: nowrap;">Périodicité : <strong><%= (contract.periodicite && contract.periodicite.libelle) ? contract.periodicite.libelle : '-' %></strong></span>
