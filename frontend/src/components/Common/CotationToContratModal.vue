@@ -1058,8 +1058,12 @@ export default defineComponent({
         adresse: Yup.string().required('L\'adresse est obligatoire'),
         email: Yup.string().email('Email invalide'),
         typeAss: Yup.string()
-          .oneOf(['1', '2'], 'Le type de client est obligatoire')
-          .required('Le type de client est obligatoire'),
+          .required('Le type de client est obligatoire')
+          .test('valid-type-client', 'Le type de client est obligatoire', function(value) {
+            if (!value) return false;
+            if (typeCustomers.value.length === 0) return true; // liste pas encore chargée, ne pas bloquer
+            return typeCustomers.value.some(tc => String(tc.id) === value);
+          }),
         sexe: Yup.string().required('Le sexe est obligatoire'),
         profession: Yup.string().required('La profession est obligatoire'),
         dateNaissance: Yup.string()
@@ -1874,7 +1878,7 @@ export default defineComponent({
       try {
         loadingTypeCustomers.value = true;
         const response = await ApiService.get('/type-customers');
-        const raw = response.data?.data?.data || response.data?.data || response.data;
+        const raw = response.data?.data?.typeCustomers || response.data?.data?.data || response.data?.data || response.data;
         if (Array.isArray(raw)) {
           typeCustomers.value = raw;
         } else {
