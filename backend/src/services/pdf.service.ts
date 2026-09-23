@@ -219,7 +219,7 @@ export class PdfService {
   ): Promise<Buffer> {
     // Convertir les logos en base64
     const aqaLogo = this.getImageAsBase64('images/aa.png');
-    const msfpLogo = this.getImageAsBase64('images/msfp.png');
+    const msfpLogo = this.getImageAsBase64('images/logo-renaca.jpeg');
     const certifLogo = this.getImageAsBase64('images/certif.jpg');
     const questionnaireImage = this.getImageAsBase64('images/questionnaire.png');
     const signatureImage = this.getImageAsBase64('images/signature.png');
@@ -318,7 +318,7 @@ export class PdfService {
     agencyData: any
   ): Promise<Buffer> {
     const aqaLogo   = this.getImageAsBase64('images/aa.png');
-    const msfpLogo  = this.getImageAsBase64('images/msfp.png');
+    const msfpLogo  = this.getImageAsBase64('images/logo-renaca.jpeg');
     const certifLogo = this.getImageAsBase64('images/certif.jpg');
 
     const idNature = String(cotationData.idNatureCredit || '');
@@ -539,7 +539,7 @@ export class PdfService {
     } = {}
   ): Promise<Buffer> {
     const aqaLogo = this.getImageAsBase64('images/aa.png');
-    const msfpLogo = this.getImageAsBase64('images/msfp.png');
+    const msfpLogo = this.getImageAsBase64('images/logo-renaca.jpeg');
     const certifLogo = this.getImageAsBase64('images/certif.jpg');
 
     const templateData = {
