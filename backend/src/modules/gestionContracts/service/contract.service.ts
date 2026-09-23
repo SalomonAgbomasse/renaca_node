@@ -790,7 +790,7 @@ export class ContractService {
     // garantieCompl réutilisée pour Perte d'Emploi OUI/NON (RENACA)
     contractData.garantieCompl = contractData.perteEmploi ? 'OUI' : 'NON';
 
-    contractData.contractType = 'RENACA';
+    contractData.contractType = ContractType.STANDARD;
 
     contractData.keyCont = await this.generateKeyCont(
       contractData.idCustomer || 0,
@@ -856,8 +856,8 @@ export class ContractService {
     // Vérifier la limite de contrats par nature et par période pour le client
     await this.checkContractLimits(contractData, contractData.dateEff);
 
-    contractData.police = contractData.police || await this.policyNumberService.generateStandardPolice(idAgency, typeCapital);
-    contractData.reference = contractData.reference || await this.policyNumberService.generateStandardReference(idUser, typeCapital);
+    contractData.police = contractData.police || await this.policyNumberService.generateRenacaPolice(idAgency);
+    contractData.reference = contractData.reference || await this.policyNumberService.generateRenacaReference(idUser, typeCapital);
 
     const existingContractReference = await this.findByReference(contractData.reference || '');
     if (existingContractReference.length > 0) {
