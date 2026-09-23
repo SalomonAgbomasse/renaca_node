@@ -791,7 +791,7 @@ export default defineComponent({
     const loadTypeCustomers = async () => {
       try {
         const response = await ApiService.get('/type-customers');
-        const raw = response.data?.data?.data || response.data?.data || response.data;
+        const raw = response.data?.data?.typeCustomers || response.data?.data?.data || response.data?.data || response.data;
         if (Array.isArray(raw)) {
           typeCustomers.value = raw;
         } else {

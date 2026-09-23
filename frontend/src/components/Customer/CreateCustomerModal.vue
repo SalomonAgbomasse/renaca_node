@@ -140,15 +140,15 @@
           <label class="form-label fw-bold">
             Type de client <span class="text-danger">*</span>
           </label>
-          <select 
+          <select
             class="form-select"
             :class="{ 'is-invalid': errors.idTypeCustomer }"
             v-model="idTypeCustomer"
             v-bind="idTypeCustomerAttrs"
+            :disabled="loadingTypeCustomers"
           >
-            <option value="">Sélectionner</option>
-            <option value="1">Particulier</option>
-            <option value="2">Personnel PADME</option>
+            <option value="">{{ loadingTypeCustomers ? 'Chargement...' : 'Sélectionner' }}</option>
+            <option v-for="tc in typeCustomers" :key="tc.id" :value="String(tc.id)">{{ tc.libelle }}</option>
           </select>
           <div v-if="errors.idTypeCustomer" class="invalid-feedback d-block">
             {{ errors.idTypeCustomer }}
@@ -295,6 +295,27 @@ export default defineComponent({
     const loadingContracts = ref(false);
     const canEditIdentityFields = ref(false);
     const identityFieldsBlockedReason = ref<string>('');
+    const typeCustomers = ref<any[]>([]);
+    const loadingTypeCustomers = ref(false);
+
+    // Fonction pour charger les types de client
+    async function loadTypeCustomers() {
+      try {
+        loadingTypeCustomers.value = true;
+        const response = await ApiService.get('/type-customers');
+        const raw = response.data?.data?.typeCustomers || response.data?.data?.data || response.data?.data || response.data;
+        if (Array.isArray(raw)) {
+          typeCustomers.value = raw;
+        } else {
+          typeCustomers.value = [{ id: 1, libelle: 'PARTICULIER' }, { id: 2, libelle: 'PERSONNEL RENACA' }];
+        }
+      } catch (err) {
+        console.error('❌ Erreur lors du chargement des types de client:', err);
+        typeCustomers.value = [{ id: 1, libelle: 'PARTICULIER' }, { id: 2, libelle: 'PERSONNEL RENACA' }];
+      } finally {
+        loadingTypeCustomers.value = false;
+      }
+    }
 
     // Fonction pour charger le rôle de l'utilisateur
     async function loadUserRole() {
@@ -734,9 +755,10 @@ export default defineComponent({
       emit('update:isVisible', value);
     };
 
-    // Charger le rôle au montage du composant
+    // Charger le rôle et les types de client au montage du composant
     onMounted(() => {
       loadUserRole();
+      loadTypeCustomers();
     });
 
     return {
@@ -771,7 +793,9 @@ export default defineComponent({
       formatDate,
       getGenderText,
       canEditIdentityFields,
-      identityFieldsBlockedReason
+      identityFieldsBlockedReason,
+      typeCustomers,
+      loadingTypeCustomers
     };
   }
 });

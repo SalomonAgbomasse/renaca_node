@@ -1111,15 +1111,16 @@ export default defineComponent({
     // Utilitaires de style
     function getTypeClass(type: string): string {
       const baseClass = 'badge fs-7 px-2 py-1';
-      
-      switch (type) {
-        case 'Personnel':
+      const normalized = (type || '').toUpperCase();
+
+      switch (normalized) {
+        case 'PERSONNEL RENACA':
           return `${baseClass} bg-warning text-dark`;
-        case 'Entreprise':
+        case 'ENTREPRISE':
           return `${baseClass} bg-info text-white`;
-        case 'Professionnel':
+        case 'PROFESSIONNEL':
           return `${baseClass} bg-primary text-white`;
-        case 'Particulier':
+        case 'PARTICULIER':
         default:
           return `${baseClass} bg-secondary text-white`;
       }
@@ -1127,14 +1128,15 @@ export default defineComponent({
 
     // Fonction pour obtenir l'icône selon le type
     function getTypeIcon(type: string): string {
-      switch (type) {
-        case 'Personnel':
+      const normalized = (type || '').toUpperCase();
+      switch (normalized) {
+        case 'PERSONNEL RENACA':
           return 'flaticon-user-1';
-        case 'Entreprise':
+        case 'ENTREPRISE':
           return 'flaticon-briefcase';
-        case 'Professionnel':
+        case 'PROFESSIONNEL':
           return 'flaticon-user';
-        case 'Particulier':
+        case 'PARTICULIER':
         default:
           return 'flaticon-user';
       }
