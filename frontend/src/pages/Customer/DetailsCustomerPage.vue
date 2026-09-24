@@ -378,58 +378,8 @@
         <div class="tab-pane fade" id="limits-tab-pane" role="tabpanel" tabindex="0">
           <div class="row g-4">
             
-            <!-- CP Quota Card -->
-            <div class="col-md-4">
-              <div class="card shadow-sm border-0 h-100 border-start border-4 border-info">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold text-dark mb-0">Crédit Campagne (CP)</h6>
-                    <span class="badge bg-info text-white">Max 3 / An</span>
-                  </div>
-                  <div class="display-6 fw-bold text-info my-3">
-                    {{ stats.cpCount }} <small class="fs-6 text-muted">/ 3 souscrits</small>
-                  </div>
-                  <div class="progress mb-2" style="height: 10px;">
-                    <div 
-                      class="progress-bar bg-info" 
-                      role="progressbar" 
-                      :style="{ width: `${Math.min(100, (stats.cpCount / 3) * 100)}%` }">
-                    </div>
-                  </div>
-                  <small class="text-muted d-block mt-2">
-                    <i class="flaticon-information me-1"></i> Règle : Au plus 3 crédits CP sur la période de 1 an initiée par le 1er crédit.
-                  </small>
-                </div>
-              </div>
-            </div>
-
-            <!-- OBA Quota Card -->
-            <div class="col-md-4">
-              <div class="card shadow-sm border-0 h-100 border-start border-4 border-warning">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold text-dark mb-0">Obsèques Alafia (OBA)</h6>
-                    <span class="badge bg-warning text-dark">Max 2 / An</span>
-                  </div>
-                  <div class="display-6 fw-bold text-warning my-3">
-                    {{ stats.obaCount }} <small class="fs-6 text-muted">/ 2 souscrits</small>
-                  </div>
-                  <div class="progress mb-2" style="height: 10px;">
-                    <div 
-                      class="progress-bar bg-warning" 
-                      role="progressbar" 
-                      :style="{ width: `${Math.min(100, (stats.obaCount / 2) * 100)}%` }">
-                    </div>
-                  </div>
-                  <small class="text-muted d-block mt-2">
-                    <i class="flaticon-information me-1"></i> Règle : Au plus 2 crédits OBA sur la période de 1 an initiée par le 1er crédit.
-                  </small>
-                </div>
-              </div>
-            </div>
-
             <!-- AMORT Quota Card -->
-            <div class="col-md-4">
+            <div class="col-md-6">
               <div class="card shadow-sm border-0 h-100 border-start border-4 border-success">
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-center mb-2">
@@ -437,10 +387,27 @@
                     <span class="badge bg-success text-white">Max 1 / Jour</span>
                   </div>
                   <div class="display-6 fw-bold text-success my-3">
-                    {{ stats.amortCount }} <small class="fs-6 text-muted">actif(s)</small>
+                    {{ stats.amortCount }} <small class="fs-6 text-muted">actif(s) au total</small>
                   </div>
                   <small class="text-muted d-block mt-2">
                     <i class="flaticon-information me-1"></i> Règle : Au plus 1 crédit Amortissable par jour pour un même client.
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- CONST Card -->
+            <div class="col-md-6">
+              <div class="card shadow-sm border-0 h-100 border-start border-4 border-primary">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-dark mb-0">Crédit Constant (CONST)</h6>
+                  </div>
+                  <div class="display-6 fw-bold text-primary my-3">
+                    {{ stats.constCount }} <small class="fs-6 text-muted">actif(s) au total</small>
+                  </div>
+                  <small class="text-muted d-block mt-2">
+                    <i class="flaticon-information me-1"></i> Aucune limite de souscription pour ce type de crédit.
                   </small>
                 </div>
               </div>
@@ -545,8 +512,7 @@ export default defineComponent({
       activeContracts: 0,
       totalCapital: 0,
       totalPuttc: 0,
-      cpCount: 0,
-      obaCount: 0,
+      constCount: 0,
       amortCount: 0
     });
 
@@ -737,8 +703,7 @@ export default defineComponent({
     }
 
     function getNatureLabel(idNatureCredit: number | undefined): string {
-      if (idNatureCredit === 2) return 'Campagne (CP)';
-      if (idNatureCredit === 3) return 'Obsèques Alafia (OBA)';
+      if (idNatureCredit === 2) return 'Crédit Constant (CONST)';
       return 'Crédit Amortissable (AMORT)';
     }
 

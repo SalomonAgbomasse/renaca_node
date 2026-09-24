@@ -1799,69 +1799,7 @@ export class ContractService {
       return;
     }
 
-    // RÈGLE 2 : CP (Crédit Campagne -> Max 3 sur 1 an) / OBA (Obsèques Alafia -> Max 2 sur 1 an)
-    let limit = 0;
-    let natureName = '';
-
-    if (code === 'CP') {
-      limit = 3;
-      natureName = 'Campagne (CP)';
-    } else if (code === 'OBA') {
-      limit = 2;
-      natureName = 'Obsèques Alafia (OBA)';
-    } else {
-      return; // Aucune limite sur d'autres types non spécifiés
-    }
-
-    // Récupérer tous les contrats valides du client pour cette nature
-    const existingContracts = await this.contractRepository.createQueryBuilder('contract')
-      .where('contract.idCustomer = :idCustomer', { idCustomer })
-      .andWhere('contract.idNatureCredit = :idNatureCredit', { idNatureCredit })
-      .andWhere('contract.idContractState IN (:...states)', { states: [1, 2, 5] }) // EN COURS, RENOUVELE, SINISTRE
-      .orderBy('contract.dateEff', 'ASC')
-      .addOrderBy('contract.createdAt', 'ASC')
-      .getMany();
-
-    if (existingContracts.length === 0) {
-      return; // Premier crédit pour cette nature
-    }
-
-    // Déterminer la période de référence d'un an basée sur le 1er crédit
-    const firstContract = existingContracts[0];
-    const refStartDate = new Date(firstContract.dateEff || firstContract.createdAt);
-
-    const refEndDate = new Date(refStartDate);
-    refEndDate.setFullYear(refEndDate.getFullYear() + 1);
-    refEndDate.setDate(refEndDate.getDate() - 1);
-    refEndDate.setHours(23, 59, 59, 999);
-
-    // Vérifier si la souscription demandée est dans la période de référence
-    if (targetDate >= refStartDate && targetDate <= refEndDate) {
-      const contractsInPeriod = existingContracts.filter(c => {
-        const d = new Date(c.dateEff || c.createdAt);
-        return d >= refStartDate && d <= refEndDate;
-      });
-
-      if (contractsInPeriod.length >= limit) {
-        const formatDateStr = (d: Date) => {
-          const day = String(d.getDate()).padStart(2, '0');
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          const year = d.getFullYear();
-          return `${day}/${month}/${year}`;
-        };
-
-        const references = contractsInPeriod
-          .map(c => c.police || c.reference || `#${c.id}`)
-          .join(', ');
-
-        const pStart = formatDateStr(refStartDate);
-        const pEnd = formatDateStr(refEndDate);
-
-        throw new Error(
-          `Souscription refusée : Le client "${customerName}" a déjà atteint la limite maximale de ${limit} crédit(s) pour la nature "${natureName}" durant la période du ${pStart} au ${pEnd} (${contractsInPeriod.length} crédit(s) souscrit(s) : ${references}).`
-        );
-      }
-    }
+    // Aucune limite de souscription pour les autres natures de crédit (ex. CONST).
   }
 
   async findByPeriodAndFilters(
