@@ -311,7 +311,7 @@
                       Pour valider un contrat converti, ouvrez sa fiche detaillee et renseignez les informations suivantes :
                     </p>
                     <ul class="text-muted small ps-3 mb-2">
-                      <li><strong>Reference Compte :</strong> Le numero de compte bancaire ou reference associe.</li>
+                      <li><strong>Reference Dossier :</strong> La reference du contrat (generee automatiquement si vous ne la renseignez pas).</li>
                       <li><strong>Date d'effet :</strong> Date de debut de prise d'effet des garanties.</li>
                       <li><strong>Date de 1ere echeance :</strong> Date du premier versement de remboursement.</li>
                       <li><strong>Clause Beneficiaire :</strong> L'Africaine Vie en couverture du solde restant du, puis les ayants droit en cas de surplus.</li>
@@ -329,24 +329,14 @@
                   </div>
                 </div>
 
-                <div class="guide-step d-flex gap-3 mb-4" v-if="matchesSearch('Edition des Conditions Particulieres', 'Genez les Conditions Particulieres CP au format PDF')">
+                <div class="guide-step d-flex gap-3 mb-4" v-if="matchesSearch('Edition des Conditions Particulieres', 'Generez les Conditions Particulieres au format PDF')">
                   <div class="step-number fw-bold bg-success-subtle text-success">4</div>
                   <div>
-                    <h5 class="fw-bold text-dark fs-15">Generation des Conditions Particulieres (CP)</h5>
+                    <h5 class="fw-bold text-dark fs-15">Generation des Conditions Particulieres</h5>
                     <p class="text-muted small">
-                      Une fois le contrat mis en vigueur, vous pouvez editer et telecharger les <strong>Conditions Particulieres (CP)</strong> au format PDF. Ce document officiel comprend les informations de l'assure, la ventilation des taxes et des commissions, ainsi que les signatures electroniques scannees de L'Africaine Vie et de PADME S.A.
+                      Une fois le contrat mis en vigueur, vous pouvez editer et telecharger les <strong>Conditions Particulieres</strong> au format PDF. Ce document officiel comprend les informations de l'assure, le detail des garanties et primes, ainsi que les signatures electroniques scannees de L'Africaine Vie et de RENACA-BENIN.
                     </p>
                   </div>
-                </div>
-              </div>
-
-              <div class="alert alert-success border-0 rounded-1 d-flex gap-3 mt-4">
-                <i class="flaticon-shield fs-24 text-success"></i>
-                <div>
-                  <h6 class="fw-bold mb-1 text-dark">Commission &amp; Co-assurance</h6>
-                  <p class="mb-0 small text-muted">
-                    Le module de gestion calcule automatiquement la répartition de co-assurance et les commissions intermédiaires selon le paramétrage de la convention PADME S.A - L'Africaine Vie.
-                  </p>
                 </div>
               </div>
             </div>
