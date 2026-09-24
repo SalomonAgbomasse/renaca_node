@@ -230,11 +230,10 @@
                     </p>
                     <div class="row g-2 mt-1 ps-2">
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>PD :</strong> Prime Décès</span></div>
-                      <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>PC :</strong> Prime Perte d'Emploi <span class="text-muted">(AMORT uniquement)</span></span></div>
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>SURP :</strong> Surprimes</span></div>
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>ACC :</strong> Accessoires</span></div>
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>FM :</strong> Frais Médicaux</span></div>
-                      <div class="col-md-4"><span class="badge w-100 p-2 text-start" style="background-color: rgba(241, 180, 52, 0.1); color: #b58315; border: 1px solid rgba(241, 180, 52, 0.2);"><strong>PUTTC :</strong> Prime Unique TTC</span></div>
+                      <div class="col-md-8"><span class="badge w-100 p-2 text-start" style="background-color: rgba(241, 180, 52, 0.1); color: #b58315; border: 1px solid rgba(241, 180, 52, 0.2);"><strong>PUTTC :</strong> Prime Unique TTC</span></div>
                     </div>
                   </div>
                 </div>
