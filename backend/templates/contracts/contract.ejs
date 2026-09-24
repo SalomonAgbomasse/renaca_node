@@ -384,6 +384,9 @@
         </div>
         <div class="guarantee-row" style="width: 100%;">
             <span style="flex: 1.2; white-space: nowrap;">Périodicité : <strong><%= (contract.periodicite && contract.periodicite.libelle) ? contract.periodicite.libelle : '-' %></strong></span>
+            <% if (contract.natureCredit && contract.natureCredit.code === 'AMORT') { %>
+            <span style="flex: 1; text-align: center; white-space: nowrap;">Perte Emploi : <strong><%= contract.garantieCompl === 'OUI' ? 'OUI' : 'NON' %></strong></span>
+            <% } %>
             <span style="flex: 1.3; text-align: right; white-space: nowrap;">Type Crédit : <strong><%= contract.natureCredit.libelle %></strong></span>
         </div>
     </div>
@@ -395,7 +398,14 @@
     <div style="border-bottom: 1px solid #ccc; margin-top: -6px; width: 100%;"></div>
     
     <div style="font-size: 12px; margin: 6px 0;">
-       En cas de Décès ou d’Invalidité Absolue et Définitive : <strong>RENACA</strong> jusqu'à concurrence du capital restant dû.
+        <% if (contract.natureCredit && contract.natureCredit.code === 'AMORT') { %>
+        En cas de Décès ou d’Invalidité Absolue et Définitive : <strong><%= subscriberName %></strong> jusqu'à concurrence du capital restant dû.
+        <% if (contract.garantieCompl === 'OUI') { %>
+        <br>NB : En cas de souscription à la garantie Perte Emploi, joindre impérativement une copie de l'attestation de travail de l'Assuré.
+        <% } %>
+        <% } else if (contract.natureCredit && contract.natureCredit.code === 'CONST') { %>
+        En cas de décès pour solde du capital constant : <strong><%= subscriberName %></strong> jusqu'à concurrence du capital constant.
+        <% } %>
     </div>
 
     <!-- Questionnaire de santé -->
