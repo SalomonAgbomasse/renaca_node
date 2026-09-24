@@ -8,7 +8,7 @@
         </div>
         <div>
           <h3 class="mb-0 fw-bold text-dark fs-18 fs-md-22">Guide d'Utilisation Officiel</h3>
-          <p class="text-muted small mb-0 mt-1">Plateforme de Simulation Emprunteur &ndash; PADME S.A &amp; L'Africaine Vie</p>
+          <p class="text-muted small mb-0 mt-1">Plateforme de Simulation Emprunteur &ndash; RENACA-BENIN &amp; L'Africaine Vie</p>
         </div>
       </div>
       <!-- Search Input -->
