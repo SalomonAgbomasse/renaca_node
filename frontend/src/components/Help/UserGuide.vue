@@ -447,7 +447,7 @@
                   <div>
                     <h5 class="fw-bold text-dark fs-15">Exports de Pilotage Decisionnel</h5>
                     <p class="text-muted small">
-                      Chacune des trois vues decisionnelles (Vue d'ensemble, Analyse Clients, Analyse Commerciale) integre des boutons d'export <strong>Excel</strong> et <strong>PDF</strong> dedies. Les fichiers exportes incluent des tableaux de statistiques formates aux couleurs de la charte de FNDA.
+                      Chacune des trois vues decisionnelles (Vue d'ensemble, Analyse Clients, Analyse Commerciale) integre des boutons d'export <strong>Excel</strong> et <strong>PDF</strong> dedies. Les fichiers exportes incluent des tableaux de statistiques formates aux couleurs de la charte de RENACA-BENIN.
                     </p>
                   </div>
                 </div>
