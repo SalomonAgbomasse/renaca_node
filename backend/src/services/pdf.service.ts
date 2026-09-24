@@ -225,6 +225,7 @@ export class PdfService {
     const signatureImage = this.getImageAsBase64('images/signature.png');
 
     const productName = contractData.natureCredit?.libelle || 'BOUCLIER EMPRUNTEUR';
+    const subscriberName = agencyData?.subscriber?.name || 'RENACA';
 
     const rightLogoHtml = `<img src="${msfpLogo}" alt="Logo partenaire" style="max-width: 100px; max-height: 52px; object-fit: contain;" />`;
 
@@ -243,6 +244,7 @@ export class PdfService {
       userFirstname: contractData.user?.firstname || 'N/A',
       userPhone: contractData.user?.phone || 'N/A',
       productName: productName,
+      subscriberName: subscriberName,
       rightLogoHtml: rightLogoHtml
     };
 

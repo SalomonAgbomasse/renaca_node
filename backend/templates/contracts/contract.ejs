@@ -324,7 +324,7 @@
     </div>
     
     <div class="guarantee-row">
-        <div>Souscripteur : <strong><%= (contract.contractType === 'HORS_CONVENTION') ? (contract.etablissement || 'HORS CONVENTION') : 'RENACA' %></strong></div>
+        <div>Souscripteur : <strong><%= subscriberName %></strong></div>
         <div>Téléphone : <strong><%= (agency.phone || contract.user.phone) ? '(00229) ' + (agency.phone || contract.user.phone) : '-' %></strong></div>
     </div>
     
@@ -408,7 +408,7 @@
         <table border="0"  width="100%" style="font-size: 9pt;  border-collapse: collapse;"  >
             <tr>
                 <td width="33%"><b><u>L'ASSURE(E)</u></b><br><small>Préceder de "Lu et Approuvé"</small></td>
-                <td width="33%" style="text-align: center;"><b><u><%= (contract.contractType === 'HORS_CONVENTION') ? (contract.etablissement || 'HORS CONVENTION') : 'RENACA' %></u></b></td>
+                <td width="33%" style="text-align: center;"><b><u><%= subscriberName %></u></b></td>
                 <td width="33%" style="text-align: right;"><b><u>L'AFRICAINE VIE BENIN</u></b></td>
             </tr>
         </table>

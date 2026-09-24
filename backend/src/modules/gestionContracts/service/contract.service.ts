@@ -549,7 +549,7 @@ export class ContractService {
     const where = uuid ? { uuid } : { id };
     return this.contractRepository.findOne({ 
       where,
-      relations: ['customer', 'customer.typeCustomer', 'contractState', 'user', 'user.office', 'product', 'agency', 'natureCredit', 'periodicite', 'beneficiaries', 'insuredMembers', 'updatedByUser']
+      relations: ['customer', 'customer.typeCustomer', 'contractState', 'user', 'user.office', 'product', 'agency', 'agency.subscriber', 'natureCredit', 'periodicite', 'beneficiaries', 'insuredMembers', 'updatedByUser']
     });
   }
 
@@ -1907,6 +1907,7 @@ export class ContractService {
         'user.office',
         'product',
         'agency',
+        'agency.subscriber',
         'natureCredit',
         'periodicite',
         'beneficiaries',
