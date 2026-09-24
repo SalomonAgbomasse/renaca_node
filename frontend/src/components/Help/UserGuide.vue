@@ -108,30 +108,23 @@
                 </p>
               </div>
 
-              <!-- Onglets Sub-navigation des 3 Natures de Crédit -->
+              <!-- Onglets Sub-navigation des 2 Natures de Crédit -->
               <div class="card border-0 shadow-sm mb-4 rounded-2 overflow-hidden">
                 <div class="card-header bg-light border-bottom p-2">
                   <div class="nav nav-pills nav-fill gap-2">
-                    <button 
+                    <button
                       class="nav-link fw-bold fs-14 py-2 border-0 transition rounded-1"
                       :class="selectedNature === 'amortissable' ? 'bg-primary text-white shadow-sm' : 'bg-white text-dark border'"
                       @click="selectedNature = 'amortissable'"
                     >
                       <i class="flaticon-form me-1"></i> 1. Crédit Amortissable
                     </button>
-                    <button 
+                    <button
                       class="nav-link fw-bold fs-14 py-2 border-0 transition rounded-1"
-                      :class="selectedNature === 'cp' ? 'bg-success text-white shadow-sm' : 'bg-white text-dark border'"
-                      @click="selectedNature = 'cp'"
+                      :class="selectedNature === 'const' ? 'bg-success text-white shadow-sm' : 'bg-white text-dark border'"
+                      @click="selectedNature = 'const'"
                     >
-                      <i class="flaticon-document me-1"></i> 2. PADME PROTECTION (CP)
-                    </button>
-                    <button 
-                      class="nav-link fw-bold fs-14 py-2 border-0 transition rounded-1"
-                      :class="selectedNature === 'oba' ? 'bg-warning text-dark shadow-sm' : 'bg-white text-dark border'"
-                      @click="selectedNature = 'oba'"
-                    >
-                      <i class="flaticon-file-1 me-1"></i> 3. Obsèques Alafia (OBA)
+                      <i class="flaticon-document me-1"></i> 2. Capital Constant (CONST)
                     </button>
                   </div>
                 </div>
@@ -151,7 +144,7 @@
                         <div class="p-3 border rounded-1 bg-light h-100">
                           <strong class="d-block text-dark mb-1 fs-13"><i class="flaticon-check text-success me-1"></i>Contrôles de Saisie :</strong>
                           <ul class="text-muted fs-12 mb-0 ps-3 lh-base">
-                            <li>Capital Maximum Garanti : <strong>10 000 000 FCFA</strong> (PADME S.A).</li>
+                            <li>Capital Maximum Garanti : <strong>10 000 000 FCFA</strong>.</li>
                             <li>Périodicités gérées : Mensuelle, Bimestrielle, Trimestrielle, Semestrielle, Annuelle / Constante.</li>
                             <li>Garantie Complémentaire Perte d'Emploi en option (OUI / NON).</li>
                           </ul>
@@ -163,137 +156,45 @@
                           <ul class="text-muted fs-12 mb-0 ps-3 lh-base">
                             <li>Âge minimum d'adhésion : <strong>18 ans</strong>.</li>
                             <li>Âge maximum à l'échéance : <strong>70 ans révolus</strong>.</li>
-                            <li>Assurés de 65 à 70 ans : Durée maximale restreinte à <strong>12 mois</strong>.</li>
+                            <li>Plus l'assuré est âgé, plus la durée maximale autorisée diminue, afin que le crédit s'achève avant ses 70 ans révolus (formule : <strong>(70 − âge) × 12 mois</strong>, plafonnée à <strong>60 mois</strong>).</li>
                           </ul>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- 2. PADME PROTECTION (CP) -->
-                  <div v-if="selectedNature === 'cp'">
+                  <!-- 2. CAPITAL CONSTANT (CONST) -->
+                  <div v-if="selectedNature === 'const'">
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                      <h6 class="fw-bold text-dark mb-0 fs-16"><i class="flaticon-document text-success me-2"></i>Guide Officiel - PADME PROTECTION</h6>
-                      <span class="badge bg-success">Convention Partenariat Art. 13</span>
+                      <h6 class="fw-bold text-dark mb-0 fs-16"><i class="flaticon-document text-success me-2"></i>Guide &amp; Règles du Capital Constant</h6>
+                      <span class="badge bg-success">Garantie Emprunteur Standard</span>
                     </div>
                     <p class="text-muted fs-14 mb-3">
-                      La convention souscrite par PADME S.A au profit de ses clients titulaires d'un compte courant ou d'épargne offre une couverture Décès et IAD liée au compte bancaire.
+                      Le Capital Constant est destiné aux financements où le capital assuré reste fixe pendant toute la durée du crédit, contrairement au Crédit Amortissable dont le capital restant dû diminue à chaque échéance. Les primes couvrent les risques Décès pour solde du capital constant.
                     </p>
-                    <div class="alert alert-success border-0 rounded-1 p-3 mb-3 fs-13">
-                      <strong>Champs obligatoires spécifiques :</strong> Vous devez impérativement saisir le <strong>N° de Compte bancaire</strong> (Courant ou Épargne), l'<strong>Établissement/Employeur</strong> et valider l'option de <strong>Renouvellement Automatique</strong> (reconduction tacite au 1er Janvier). Max <strong>3 souscriptions par adhérent</strong> (co-titulaires de compte joint gérés individuellement).
-                    </div>
-                    <!-- Grille tarifaire CP -->
-                    <h6 class="fw-bold text-dark fs-14 mb-2">Grille Tarifaire Officielle de PADME PROTECTION :</h6>
-                    <div class="table-responsive mb-3">
-                      <table class="table table-bordered align-middle text-center fs-13 mb-0">
-                        <thead class="table-success">
-                          <tr>
-                            <th>Formule</th>
-                            <th>Tranche d'Âge</th>
-                            <th>Capital Garanti</th>
-                            <th>Prime Annuelle / Adhérent</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td rowspan="2" class="fw-bold">1ère Option</td>
-                            <td>18 à 64 ans</td>
-                            <td>500 000 FCFA</td>
-                            <td class="fw-bold text-success">2 000 FCFA / an</td>
-                          </tr>
-                          <tr>
-                            <td>65 à 75 ans</td>
-                            <td>500 000 FCFA</td>
-                            <td class="fw-bold text-success">2 500 FCFA / an</td>
-                          </tr>
-                          <tr>
-                            <td rowspan="2" class="fw-bold">2ème Option</td>
-                            <td>18 à 64 ans</td>
-                            <td>1 000 000 FCFA</td>
-                            <td class="fw-bold text-success">4 000 FCFA / an</td>
-                          </tr>
-                          <tr>
-                            <td>65 à 75 ans</td>
-                            <td>1 000 000 FCFA</td>
-                            <td class="fw-bold text-success">4 500 FCFA / an</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <p class="small text-muted mb-0"><i class="flaticon-info me-1"></i>Lors de l'export PDF, le contrat génère le document officiel dédié <strong>Conditions Particulières CP (contract_cp)</strong>.</p>
-                  </div>
-
-                  <!-- 3. OBSÈQUES ALAFIA (OBA) -->
-                  <div v-if="selectedNature === 'oba'">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                      <h6 class="fw-bold text-dark mb-0 fs-16"><i class="flaticon-file-1 text-warning me-2"></i>Guide Officiel - PADME OBSÈQUES ALAFIA</h6>
-                      <span class="badge bg-warning text-dark">Convention Partenariat Art. 4</span>
-                    </div>
-                    <p class="text-muted fs-14 mb-3">
-                      Produit d'assistance funéraire garantissant un capital forfaitaire lors de la disparition de l'adhérent ou d'un membre de sa famille (Conjoint et Ascendants biologiques).
-                    </p>
-                    <div class="row g-3 mb-3 fs-13">
+                    <div class="row g-3 mb-3">
                       <div class="col-md-6">
-                        <div class="p-3 border rounded-1 bg-light">
-                          <strong class="text-dark d-block mb-1"><i class="flaticon-check text-warning me-1"></i>Membres Couverts :</strong>
-                          <ul class="text-muted mb-0 ps-3">
-                            <li>Assuré(e) Principal(e) + Conjoint(e).</li>
-                            <li>Jusqu'à <strong>4 Ascendants biologiques ou adoptifs</strong> (Père &amp; Mère - tuteurs exclus).</li>
-                            <li>Nom, Prénoms, Date de naissance et Qualité requis par membre.</li>
+                        <div class="p-3 border rounded-1 bg-light h-100">
+                          <strong class="d-block text-dark mb-1 fs-13"><i class="flaticon-check text-success me-1"></i>Contrôles de Saisie :</strong>
+                          <ul class="text-muted fs-12 mb-0 ps-3 lh-base">
+                            <li>Capital Maximum Garanti : <strong>20 000 000 FCFA</strong>.</li>
+                            <li>Périodicités gérées : Mensuelle, Bimestrielle, Trimestrielle, Semestrielle, Annuelle / Constante.</li>
+                            <li>Garantie Complémentaire Perte d'Emploi <strong>non disponible</strong> pour ce produit.</li>
                           </ul>
                         </div>
                       </div>
                       <div class="col-md-6">
-                        <div class="p-3 border rounded-1 bg-light">
-                          <strong class="text-dark d-block mb-1"><i class="flaticon-check text-warning me-1"></i>Limites d'Âge &amp; Contrats :</strong>
-                          <ul class="text-muted mb-0 ps-3">
-                            <li><strong>Assuré &amp; Conjoint :</strong> Max 65 ans souscription / 66 ans échéance.</li>
-                            <li><strong>Ascendants :</strong> Max 75 ans souscription / 76 ans échéance.</li>
-                            <li>Nombre de contrats max : <strong>2 souscriptions par adhérent</strong>.</li>
+                        <div class="p-3 border rounded-1 bg-light h-100">
+                          <strong class="d-block text-dark mb-1 fs-13"><i class="flaticon-check text-success me-1"></i>Limites d'Âge &amp; Exigences :</strong>
+                          <ul class="text-muted fs-12 mb-0 ps-3 lh-base">
+                            <li>Âge minimum d'adhésion : <strong>18 ans</strong>.</li>
+                            <li>Âge maximum à l'échéance : <strong>70 ans révolus</strong>.</li>
+                            <li>Même formule de durée maximale que le Crédit Amortissable : <strong>(70 − âge) × 12 mois</strong>, plafonnée à <strong>60 mois</strong>.</li>
                           </ul>
                         </div>
                       </div>
                     </div>
-
-                    <!-- Grille tarifaire OBA -->
-                    <h6 class="fw-bold text-dark fs-14 mb-2">Grille Tarifaire Officielle Obsèques Alafia :</h6>
-                    <div class="table-responsive mb-3">
-                      <table class="table table-bordered align-middle text-center fs-13 mb-0">
-                        <thead class="table-warning">
-                          <tr>
-                            <th>Membres de la Couverture</th>
-                            <th>Capital Garanti / Tête</th>
-                            <th>Prime Annuelle / Tête</th>
-                            <th>Capitaux Total Garanti (Formule Max)</th>
-                            <th>Prime Totale à Payer / An</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>Assuré &amp; Conjoint</td>
-                            <td>500 000 FCFA / tête</td>
-                            <td class="fw-bold">2 000 FCFA / tête</td>
-                            <td>1 000 000 FCFA</td>
-                            <td>4 000 FCFA / an</td>
-                          </tr>
-                          <tr>
-                            <td>Ascendants biologiques (Max 4)</td>
-                            <td>500 000 FCFA / tête</td>
-                            <td class="fw-bold">2 500 FCFA / tête</td>
-                            <td>2 000 000 FCFA</td>
-                            <td>10 000 FCFA / an</td>
-                          </tr>
-                          <tr class="fw-bold table-light">
-                            <td colspan="3" class="text-end">CUMUL FORMULE COMPLÈTE :</td>
-                            <td class="text-primary fs-14">3 000 000 FCFA</td>
-                            <td class="text-success fs-14">14 000 FCFA / an</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="alert alert-warning border-0 rounded-1 p-2 fs-12 mb-0">
-                      <i class="flaticon-info me-1"></i><strong>Règles de Sinistre :</strong> La prime unique est globale. Le décès d'un membre ascendant ou conjoint supprime l'appel de prime pour cette tête aux renouvellements suivants. Le décès de l'assuré principal met fin définitivement au contrat. Génération du PDF dédié <strong>Conditions Particulières OBA (contract_oba)</strong>.
-                    </div>
+                    <p class="small text-muted mb-0"><i class="flaticon-info me-1"></i>Les primes sont calculées automatiquement lors de la simulation, comme pour le Crédit Amortissable — il n'existe pas de grille tarifaire fixe pour ce produit.</p>
                   </div>
                 </div>
               </div>
@@ -315,7 +216,7 @@
                     <h5 class="fw-bold text-dark fs-15">Validation Automatique de l'Âge</h5>
                     <p class="text-muted small">
                       Le système calcule l'âge à partir de la date de naissance. L'âge d'adhésion minimum est de 18 ans. 
-                      <strong>Calcul limite :</strong> L'âge de l'assuré à l'échéance du crédit ne doit pas dépasser <strong>70 ans</strong>. Si cette limite est dépassée, un message d'avertissement s'affiche et bloque la validation. Pour les clients âgés de 65 à 70 ans, la durée maximale admissible est restreinte à <strong>12 mois</strong>.
+                      <strong>Calcul limite :</strong> L'âge de l'assuré à l'échéance du crédit ne doit pas dépasser <strong>70 ans</strong>. Si cette limite est dépassée, un message d'avertissement s'affiche et bloque la validation. Plus l'assuré est âgé, plus la durée maximale admissible diminue (formule : <strong>(70 − âge) × 12 mois</strong>, plafonnée à <strong>60 mois</strong>).
                     </p>
                   </div>
                 </div>
@@ -329,10 +230,11 @@
                     </p>
                     <div class="row g-2 mt-1 ps-2">
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>PD :</strong> Prime Décès</span></div>
+                      <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>PC :</strong> Prime Perte d'Emploi <span class="text-muted">(AMORT uniquement)</span></span></div>
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>SURP :</strong> Surprimes</span></div>
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>ACC :</strong> Accessoires</span></div>
                       <div class="col-md-4"><span class="badge bg-indigo bg-opacity-10 text-indigo border-indigo-subtle w-100 p-2 text-start"><strong>FM :</strong> Frais Médicaux</span></div>
-                      <div class="col-md-8"><span class="badge w-100 p-2 text-start" style="background-color: rgba(241, 180, 52, 0.1); color: #b58315; border: 1px solid rgba(241, 180, 52, 0.2);"><strong>PUTTC :</strong> Prime Unique TTC</span></div>
+                      <div class="col-md-4"><span class="badge w-100 p-2 text-start" style="background-color: rgba(241, 180, 52, 0.1); color: #b58315; border: 1px solid rgba(241, 180, 52, 0.2);"><strong>PUTTC :</strong> Prime Unique TTC</span></div>
                     </div>
                   </div>
                 </div>
