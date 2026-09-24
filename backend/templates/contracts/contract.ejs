@@ -401,10 +401,10 @@
         <% if (contract.natureCredit && contract.natureCredit.code === 'AMORT') { %>
         En cas de Décès ou d’Invalidité Absolue et Définitive : <strong><%= subscriberName %></strong> jusqu'à concurrence du capital restant dû.
         <% if (contract.garantieCompl === 'OUI') { %>
-        <br>NB : En cas de souscription à la garantie Perte Emploi, joindre impérativement une copie de l'attestation de travail de l'Assuré.
+        <br><strong>NB :</strong> En cas de souscription à la garantie Perte Emploi, joindre impérativement une copie de l'attestation de travail de l'Assuré.
         <% } %>
         <% } else if (contract.natureCredit && contract.natureCredit.code === 'CONST') { %>
-        En cas de décès pour solde du capital constant : <strong><%= subscriberName %></strong> jusqu'à concurrence du capital constant.
+        En cas de décès pour solde du capital constant : <strong><%= subscriberName %></strong>.
         <% } %>
     </div>
 
