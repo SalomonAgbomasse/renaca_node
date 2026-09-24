@@ -366,10 +366,9 @@ export class DashboardService {
       // Normaliser le rôle en majuscules pour la comparaison
       const normalizedRole = typeof userRole === 'string' ? userRole.toUpperCase() : '';
       
-      // Vérifier si l'utilisateur est admin (ROOT, ADMIN AAVIE, ADMIN PADME)
-      const isAdmin = normalizedRole === 'ROOT' || 
-                      normalizedRole === 'ADMIN AAVIE' || 
-                      normalizedRole === 'ADMIN PADME' ||
+      // Vérifier si l'utilisateur est admin (ROOT, ADMIN AAVIE)
+      const isAdmin = normalizedRole === 'ROOT' ||
+                      normalizedRole === 'ADMIN AAVIE' ||
                       normalizedRole === 'ADMIN' ||
                       normalizedRole === 'SUPER ADMIN';
       
@@ -926,10 +925,9 @@ export class DashboardService {
     
     // Normaliser le rôle en majuscules pour la comparaison
     const normalizedRole = typeof userRole === 'string' ? userRole.toUpperCase() : '';
-    // Vérifier si l'utilisateur est admin (ROOT, ADMIN AAVIE, ADMIN PADME)
-    const isAdmin = normalizedRole === 'ROOT' || 
-                    normalizedRole === 'ADMIN AAVIE' || 
-                    normalizedRole === 'ADMIN PADME' ||
+    // Vérifier si l'utilisateur est admin (ROOT, ADMIN AAVIE)
+    const isAdmin = normalizedRole === 'ROOT' ||
+                    normalizedRole === 'ADMIN AAVIE' ||
                     normalizedRole === 'ADMIN' ||
                     normalizedRole === 'SUPER ADMIN';
     
@@ -1172,10 +1170,9 @@ export class DashboardService {
     
     // Normaliser le rôle en majuscules pour la comparaison
     const normalizedRole = typeof userRole === 'string' ? userRole.toUpperCase() : '';
-    // Vérifier si l'utilisateur est admin (ROOT, ADMIN AAVIE, ADMIN PADME)
-    const isAdmin = normalizedRole === 'ROOT' || 
-                    normalizedRole === 'ADMIN AAVIE' || 
-                    normalizedRole === 'ADMIN PADME' ||
+    // Vérifier si l'utilisateur est admin (ROOT, ADMIN AAVIE)
+    const isAdmin = normalizedRole === 'ROOT' ||
+                    normalizedRole === 'ADMIN AAVIE' ||
                     normalizedRole === 'ADMIN' ||
                     normalizedRole === 'SUPER ADMIN';
     
