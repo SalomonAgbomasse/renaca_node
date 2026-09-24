@@ -1745,8 +1745,10 @@ export class ContractService {
     const code = (nature.code || '').toUpperCase().trim();
     const targetDate = requestedDate ? new Date(requestedDate) : new Date();
 
-    // RÈGLE 1 : AMORT (Crédit Amortissable) -> Pas de doublon exact le même jour pour un même client
-    if (code === 'AMORT') {
+    // RÈGLE 1 : AMORT/CONST -> Pas de doublon exact le même jour pour un même client
+    if (code === 'AMORT' || code === 'CONST') {
+      const natureLabel = code === 'CONST' ? 'Constant' : 'Amortissable';
+
       const formatDateStr = (d: Date) => {
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -1761,7 +1763,7 @@ export class ContractService {
       const startOfDay = new Date(targetYear, targetMonth, targetDay, 0, 0, 0, 0);
       const endOfDay = new Date(targetYear, targetMonth, targetDay, 23, 59, 59, 999);
 
-      // Rechercher s'il existe déjà un contrat AMORT créé ou prenant effet ce même jour avec les mêmes caractéristiques
+      // Rechercher s'il existe déjà un contrat de même nature créé ou prenant effet ce même jour avec les mêmes caractéristiques
       const query = this.contractRepository.createQueryBuilder('contract')
         .where('contract.idCustomer = :idCustomer', { idCustomer })
         .andWhere('contract.idNatureCredit = :idNatureCredit', { idNatureCredit })
@@ -1786,20 +1788,20 @@ export class ContractService {
       const warranty = contractData.garantieCompl || 'NON';
       query.andWhere('contract.garantieCompl = :garantieCompl', { garantieCompl: warranty });
 
-      const existingAmortSameDay = await query.getOne();
+      const existingSameDay = await query.getOne();
 
-      if (existingAmortSameDay) {
-        const policeStr = existingAmortSameDay.police || 'N/A';
-        const referenceStr = existingAmortSameDay.reference || 'N/A';
+      if (existingSameDay) {
+        const policeStr = existingSameDay.police || 'N/A';
+        const referenceStr = existingSameDay.reference || 'N/A';
         const dayStr = formatDateStr(targetDate);
         throw new Error(
-          `Souscription refusée : Le client "${customerName}" a déjà souscrit un crédit Amortissable le ${dayStr} avec les mêmes caractéristiques (Capital: ${contractData.capital} FCFA, Durée: ${contractData.duration} mois, Police: ${policeStr}, Référence: ${referenceStr}).`
+          `Souscription refusée : Le client "${customerName}" a déjà souscrit un crédit ${natureLabel} le ${dayStr} avec les mêmes caractéristiques (Capital: ${contractData.capital} FCFA, Durée: ${contractData.duration} mois, Police: ${policeStr}, Référence: ${referenceStr}).`
         );
       }
       return;
     }
 
-    // Aucune limite de souscription pour les autres natures de crédit (ex. CONST).
+    // Aucune limite de souscription pour les autres natures de crédit.
   }
 
   async findByPeriodAndFilters(

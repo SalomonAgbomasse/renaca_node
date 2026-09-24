@@ -402,12 +402,13 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-dark mb-0">Crédit Constant (CONST)</h6>
+                    <span class="badge bg-primary text-white">Max 1 / Jour</span>
                   </div>
                   <div class="display-6 fw-bold text-primary my-3">
                     {{ stats.constCount }} <small class="fs-6 text-muted">actif(s) au total</small>
                   </div>
                   <small class="text-muted d-block mt-2">
-                    <i class="flaticon-information me-1"></i> Aucune limite de souscription pour ce type de crédit.
+                    <i class="flaticon-information me-1"></i> Règle : Au plus 1 crédit Constant par jour pour un même client.
                   </small>
                 </div>
               </div>
