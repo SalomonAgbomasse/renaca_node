@@ -571,10 +571,10 @@ export class PdfService {
               </td>
               <td width="60%" align="center" style="vertical-align: middle;">
                 <div style="font-weight: bold; font-size: 13px; color: #1b5e20; text-transform: uppercase; letter-spacing: 0.5px;">${reportTitle}</div>
-                <div style="font-size: 9.5px; color: #555; margin-top: 2px;">Assurance Emprunteur - FNDA</div>
+                <div style="font-size: 9.5px; color: #555; margin-top: 2px;">Assurance Emprunteur - RENACA-BENIN</div>
               </td>
               <td width="20%" align="right" style="vertical-align: middle;">
-                <img src="${msfpLogo}" alt="FNDA Logo" style="max-height: 46px; max-width: 90px; object-fit: contain;" />
+                <img src="${msfpLogo}" alt="RENACA-BENIN Logo" style="max-height: 46px; max-width: 90px; object-fit: contain;" />
               </td>
             </tr>
           </table>

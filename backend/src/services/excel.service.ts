@@ -1447,7 +1447,7 @@ export class ExcelService {
     period: { startDate: string; endDate: string };
   }): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'PADME S.A';
+    workbook.creator = 'RENACA-BENIN';
     workbook.created = new Date();
 
     const worksheet = workbook.addWorksheet('Vue Générale');
@@ -1769,7 +1769,7 @@ export class ExcelService {
     period: { startDate: string; endDate: string };
   }): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'PADME S.A';
+    workbook.creator = 'RENACA-BENIN';
     workbook.created = new Date();
 
     const sheets = [
@@ -1923,7 +1923,7 @@ export class ExcelService {
     period: { startDate: string; endDate: string };
   }): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'PADME S.A';
+    workbook.creator = 'RENACA-BENIN';
     workbook.created = new Date();
 
     // SHEET 1: AGENCES
