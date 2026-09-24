@@ -815,6 +815,50 @@ export class ContractService {
   }
 
   /**
+   * Import en masse de contrats RENACA (Amortissable ou Constant).
+   * Traite le lot séquentiellement (pas Promise.all) en réutilisant
+   * createRenacaContract() ligne par ligne, afin que la RÈGLE 1
+   * anti-doublon même jour (checkContractLimits) voie bien les lignes
+   * déjà insérées plus tôt dans le même lot. Une ligne en échec n'arrête
+   * pas le traitement des suivantes.
+   */
+  async createRenacaContractsBulk(
+    contracts: any[],
+    idUser: number,
+    idAgency: number
+  ): Promise<{
+    summary: { success: number; failed: number };
+    results: Array<{ index: number; success: boolean; error?: string; contract?: Contract }>;
+  }> {
+    const results: Array<{ index: number; success: boolean; error?: string; contract?: Contract }> = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (let index = 0; index < contracts.length; index++) {
+      const contractData = { ...contracts[index] };
+      try {
+        contractData.idUser = idUser;
+        contractData.idAgency = idAgency;
+        contractData.idProduct = contractData.idProduct || 1;
+        contractData.idContractState = contractData.idContractState || 1;
+        contractData.dateEff = contractData.dateEff || new Date().toISOString();
+
+        const contract = await this.createRenacaContract(contractData);
+        results.push({ index, success: true, contract });
+        successCount++;
+      } catch (error: any) {
+        results.push({ index, success: false, error: error.message || 'Erreur lors de la création du contrat' });
+        failedCount++;
+      }
+    }
+
+    return {
+      summary: { success: successCount, failed: failedCount },
+      results
+    };
+  }
+
+  /**
    * Création d'un contrat Hors Convention (HLA) avec création/réutilisation
    * simultanée du client. Contrairement à createRenacaContract, les primes
    * sont saisies manuellement par l'utilisateur (pas d'appel à primeRENACA) :

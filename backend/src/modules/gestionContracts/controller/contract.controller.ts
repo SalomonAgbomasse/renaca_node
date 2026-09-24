@@ -79,6 +79,47 @@ export class ContractController {
     }
   }
 
+  // Import en masse de contrats RENACA (Amortissable ou Constant) depuis un
+  // fichier Excel. Chaque ligne est traitée par createRenacaContract() ;
+  // une ligne en échec n'interrompt pas le traitement des suivantes.
+  @Post('import')
+  @RequirePermissions(ContractPermission.CREATE)
+  async importContracts(
+    @Body() body: { contracts: any[] },
+    @Req() request: Request
+  ): Promise<{ success: boolean; message: string; summary: { success: number; failed: number }; results: any[] }> {
+    try {
+      const user = (request as any).user;
+      if (!user) {
+        throw new UnauthorizedException('Utilisateur non authentifié');
+      }
+
+      if (!body.contracts || !Array.isArray(body.contracts) || body.contracts.length === 0) {
+        return { success: false, message: 'Aucun contrat à importer', summary: { success: 0, failed: 0 }, results: [] };
+      }
+
+      const { summary, results } = await this.contractService.createRenacaContractsBulk(
+        body.contracts,
+        user.id,
+        user.idAgency
+      );
+
+      return {
+        success: summary.success > 0,
+        message: `Importation terminée : ${summary.success} contrat(s) créé(s), ${summary.failed} échec(s)`,
+        summary,
+        results
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || "Erreur lors de l'import des contrats",
+        summary: { success: 0, failed: 0 },
+        results: []
+      };
+    }
+  }
+
   // Création d'un contrat Hors Convention (HLA) avec création simultanée du client.
   // Primes saisies manuellement (pas de calcul RENACA automatique) — réservé Admin/Super Admin.
   @Post('hors-convention-with-customer')
