@@ -540,7 +540,7 @@ export default defineComponent({
     const faqs = ref<FaqItem[]>([
       {
         question: "Pourquoi le bouton 'Simuler' reste-t-il grisé ou désactivé ?",
-        answer: "Le bouton s'active uniquement si tous les champs obligatoires sont valides et si les règles d'âge sont respectées. Vérifiez que : <ul><li>Le capital saisi est compris entre 1 et 10 000 000 FCFA.</li><li>La durée est saisie et inférieure ou égale à 60 mois (max 12 mois pour les clients de 65 à 70 ans).</li><li>L'âge du client au terme du contrat (Âge actuel + Durée en années) ne dépasse pas 70 ans. Si c'est le cas, réduisez la durée ou ajustez la date de naissance.</li></ul>",
+        answer: "Le bouton s'active uniquement si tous les champs obligatoires sont valides et si les règles d'âge sont respectées. Vérifiez que : <ul><li>Le capital saisi respecte le plafond du produit choisi : <strong>10 000 000 FCFA</strong> pour un crédit Amortissable, <strong>20 000 000 FCFA</strong> pour un crédit Capital Constant.</li><li>La durée est saisie et inférieure ou égale à 60 mois. Plus l'assuré est âgé, plus la durée maximale diminue (formule : (70 − âge) × 12 mois, plafonnée à 60 mois).</li><li>L'âge du client au terme du contrat (Âge actuel + Durée en années) ne dépasse pas 70 ans. Si c'est le cas, réduisez la durée ou ajustez la date de naissance.</li></ul>",
         category: "Simulations",
         open: false
       },
@@ -569,20 +569,14 @@ export default defineComponent({
         open: false
       },
       {
-        question: "Quelle est l'utilité de la garantie complémentaire ?",
-        answer: "Conformément à la convention d'assurance, la garantie complémentaire est facultative et s'applique aux contrats en option (OUI / NON). Elle permet de couvrir des risques supplémentaires et s'ajoute à la prime de base.",
+        question: "Qu'est-ce que la garantie Perte d'Emploi ?",
+        answer: "La garantie <strong>Perte d'Emploi</strong> est une option facultative (OUI / NON), disponible uniquement pour les contrats <strong>Amortissables (AMORT)</strong> — elle n'est pas disponible pour les contrats <strong>Capital Constant (CONST)</strong>. Lorsqu'elle est souscrite, une prime complémentaire (PC) s'ajoute à la prime de base, et une copie de l'attestation de travail de l'assuré doit être jointe au dossier.",
         category: "Règles Métier",
         open: false
       },
       {
-        question: "Quelles sont les spécificités d'un contrat PADME PROTECTION (CP) ?",
-        answer: "Le contrat <strong>PADME PROTECTION (CP)</strong> est rattaché à un compte d'épargne ou emprunteur. Il exige la saisie du <strong>N° de Compte bancaire</strong> et le choix de l'option de <strong>Renouvellement Automatique</strong>. Lors de l'édition du PDF, le système applique un modèle officiel dédié CP.",
-        category: "Natures de Crédit",
-        open: false
-      },
-      {
-        question: "Comment fonctionne la souscription Obsèques Alafia (OBA) ?",
-        answer: "Le produit <strong>Obsèques Alafia (OBA)</strong> permet de désigner et couvrir plusieurs membres de la famille de l'assuré principal : le <strong>Conjoint(e)</strong> et jusqu'à <strong>4 Ascendants</strong> (parents/beaux-parents). Pour chaque membre inclus, vous définissez les informations d'état civil et le capital garanti. Le système calcule la prime individuelle pour chaque bénéficiaire et additionne le tout dans la <strong>Prime Unique TTC (PUTTC)</strong> globale.",
+        question: "Quelles sont les spécificités d'un contrat Capital Constant (CONST) ?",
+        answer: "Le contrat <strong>Capital Constant (CONST)</strong> se distingue de l'Amortissable par un capital assuré qui reste fixe pendant toute la durée du crédit, au lieu de diminuer à chaque échéance. Le capital maximum garanti est de <strong>20 000 000 FCFA</strong>, contre 10 000 000 FCFA pour l'Amortissable. La garantie <strong>Perte d'Emploi n'est pas disponible</strong> pour ce produit. Les primes sont calculées automatiquement lors de la simulation, comme pour l'Amortissable.",
         category: "Natures de Crédit",
         open: false
       }
