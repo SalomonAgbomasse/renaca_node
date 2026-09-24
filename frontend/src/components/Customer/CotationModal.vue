@@ -307,6 +307,8 @@ export default defineComponent({
     const cotationSchema = computed(() => {
       return Yup.object().shape({
         duration: Yup.number()
+          .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : value)
+          .typeError('La durée doit être un nombre')
           .required('La durée est obligatoire')
           .min(1, 'La durée doit être d\'au moins 1 mois')
           .test('max-duration', 'Durée invalide selon l\'âge', function(value) {
@@ -316,10 +318,14 @@ export default defineComponent({
             return value <= maxDuration;
           }),
         capital: Yup.number()
+          .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : value)
+          .typeError('Le capital doit être un nombre')
           .required('Le capital est obligatoire')
           .min(1, 'Le capital doit être d\'au moins 1 FCFA')
           .max(capitalMaxForType.value, `Le capital maximum est de ${capitalMaxForType.value.toLocaleString('fr-FR')} FCFA`),
         idPeriodicite: Yup.number()
+          .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : value)
+          .typeError('Veuillez sélectionner une périodicité')
           .required('La périodicité est obligatoire')
           .min(1, 'Veuillez sélectionner une périodicité'),
         perteEmploi: isAmortMode.value
