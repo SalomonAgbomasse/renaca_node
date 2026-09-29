@@ -8,7 +8,7 @@ import { ProductionStateController } from './controller/production-state.control
 import { ProductController } from './controller/product.controller';
 import { ContractStateController } from './controller/contract-state.controller';
 import { CotationController } from './controller/cotation.controller';
-import { QuotationController } from './controller/quotation.controller';
+
 import { SubscriberController } from './controller/subscriber.controller';
 import { TypeCustomerController } from './controller/type-customer.controller';
 import { NatureCreditController } from './controller/nature-credit.controller';
@@ -43,7 +43,7 @@ import { Product } from './entity/product.entity';
 import { ContractState } from './entity/contract-state.entity';
 import { ProductionState } from './entity/production-state.entity';
 import { Cotation } from './entity/cotation.entity';
-import { Quotation } from './entity/quotation.entity';
+
 import { Subscriber } from './entity/subscriber.entity';
 import { TypeCustomer } from './entity/type-customer.entity';
 import { CreditType } from './entity/credit-type.entity';
@@ -82,7 +82,6 @@ import { RenacaTarifSeedService } from './service/renaca-tarif-seed.service';
       ContractState, 
       ProductionState, 
       Cotation, 
-      Quotation, 
       Subscriber, 
       TypeCustomer, 
       CreditType, 
@@ -110,7 +109,6 @@ import { RenacaTarifSeedService } from './service/renaca-tarif-seed.service';
     ProductController,
     ContractStateController,
     CotationController,
-    QuotationController,
     SubscriberController,
     TypeCustomerController,
     NatureCreditController,

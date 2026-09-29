@@ -7,14 +7,18 @@
           <img src="@/assets/images/logo-guda-with.png" alt="L'Africaine Vie" class="modal-inline-logo" />
           <span>{{ title }}</span>
         </h4>
-        <button 
-          type="button" 
-          class="btn-close-modal"
-          @click="closeModal"
-          :title="closeButtonTitle"
-        >
-          <span class="close-symbol">×</span>
-        </button>
+        <div class="modal-header-actions d-flex align-items-center gap-2">
+          <slot name="header-right"></slot>
+          <slot name="header-actions"></slot>
+          <button 
+            type="button" 
+            class="btn-close-modal"
+            @click="closeModal"
+            :title="closeButtonTitle"
+          >
+            <span class="close-symbol">×</span>
+          </button>
+        </div>
       </div>
 
       <!-- Contenu de la modal -->
@@ -267,6 +271,77 @@ export default defineComponent({
 .btn-close-modal:hover {
   background: rgba(255, 255, 255, 0.3) !important;
   transform: scale(1.1) !important;
+}
+
+/* Stepper moderne intégré dans le header à droite */
+:deep(.modal-header-stepper) {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 30px;
+  padding: 3px 6px;
+  gap: 3px;
+  margin-right: 6px;
+}
+
+:deep(.header-step-item) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  color: rgba(255, 255, 255, 0.85);
+  user-select: none;
+}
+
+:deep(.header-step-item:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+:deep(.header-step-item.active) {
+  background: #ffffff;
+  color: #33b04a;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+:deep(.header-step-item.completed) {
+  color: #ffffff;
+}
+
+:deep(.header-step-circle) {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+:deep(.header-step-item.active .header-step-circle),
+:deep(.header-step-item.completed .header-step-circle) {
+  background: #33b04a;
+  color: #ffffff;
+}
+
+:deep(.header-step-text) {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+:deep(.header-step-line) {
+  width: 14px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .close-symbol {

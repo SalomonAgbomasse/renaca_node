@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, BeforeInsert } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { User } from '../../gestionUsers/entity/user.entity';
 
 export enum TicketStatus {
@@ -22,6 +23,16 @@ export enum TicketPriority {
 export class Ticket {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ name: 'uuid', type: 'varchar', length: 36, nullable: true, unique: true })
+  uuid: string;
+
+  @BeforeInsert()
+  generateUuid() {
+    if (!this.uuid) {
+      this.uuid = randomUUID();
+    }
+  }
 
   @Column({ name: 'idUser', type: 'int', nullable: false })
   idUser: number;

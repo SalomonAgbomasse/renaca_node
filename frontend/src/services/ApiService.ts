@@ -179,9 +179,14 @@ class ApiService {
     return ApiService.vueInstance.axios.put(`${resource}`, params);
   }
 
-  public static delete(resource: string): Promise<AxiosResponse> {
+  public static delete(resource: string, config?: AxiosRequestConfig): Promise<AxiosResponse> {
     ApiService.setHeader();
-    return ApiService.vueInstance.axios.delete(resource);
+    return ApiService.vueInstance.axios.delete(resource, config);
+  }
+
+  public static deleteWithBody(resource: string, data: any, config: AxiosRequestConfig = {}): Promise<AxiosResponse> {
+    ApiService.setHeader();
+    return ApiService.vueInstance.axios.delete(resource, { ...config, data });
   }
 
   /**

@@ -5,16 +5,17 @@ import { emailConfig } from '../configs/email.config';
 @Injectable()
 export class EmailService {
   private transporter;
+  private readonly appName = process.env.APP_NAME || 'RENACA Simulateur';
 
   constructor() {
     const smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com';
     const smtpPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
     const smtpSecure = process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECURE === 'true';
     const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com';
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || 'knrg zwtl jsjz ugwt';
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || 'omrg rmuc hpuz vhkx';
     const rejectUnauthorized = process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false';
 
-    console.log(`🔍 Configuration SMTP: ${smtpHost}:${smtpPort} (User: ${smtpUser})`);
+    console.log(`🔍 Configuration SMTP pour ${this.appName}: ${smtpHost}:${smtpPort} (User: ${smtpUser})`);
     
     this.transporter = nodemailer.createTransport({
       host: smtpHost,
@@ -46,27 +47,27 @@ export class EmailService {
   async sendVerificationCode(email: string, code: string, firstName: string) {
     const mailOptions = {
       from: {
-        name: 'L\'Africaine Vie Bénin SA',
-        address: 'notificationsaavie@gmail.com'
+        name: `${this.appName} - L'Africaine Vie Bénin SA`,
+        address: process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com'
       },
       to: email,
-      subject: 'Code de vérification - Connexion sécurisée',
+      subject: `🔐 Code de vérification - ${this.appName}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
-            <h2 style="color: #333; margin: 0;">L'Africaine Vie Bénin SA</h2>
-            <p style="color: #666; margin: 5px 0 0 0;">Code de vérification</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #1e3a8a 0%, #111827 100%); padding: 30px 20px; text-align: center;">
+            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${this.appName}</h2>
+            <p style="color: rgba(255, 255, 255, 0.85); margin: 6px 0 0 0; font-size: 14px;">L'Africaine Vie Bénin SA - Code de vérification</p>
           </div>
           
-          <div style="padding: 30px 20px;">
-            <h3 style="color: #333;">Bonjour ${firstName},</h3>
+          <div style="padding: 30px 20px; background-color: #ffffff;">
+            <h3 style="color: #333; margin-top: 0;">Bonjour ${firstName},</h3>
             
             <p style="color: #555; font-size: 16px;">
-              Vous avez demandé à vous connecter à votre compte. Utilisez le code suivant pour compléter votre connexion :
+              Vous avez demandé à vous connecter à votre compte sur <strong>${this.appName}</strong>. Utilisez le code suivant pour compléter votre connexion :
             </p>
             
-            <div style="background-color: #f8f9fa; border: 2px dashed #007bff; padding: 20px; text-align: center; margin: 20px 0;">
-              <h1 style="color: #007bff; font-size: 32px; margin: 0; letter-spacing: 5px;">${code}</h1>
+            <div style="background-color: #f0fdf4; border: 2px dashed #16a34a; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+              <h1 style="color: #16a34a; font-size: 36px; margin: 0; letter-spacing: 6px; font-family: monospace;">${code}</h1>
             </div>
             
             <p style="color: #666; font-size: 14px;">
@@ -78,8 +79,8 @@ export class EmailService {
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             
-            <p style="color: #999; font-size: 12px; text-align: center;">
-              Cet email a été envoyé automatiquement par le système de sécurité de L'Africaine Vie Bénin SA
+            <p style="color: #999; font-size: 12px; text-align: center; margin-bottom: 0;">
+              Cet email a été envoyé automatiquement par le système de sécurité de <strong>${this.appName}</strong> (L'Africaine Vie Bénin SA)
             </p>
           </div>
         </div>
@@ -88,7 +89,7 @@ export class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Email de vérification envoyé:', info.messageId);
+      console.log(`✅ Email de vérification envoyé (${this.appName}):`, info.messageId);
       return { success: true, messageId: info.messageId };
     } catch (error) {
       console.error('❌ Erreur envoi email:', error);
@@ -100,27 +101,27 @@ export class EmailService {
   async sendPasswordResetCode(email: string, code: string, firstName: string) {
     const mailOptions = {
       from: {
-        name: 'L\'Africaine Vie Bénin SA',
-        address: 'notificationsaavie@gmail.com'
+        name: `${this.appName} - L'Africaine Vie Bénin SA`,
+        address: process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com'
       },
       to: email,
-      subject: 'Réinitialisation de votre mot de passe',
+      subject: `🔑 Réinitialisation de votre mot de passe - ${this.appName}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
-            <h2 style="color: #333; margin: 0;">L'Africaine Vie Bénin SA</h2>
-            <p style="color: #666; margin: 5px 0 0 0;">Réinitialisation de mot de passe</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #dc2626 0%, #111827 100%); padding: 30px 20px; text-align: center;">
+            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${this.appName}</h2>
+            <p style="color: rgba(255, 255, 255, 0.85); margin: 6px 0 0 0; font-size: 14px;">L'Africaine Vie Bénin SA - Réinitialisation de mot de passe</p>
           </div>
           
-          <div style="padding: 30px 20px;">
-            <h3 style="color: #333;">Bonjour ${firstName},</h3>
+          <div style="padding: 30px 20px; background-color: #ffffff;">
+            <h3 style="color: #333; margin-top: 0;">Bonjour ${firstName},</h3>
             
             <p style="color: #555; font-size: 16px;">
-              Vous avez demandé à réinitialiser votre mot de passe. Utilisez le code suivant pour créer un nouveau mot de passe :
+              Vous avez demandé à réinitialiser votre mot de passe sur <strong>${this.appName}</strong>. Utilisez le code suivant pour créer un nouveau mot de passe :
             </p>
             
-            <div style="background-color: #f8f9fa; border: 2px dashed #dc3545; padding: 20px; text-align: center; margin: 20px 0;">
-              <h1 style="color: #dc3545; font-size: 32px; margin: 0; letter-spacing: 5px;">${code}</h1>
+            <div style="background-color: #fef2f2; border: 2px dashed #dc2626; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+              <h1 style="color: #dc2626; font-size: 36px; margin: 0; letter-spacing: 6px; font-family: monospace;">${code}</h1>
             </div>
             
             <p style="color: #666; font-size: 14px;">
@@ -132,8 +133,8 @@ export class EmailService {
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             
-            <p style="color: #999; font-size: 12px; text-align: center;">
-              Cet email a été envoyé automatiquement par le système de sécurité de L'Africaine Vie Bénin SA
+            <p style="color: #999; font-size: 12px; text-align: center; margin-bottom: 0;">
+              Cet email a été envoyé automatiquement par le système de sécurité de <strong>${this.appName}</strong> (L'Africaine Vie Bénin SA)
             </p>
           </div>
         </div>
@@ -142,7 +143,7 @@ export class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Email de réinitialisation envoyé:', info.messageId);
+      console.log(`✅ Email de réinitialisation envoyé (${this.appName}):`, info.messageId);
       return { success: true, messageId: info.messageId };
     } catch (error) {
       console.error('❌ Erreur envoi email de réinitialisation:', error);
@@ -158,11 +159,14 @@ export class EmailService {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     let mailOptions: any;
 
+    const senderName = process.env.EMAIL_FROM_NAME || `${this.appName} - L'Africaine Vie Bénin SA`;
+    const senderAddress = process.env.EMAIL_FROM_ADDRESS || process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com';
+
     if (typeof toOrOptions === 'object' && toOrOptions !== null) {
       mailOptions = {
         from: {
-          name: emailConfig.from.name,
-          address: emailConfig.from.address
+          name: senderName,
+          address: senderAddress
         },
         to: Array.isArray(toOrOptions.to) ? toOrOptions.to.join(', ') : toOrOptions.to,
         subject: toOrOptions.subject,
@@ -172,8 +176,8 @@ export class EmailService {
     } else {
       mailOptions = {
         from: {
-          name: emailConfig.from.name,
-          address: emailConfig.from.address
+          name: senderName,
+          address: senderAddress
         },
         to: toOrOptions,
         subject: subject,

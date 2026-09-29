@@ -1,56 +1,6 @@
 <template>
-    <div class="login-form-wrapper">
-      <div class="login-container-flex">
-        <!-- Note d'information migration (à gauche sur grand écran, rouge clignotant battement) -->
-        <div v-if="!showTwoFactorStep && !isMigrationWarningDismissed" class="alert-migration alert-danger-pulse border-0 shadow-lg p-4 mb-0" style="background-color: #fff5f5; border-radius: 20px; border-left: 5px solid #dc2626 !important; backdrop-filter: blur(10px); background: rgba(255, 245, 245, 0.96); display: flex; flex-direction: column; justify-content: center;">
-          <div class="d-flex align-items-start gap-3">
-            <i class="ph-bold ph-warning-circle text-danger fs-32 mt-1"></i>
-            <div class="text-start">
-              <h5 class="fw-bold mb-3 text-danger d-flex align-items-center gap-2" style="font-size: 1.2rem;">
-                <span class="pulse-dot"></span>
-                Action Requise : Migration
-              </h5>
-              <div class="fs-13 text-dark" style="line-height: 1.6;">
-                Suite à la migration récente de la plateforme, vos anciens identifiants de connexion nécessitent une mise à jour. <strong class="text-danger">Veuillez suivre ces étapes pour vous connecter :</strong>
-                
-                <ol class="mt-3 ps-3 mb-3 text-dark fw-medium" style="list-style-type: decimal; gap: 10px; display: flex; flex-direction: column;">
-                  <li>
-                    Cliquez sur le lien 
-                    <router-link to="/forgot-password" class="fw-bold text-danger text-decoration-underline">
-                      "Mot de passe oublié ?"
-                    </router-link> 
-                    sur le formulaire.
-                  </li>
-                  <li>
-                    Saisissez votre <strong>adresse email</strong> ou <strong>numéro de téléphone</strong> puis validez.
-                  </li>
-                  <li>
-                    Consultez vos messages (boîte de réception ou SMS) et récupérez le <strong>code OTP</strong> de réinitialisation reçu.
-                  </li>
-                  <li>
-                    Saisissez ce code OTP sur la page suivante, définissez votre nouveau mot de passe puis connectez-vous.
-                  </li>
-                </ol>
-
-                <!-- Note sur le préfixe 01 pour le téléphone -->
-                <div class="p-2.5 bg-white rounded border border-danger-subtle fs-12 mt-3 mb-3" style="border: 1px solid rgba(220, 38, 38, 0.25) !important;">
-                  <i class="ph-bold ph-phone text-danger me-1"></i>
-                  <strong>Connexion par téléphone :</strong> N'oubliez pas de rajouter le préfixe <strong class="text-danger">01</strong> devant votre numéro de téléphone à 8 chiffres (ex: <strong class="text-danger">01</strong>XXXXXXXX).
-                </div>
-
-                <!-- Bouton pour masquer l'information -->
-                <div class="text-end">
-                  <button type="button" @click="dismissMigrationWarning" class="btn btn-sm btn-outline-danger rounded-pill fs-11 px-3 py-1 fw-bold">
-                    <i class="ph-bold ph-eye-slash me-1"></i>
-                    Masquer cette information
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="login-card">
+  <div class="login-form-wrapper">
+    <div class="login-card">
         <div class="login-card-body">
           <div class="text-center mb-4">
             <div class="logo-container">
@@ -140,11 +90,10 @@
                 ← Retour à la connexion
               </button>
             </Form>
-          </div>
         </div>
       </div>
-      </div> <!-- Closes login-container-flex -->
-    </div> <!-- Closes login-form-wrapper -->
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -325,18 +274,10 @@ export default defineComponent({
       }
     };
 
-    const isMigrationWarningDismissed = ref(localStorage.getItem('migration_warning_dismissed') === 'true');
-
-    const dismissMigrationWarning = () => {
-      localStorage.setItem('migration_warning_dismissed', 'true');
-      isMigrationWarningDismissed.value = true;
-    };
-   
     return { 
       loginSchema, otpSchema, loginForm, otpForm, submitButton, otpInput,
       showTwoFactorStep, tempUserId, userEmail, isLoading, isVerifying, isResending,
-      onSubmitLogin, onSubmitOTP, goBackToLogin, resendOTP,
-      isMigrationWarningDismissed, dismissMigrationWarning
+      onSubmitLogin, onSubmitOTP, goBackToLogin, resendOTP
     };
   },
 });
@@ -500,93 +441,5 @@ export default defineComponent({
   font-size: 1.3em;
   font-weight: 600;
   text-align: center;
-}
-
-.login-container-flex {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-}
-
-.alert-migration {
-  width: 100%;
-  animation: slideInUp 0.4s ease-out;
-}
-
-.alert-danger-pulse {
-  animation: heartbeat 2.5s infinite ease-in-out;
-  border: 1px solid rgba(220, 38, 38, 0.25) !important;
-  transition: all 0.3s ease;
-}
-
-@keyframes heartbeat {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 10px 30px rgba(220, 38, 38, 0.1);
-  }
-  50% {
-    transform: scale(1.015);
-    box-shadow: 0 15px 40px rgba(220, 38, 38, 0.25);
-    border-color: rgba(220, 38, 38, 0.5) !important;
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 10px 30px rgba(220, 38, 38, 0.1);
-  }
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #dc2626;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-  animation: dot-pulse 1.5s infinite;
-  vertical-align: middle;
-}
-
-@keyframes dot-pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-  }
-}
-
-@media (min-width: 992px) {
-  .login-container-flex {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-  }
-
-  .alert-migration {
-    flex: 0 0 380px !important;
-    width: 380px !important;
-  }
-
-  .login-card {
-    flex: 0 0 440px !important;
-    width: 440px !important;
-    margin-bottom: 0;
-  }
-}
-</style>
-
-<style>
-@media (min-width: 992px) {
-  .auth-layout-wrapper .auth-card-container {
-    max-width: 880px !important;
-  }
 }
 </style>

@@ -62,14 +62,14 @@
               :class="{ 'active': creditType === natureCredit.code || creditType === (natureCredit.code || '').toUpperCase() }"
               @click="selectCreditType(natureCredit.code, natureCredit.libelle)"
             >
+              <div class="tab-label">
+                <span class="full-label">{{ natureCredit.libelle }}</span>
+                <span class="short-label">{{ natureCredit.code }}</span>
+              </div>
               <div class="tab-icon">
                 <i v-if="(natureCredit.code || '').toUpperCase() === 'AMORT'" class="fas fa-chart-line"></i>
                 <i v-else-if="(natureCredit.code || '').toUpperCase() === 'CONST'" class="fas fa-coins"></i>
                 <i v-else class="fas fa-file-invoice-dollar"></i>
-              </div>
-              <div class="tab-label">
-                <span class="full-label">{{ natureCredit.libelle }}</span>
-                <span class="short-label">{{ natureCredit.code }}</span>
               </div>
             </div>
           </div>
@@ -392,41 +392,15 @@
           </div>
 
           <div v-else>
-            <div class="row">
-              <!-- Périodicité PADME -->
-              <div class="col-md-6">
-                <div class="form-group mb-15 mb-sm-20 mb-md-25">
-                  <label class="d-block text-black fw-semibold mb-10">
-                    Périodicité <span class="text-danger">*</span>
-                  </label>
-                  <Field name="idPeriodicite" v-slot="{ field }">
-                    <select 
-                      v-bind="field"
-                      class="form-control shadow-none fs-md-15 text-black"
-                      @change="onPeriodiciteChange($event)"
-                      :disabled="loadingPeriodicites"
-                      style="height: 48px; border: 2px solid #e9ecef; border-radius: 8px;"
-                    >
-                      <option value="" disabled>
-                        {{ loadingPeriodicites ? 'Chargement...' : 'Sélectionner la périodicité' }}
-                      </option>
-                      <option 
-                        v-for="periodicite in periodicites" 
-                        :key="periodicite.id" 
-                        :value="periodicite.id"
-                      >
-                        {{ periodicite.libelle }}
-                      </option>
-                    </select>
-                  </Field>
-                </div>
-              </div>
+            <!-- Périodicité fixée par défaut (Mensuelle) pour RENACA -->
+            <Field name="idPeriodicite" type="hidden" :value="1" />
 
+            <div class="row">
               <!-- Date de naissance -->
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Date de naissance <span class="text-danger">*</span>
+                    <i class="fas fa-calendar-alt text-secondary me-2"></i>Date de naissance <span class="text-danger">*</span>
                     <span v-if="birthDateValue && calculatedAge > 0"
                           class="ms-2"
                           :class="calculatedAge >= 18 && calculatedAge <= 69 ? 'text-success' : 'text-danger'">
@@ -451,7 +425,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Capital <span class="text-danger">*</span>
+                    <i class="fas fa-coins text-secondary me-2"></i>Capital <span class="text-danger">*</span>
                     <span class="ms-2" v-if="isAmortMode || isConstMode">Max {{ capitalMaxForType.toLocaleString('fr-FR') }}</span>
                     <span v-if="!isBirthDateValid && (isAmortMode || isConstMode)" class="text-muted ms-2">(Saisissez d'abord la date de naissance)</span>
                   </label>
@@ -490,7 +464,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Durée en mois <span class="text-danger">*</span>
+                    <i class="fas fa-clock text-secondary me-2"></i>Durée en mois <span class="text-danger">*</span>
                     <span v-if="!isCapitalValid" class="text-muted ms-2">(Saisissez d'abord le capital)</span>
                   </label>
                   <Field name="duration" v-slot="{ field }">
@@ -512,47 +486,74 @@
 
               <!-- Perte d'Emploi (Amortissable uniquement) -->
               <div class="col-md-6" v-if="isAmortMode">
-                <label class="d-block text-black fw-semibold mb-10">Perte d'Emploi <span class="text-danger">*</span></label>
-                <div class="d-flex gap-3">
-                  <label class="d-flex align-items-center gap-2">
-                    <Field name="perteEmploi" type="radio" value="OUI" v-slot="{ field }">
-                      <input type="radio" v-bind="field" value="OUI" />
-                    </Field>
-                    OUI
+                <div class="form-group mb-15 mb-sm-20 mb-md-25">
+                  <label class="d-block text-black fw-semibold mb-10">
+                    <i class="fas fa-shield-alt text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span>
                   </label>
-                  <label class="d-flex align-items-center gap-2">
-                    <Field name="perteEmploi" type="radio" value="NON" v-slot="{ field }">
-                      <input type="radio" v-bind="field" value="NON" />
-                    </Field>
-                    NON
-                  </label>
+                  <div class="d-flex gap-3">
+                    <label class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light">
+                      <Field name="perteEmploi" type="radio" value="OUI" v-slot="{ field }">
+                        <input type="radio" v-bind="field" value="OUI" />
+                      </Field>
+                      OUI
+                    </label>
+                    <label class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light">
+                      <Field name="perteEmploi" type="radio" value="NON" v-slot="{ field }">
+                        <input type="radio" v-bind="field" value="NON" />
+                      </Field>
+                      NON
+                    </label>
+                  </div>
+                  <ErrorMessage name="perteEmploi" class="text-danger" />
                 </div>
-                <ErrorMessage name="perteEmploi" class="text-danger" />
+              </div>
+
+              <!-- Etablissement (Constant : même ligne que Durée en mois) -->
+              <div class="col-md-6" v-if="isConstMode">
+                <div class="form-group mb-15 mb-sm-20 mb-md-25">
+                  <label class="d-block text-black fw-semibold mb-10">
+                    <i class="fas fa-building text-secondary me-2"></i>Établissement
+                  </label>
+                  <Field name="etablissement" v-slot="{ field }">
+                    <input
+                      v-bind="field"
+                      type="text"
+                      class="form-control shadow-none fs-md-15 text-black"
+                      placeholder="Nom de l'établissement (optionnel)"
+                    />
+                  </Field>
+                  <ErrorMessage name="etablissement" class="text-danger"/>
+                </div>
               </div>
 
               <!-- Type de client -->
               <div class="col-md-6">
-                <label class="d-block text-black fw-semibold mb-10">Type de client <span class="text-danger">*</span></label>
-                <div class="d-flex gap-3">
-                  <label
-                    v-for="tc in typeCustomers"
-                    :key="tc.id"
-                    class="d-flex align-items-center gap-2"
-                  >
-                    <Field name="typeCustomer" type="radio" :value="String(tc.id)" v-slot="{ field }">
-                      <input type="radio" v-bind="field" :value="String(tc.id)" />
-                    </Field>
-                    {{ tc.libelle }}
-                  </label>
-                </div>
-                <ErrorMessage name="typeCustomer" class="text-danger" />
-              </div>
-
-              <!-- Etablissement (Constant : même ligne que Type de client) -->
-              <div class="col-md-6" v-if="isConstMode">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Établissement
+                    <i class="fas fa-user-tag text-secondary me-2"></i>Type de client <span class="text-danger">*</span>
+                  </label>
+                  <div class="d-flex gap-3 flex-wrap">
+                    <label
+                      v-for="tc in typeCustomers"
+                      :key="tc.id"
+                      class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light"
+                    >
+                      <Field name="typeCustomer" type="radio" :value="String(tc.id)" v-slot="{ field }">
+                        <input type="radio" v-bind="field" :value="String(tc.id)" :id="`type_${tc.id}`" />
+                      </Field>
+                      <i :class="tc.id == 1 ? 'fas fa-user text-secondary me-1' : 'fas fa-id-badge text-secondary me-1'"></i>
+                      {{ tc.libelle }}
+                    </label>
+                  </div>
+                  <ErrorMessage name="typeCustomer" class="text-danger" />
+                </div>
+              </div>
+
+              <!-- Etablissement (Amortissable : même ligne que Type de client) -->
+              <div class="col-md-6" v-if="isAmortMode">
+                <div class="form-group mb-15 mb-sm-20 mb-md-25">
+                  <label class="d-block text-black fw-semibold mb-10">
+                    <i class="fas fa-building text-secondary me-2"></i>Établissement
                   </label>
                   <Field name="etablissement" v-slot="{ field }">
                     <input
@@ -568,29 +569,11 @@
             </div>
 
             <div class="row">
-              <!-- Etablissement (Amortissable : même ligne que Nom/Prénoms) -->
-              <div class="col-md-4" v-if="isAmortMode">
-                <div class="form-group mb-15 mb-sm-20 mb-md-25">
-                  <label class="d-block text-black fw-semibold mb-10">
-                    Établissement
-                  </label>
-                  <Field name="etablissement" v-slot="{ field }">
-                    <input
-                      v-bind="field"
-                      type="text"
-                      class="form-control shadow-none fs-md-15 text-black"
-                      placeholder="Nom de l'établissement (optionnel)"
-                    />
-                  </Field>
-                  <ErrorMessage name="etablissement" class="text-danger"/>
-                </div>
-              </div>
-
               <!-- Nom -->
-              <div :class="isAmortMode ? 'col-md-4' : 'col-md-6'">
+              <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Nom
+                    <i class="fas fa-user text-secondary me-2"></i>Nom
                   </label>
                   <Field name="lastname" v-slot="{ field }">
                     <input
@@ -606,10 +589,10 @@
               </div>
 
               <!-- Prénoms -->
-              <div :class="isAmortMode ? 'col-md-4' : 'col-md-6'">
+              <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Prénoms
+                    <i class="fas fa-user text-secondary me-2"></i>Prénoms
                   </label>
                   <Field name="firstname" v-slot="{ field }">
                     <input
@@ -761,11 +744,12 @@ setup() {
   const initialValues = ref<any>({
     typeCustomer: '1', // Particulier par défaut
     garantieCompl: 'NON', // NON par défaut pour PADME
-    differe: 0 // Différée à 0 par défaut
+    differe: 0, // Différée à 0 par défaut
+    idPeriodicite: '1'
   });
   const selectedOption = ref('');
   const selectedMonth = ref(new Date().getMonth() + 1); // Mois actuel (1-12)
-  const idPeriodicite = ref('');
+  const idPeriodicite = ref('1');
   const creditType = ref('AMORT'); // AMORT par défaut
   const isAmortMode = computed(() => (creditType.value || '').toUpperCase() === 'AMORT');
   const isConstMode = computed(() => (creditType.value || '').toUpperCase() === 'CONST');
@@ -785,7 +769,7 @@ setup() {
   const isHommeCleMode = computed(() => false); // Pas de HC pour PADME
   
   // Variables pour la validation progressive PADME
-  const isPeriodiciteValid = ref(false);
+  const isPeriodiciteValid = ref(true);
   const isBirthDateValid = ref(false);
   const isCapitalValid = ref(false);
   const isDurationValid = ref(false);
@@ -1258,9 +1242,7 @@ setup() {
   const contratSchema = computed(() => {
     return Yup.object().shape({
       // Champs PADME
-      idPeriodicite: (creditType.value === 'CP' || creditType.value === 'OBA')
-        ? Yup.string().nullable().optional()
-        : Yup.string().required('La périodicité est obligatoire'),
+      idPeriodicite: Yup.string().nullable().optional(),
       
       birthdate: Yup.date()
         .nullable()
@@ -2033,11 +2015,8 @@ setup() {
         etablissement: values.etablissement || '',
       };
 
-      // Périodicité : conservée pour AMORT/CONST à titre informatif uniquement
-      // (aucun impact sur le calcul RENACA, Prime Unique seulement), forcée pour CP/OBA.
-      formData.idPeriodicite = (creditType.value === 'CP' || creditType.value === 'OBA')
-        ? 1
-        : parseInt(values.idPeriodicite);
+      // Périodicité : fixée à 1 (Mensuelle) par défaut pour RENACA
+      formData.idPeriodicite = values.idPeriodicite ? parseInt(values.idPeriodicite) : 1;
 
       if (isRenacaMode) {
         formData.perteEmploi = values.perteEmploi === 'OUI';
@@ -4704,10 +4683,11 @@ body.modal-open {
 .modern-tabs .tab-item {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 10px 5px;
+  gap: 10px;
+  padding: 10px 18px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -4722,18 +4702,18 @@ body.modal-open {
 }
 
 .modern-tabs .tab-icon {
-  font-size: 1.2rem;
-  margin-bottom: 2px;
+  font-size: 1.15rem;
+  margin-bottom: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .modern-tabs .tab-label {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
+  width: auto;
 }
 
 .modern-tabs .short-label {

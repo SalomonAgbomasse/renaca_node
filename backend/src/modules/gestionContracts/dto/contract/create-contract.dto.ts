@@ -67,6 +67,10 @@ export class CreateContractDto {
 
   @IsOptional()
   @IsString()
+  benef?: string;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
 
   @IsOptional()

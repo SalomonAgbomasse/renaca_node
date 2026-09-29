@@ -4,133 +4,65 @@
     :is-visible="isVisible"
     title="Importer des contrats RENACA depuis Excel"
     icon="flaticon-upload"
-    :size="hasData ? 'xxlarge' : 'xlarge'"
+    :size="hasData ? 'xxlarge' : 'large'"
     @close="closeModal"
     @update:is-visible="$emit('update:visible', $event)"
   >
-    <!-- Instructions & Modèles Excel -->
-    <div v-if="!hasData || showInstructions" class="row g-3 mb-3">
-      <div class="col-12">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-primary text-white border-0 py-2">
-            <h6 class="mb-0 fw-bold">
-              <i class="flaticon-information me-2"></i>
-              Modèles Excel — les 2 natures de crédit RENACA
-            </h6>
-          </div>
-          <div class="card-body p-3">
-            <p class="text-muted small mb-3">
-              Téléchargez le modèle correspondant à la nature de crédit, renseignez une ligne par contrat, puis déposez le fichier rempli ci-dessous. Les champs marqués <strong class="text-danger">*</strong> sont obligatoires.
-            </p>
+    <!-- Section Dépôt & Téléchargement des Modèles -->
+    <div v-if="!hasData || showInstructions" class="py-1 mb-3">
+      <!-- 1. Zone d'Upload Directe -->
+      <div class="mb-3">
+        <DragDropUpload
+          @file-selected="handleFileUpload"
+          @upload-error="handleUploadError"
+          :accepted-types="'.xlsx,.xls'"
+          :allowed-mime-types="[
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'application/excel',
+            'application/x-excel',
+            'application/x-msexcel'
+          ]"
+          :max-size="10 * 1024 * 1024"
+          title="Glissez et déposez votre fichier Excel ici"
+          subtitle="ou <span class='text-primary fw-medium'>cliquez pour parcourir vos fichiers</span>"
+          hint="Formats acceptés : .xlsx, .xls (max 10 Mo) — 1 ou 2 onglets (AMORT / CONST)"
+          height="160px"
+        />
+      </div>
 
-            <div class="row g-3">
-              <!-- AMORTISSABLE -->
-              <div class="col-md-6">
-                <div class="p-3 border rounded bg-light h-100 d-flex flex-column justify-content-between">
-                  <div>
-                    <div class="d-flex align-items-center mb-2">
-                      <span class="badge bg-primary me-2">AMORT</span>
-                      <strong class="text-dark small">Crédit Amortissable</strong>
-                    </div>
-                    <ul class="text-muted x-small ps-3 mb-3">
-                      <li>Capital* : jusqu'à <strong>10 000 000 FCFA</strong></li>
-                      <li>Durée* max : plus l'assuré est âgé, plus la durée diminue — <strong>(70 − âge) × 12 mois</strong>, plafonnée à 60 mois</li>
-                      <li>Âge de l'assuré requis : <strong>18 à 69 ans</strong></li>
-                      <li>Périodicité* obligatoire</li>
-                      <li>Garantie Perte d'Emploi : <strong>disponible en option</strong> (OUI/NON)</li>
-                    </ul>
-                  </div>
-                  <button
-                    @click="downloadTemplate('AMORT')"
-                    class="btn btn-sm btn-outline-primary w-100 fw-semibold"
-                    type="button"
-                  >
-                    <i class="flaticon-download me-1"></i> Modèle AMORT
-                  </button>
-                </div>
-              </div>
-
-              <!-- CAPITAL CONSTANT -->
-              <div class="col-md-6">
-                <div class="p-3 border rounded bg-light h-100 d-flex flex-column justify-content-between border-success-subtle">
-                  <div>
-                    <div class="d-flex align-items-center mb-2">
-                      <span class="badge bg-success me-2">CONST</span>
-                      <strong class="text-dark small">Capital Constant</strong>
-                    </div>
-                    <ul class="text-muted x-small ps-3 mb-3">
-                      <li>Capital* : jusqu'à <strong>20 000 000 FCFA</strong></li>
-                      <li>Durée* max : plus l'assuré est âgé, plus la durée diminue — <strong>(70 − âge) × 12 mois</strong>, plafonnée à 60 mois</li>
-                      <li>Âge de l'assuré requis : <strong>18 à 69 ans</strong></li>
-                      <li>Périodicité* obligatoire</li>
-                      <li>Garantie Perte d'Emploi : <strong>non disponible</strong> pour ce produit</li>
-                    </ul>
-                  </div>
-                  <button
-                    @click="downloadTemplate('CONST')"
-                    class="btn btn-sm btn-success w-100 fw-semibold text-white"
-                    type="button"
-                  >
-                    <i class="flaticon-download me-1"></i> Modèle CONST
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3 pt-2 border-top d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-2">
-              <small class="text-muted" style="max-width: 520px;">
-                <i class="flaticon-info me-1"></i>
-                <strong>Règle anti-doublon :</strong> un même client ne peut pas avoir 2 contrats de même nature avec les mêmes caractéristiques créés le même jour — la ligne concernée sera rejetée avec un message explicite.
-                <br>
-                <strong>Dates :</strong> la Date d'Effet doit être aujourd'hui ou une date future (pas de saisie rétroactive).
-              </small>
-              <button
-                @click="downloadAllWorkbook"
-                class="btn btn-sm btn-outline-secondary px-3 py-1 text-nowrap"
-                type="button"
-              >
-                <i class="flaticon-file me-1"></i> Télécharger le classeur complet (2 onglets)
-              </button>
-            </div>
+      <!-- 2. Barre de téléchargement des modèles -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-2.5 px-3 bg-light rounded-3 border">
+        <div class="d-flex align-items-center text-muted small">
+          <i class="flaticon-download text-primary fs-5 me-2"></i>
+          <div>
+            <span class="fw-semibold text-dark d-block">Besoin d'un modèle vierge ?</span>
+            <span class="text-muted" style="font-size: 11px;">Téléchargez un modèle Excel préformaté :</span>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Zone de téléchargement / Upload -->
-    <div v-if="!hasData || showInstructions" class="row g-3 mb-3">
-      <div class="col-12">
-        <div class="card border-0 shadow-sm">
-          <div class="card-header bg-info text-white border-0 py-2">
-            <h6 class="mb-0 fw-bold">
-              <i class="flaticon-upload me-2"></i>
-              Déposer votre fichier Excel
-            </h6>
-          </div>
-          <div class="card-body p-3">
-            <DragDropUpload
-              @file-selected="handleFileUpload"
-              @upload-error="handleUploadError"
-              :accepted-types="'.xlsx,.xls'"
-              :allowed-mime-types="[
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.ms-excel',
-                'application/excel',
-                'application/x-excel',
-                'application/x-msexcel'
-              ]"
-              :max-size="10 * 1024 * 1024"
-              title="Glisser-déposez votre fichier Excel ici"
-              hint="Formats acceptés: .xlsx, .xls (max 10MB)"
-              class="mb-2"
-            />
-            <div class="text-center text-muted">
-              <small>
-                <i class="flaticon-info me-1"></i>
-                Le fichier peut contenir un seul onglet (AMORT ou CONST) ou les deux à la fois.
-              </small>
-            </div>
-          </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button
+            @click="downloadTemplate('AMORT')"
+            class="btn btn-xs btn-outline-primary fw-semibold rounded-pill px-3 py-1.5"
+            type="button"
+          >
+            Modèle Amortissable
+          </button>
+          <button
+            @click="downloadTemplate('CONST')"
+            class="btn btn-xs btn-outline-success fw-semibold rounded-pill px-3 py-1.5"
+            type="button"
+          >
+            Modèle Constant
+          </button>
+          <button
+            @click="downloadAllWorkbook"
+            class="btn btn-xs btn-outline-secondary fw-semibold rounded-pill px-3 py-1.5"
+            type="button"
+            title="Classeur avec onglets AMORT et CONST"
+          >
+            Classeur complet (2 onglets)
+          </button>
         </div>
       </div>
     </div>
@@ -225,11 +157,11 @@
         <div class="d-flex flex-wrap gap-2">
           <button
             @click="showInstructions = !showInstructions"
-            class="btn btn-sm animate-button"
-            :class="showInstructions ? 'btn-info text-white' : 'btn-outline-info'"
+            class="btn btn-sm"
+            :class="showInstructions ? 'btn-secondary text-white' : 'btn-outline-primary'"
           >
-            <i class="flaticon-information me-1"></i>
-            {{ showInstructions ? 'Masquer consignes' : 'Afficher consignes' }}
+            <i class="flaticon-upload me-1"></i>
+            {{ showInstructions ? 'Masquer zone d’import' : 'Changer de fichier' }}
           </button>
           <button
             @click="addNewRow"

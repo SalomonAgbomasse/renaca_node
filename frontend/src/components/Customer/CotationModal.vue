@@ -30,7 +30,9 @@
 
       <!-- Sélecteur Nature de Crédit -->
       <div class="mb-4">
-        <label class="d-block text-black fw-semibold mb-2">Nature de crédit <span class="text-danger">*</span></label>
+        <label class="d-block text-black fw-semibold mb-2">
+          <i class="fas fa-credit-card text-secondary me-2"></i>Nature de crédit <span class="text-danger">*</span>
+        </label>
         <div v-if="loadingNatureCredits" class="text-center py-2">
           <div class="spinner-border spinner-border-sm text-success me-2"></div>
           <small class="text-muted">Chargement...</small>
@@ -43,17 +45,21 @@
             :class="{ active: creditType === nc.code || creditType === (nc.code || '').toUpperCase() }"
             @click="selectCreditType(nc.code)"
           >
-            <div class="tab-icon">
-              <i v-if="(nc.code||'').toUpperCase()==='AMORT'" class="fas fa-chart-line"></i>
-              <i v-else class="fas fa-file-invoice-dollar"></i>
-            </div>
             <div class="tab-label">
               <span class="full-label">{{ nc.libelle }}</span>
               <span class="short-label">{{ nc.code }}</span>
             </div>
+            <div class="tab-icon">
+              <i v-if="(nc.code||'').toUpperCase()==='AMORT'" class="fas fa-chart-line"></i>
+              <i v-else-if="(nc.code||'').toUpperCase()==='CONST'" class="fas fa-coins"></i>
+              <i v-else class="fas fa-file-invoice-dollar"></i>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Périodicité fixée par défaut (Mensuelle) pour RENACA -->
+      <Field name="idPeriodicite" type="hidden" :value="1" />
 
       <!-- Champs conditionnels selon la nature de crédit -->
       <div class="row mb-3">
@@ -62,7 +68,9 @@
         <!-- Capital -->
         <div class="col-md-6">
           <div class="form-group mb-15 mb-sm-20 mb-md-25">
-            <label class="d-block text-black fw-semibold mb-10">Capital (FCFA) <span class="text-danger">*</span></label>
+            <label class="d-block text-black fw-semibold mb-10">
+              <i class="fas fa-coins text-secondary me-2"></i>Capital (FCFA) <span class="text-danger">*</span>
+            </label>
             <Field
               name="capital"
               v-model="cotationForm.capital"
@@ -79,7 +87,9 @@
         <!-- Durée -->
         <div class="col-md-6">
           <div class="form-group mb-15 mb-sm-20 mb-md-25">
-            <label class="d-block text-black fw-semibold mb-10">Durée (en mois) <span class="text-danger">*</span></label>
+            <label class="d-block text-black fw-semibold mb-10">
+              <i class="fas fa-clock text-secondary me-2"></i>Durée (en mois) <span class="text-danger">*</span>
+            </label>
             <Field
               name="duration"
               v-model="cotationForm.duration"
@@ -93,31 +103,20 @@
           </div>
         </div>
 
-        <!-- Périodicité -->
-        <div class="col-md-6">
-          <div class="form-group mb-15 mb-sm-20 mb-md-25">
-            <label class="d-block text-black fw-semibold mb-10">Périodicité <span class="text-danger">*</span></label>
-            <Field name="idPeriodicite" v-model="cotationForm.idPeriodicite" as="select" class="form-control shadow-none fs-md-15 text-black" :disabled="loadingPeriodicites || !isAgeValid" required>
-              <option value="">Sélectionner...</option>
-              <option v-for="p in periodicites" :key="p.id" :value="p.id">{{ p.libelle }}</option>
-            </Field>
-            <ErrorMessage name="idPeriodicite" class="text-danger"/>
-            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>{{ loadingPeriodicites ? 'Chargement...' : 'Sélectionnez la périodicité' }}</small>
-          </div>
-        </div>
-
         <!-- Perte d'Emploi (Amortissable uniquement) -->
         <div class="col-md-6" v-if="isAmortMode">
           <div class="form-group mb-15 mb-sm-20 mb-md-25">
-            <label class="d-block text-black fw-semibold mb-10">Perte d'Emploi <span class="text-danger">*</span></label>
+            <label class="d-block text-black fw-semibold mb-10">
+              <i class="fas fa-shield-alt text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span>
+            </label>
             <div class="d-flex gap-3">
-              <label class="d-flex align-items-center gap-2">
+              <label class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light">
                 <Field name="perteEmploi" type="radio" value="OUI" v-model="cotationForm.perteEmploi" v-slot="{ field }">
                   <input type="radio" v-bind="field" value="OUI" :disabled="!isAgeValid" />
                 </Field>
                 OUI
               </label>
-              <label class="d-flex align-items-center gap-2">
+              <label class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light">
                 <Field name="perteEmploi" type="radio" value="NON" v-model="cotationForm.perteEmploi" v-slot="{ field }">
                   <input type="radio" v-bind="field" value="NON" :disabled="!isAgeValid" />
                 </Field>
@@ -292,7 +291,7 @@ export default defineComponent({
       duration: 12,
       capital: 5000000, // Valeur par défaut : 5M (inférieure au maximum de 10M)
       garantieCompl: 'NON',
-      idPeriodicite: null as number | null,
+      idPeriodicite: 1 as number | null,
       perteEmploi: 'NON' as string
     });
 
@@ -323,11 +322,7 @@ export default defineComponent({
           .required('Le capital est obligatoire')
           .min(1, 'Le capital doit être d\'au moins 1 FCFA')
           .max(capitalMaxForType.value, `Le capital maximum est de ${capitalMaxForType.value.toLocaleString('fr-FR')} FCFA`),
-        idPeriodicite: Yup.number()
-          .transform((value, originalValue) => originalValue === '' || originalValue === null ? undefined : value)
-          .typeError('Veuillez sélectionner une périodicité')
-          .required('La périodicité est obligatoire')
-          .min(1, 'Veuillez sélectionner une périodicité'),
+        idPeriodicite: Yup.number().nullable().optional(),
         perteEmploi: isAmortMode.value
           ? Yup.string()
               .oneOf(['OUI', 'NON'], "Choix invalide pour Perte d'Emploi")
@@ -353,7 +348,6 @@ export default defineComponent({
 
       return !!(cotationForm.value.duration &&
              cotationForm.value.capital &&
-             cotationForm.value.idPeriodicite &&
              (!isAmortMode.value || cotationForm.value.perteEmploi === 'OUI' || cotationForm.value.perteEmploi === 'NON'));
     });
 
@@ -371,7 +365,7 @@ export default defineComponent({
         duration: 12,
         capital: 5000000,
         garantieCompl: 'NON',
-        idPeriodicite: null,
+        idPeriodicite: 1,
         perteEmploi: 'NON'
       };
       modalValidationError.value = '';
@@ -1002,5 +996,62 @@ export default defineComponent({
   color: #231f20;
   font-weight: 700;
   word-break: break-all;
+}
+
+/* Segmented Control / Tabs */
+.product-selector-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.modern-tabs {
+  display: flex;
+  background: #f1f3f5;
+  border-radius: 12px;
+  padding: 6px;
+  gap: 8px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.modern-tabs .tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #6c757d;
+  min-width: 0;
+}
+
+.modern-tabs .tab-item.active {
+  background: #fff;
+  color: #5e35b1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.modern-tabs .tab-icon {
+  font-size: 1.15rem;
+  margin-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.modern-tabs .tab-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  width: auto;
+}
+
+.modern-tabs .short-label {
+  display: none;
 }
 </style>

@@ -18,7 +18,7 @@ export const emailConfig = {
     secure: process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECURE === 'true', // true pour 465, false pour autres ports
     auth: {
       user: process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com',
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || '', // Mot de passe d'application
+      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || 'omrg rmuc hpuz vhkx', // Mot de passe d'application
     },
     tls: {
       rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
@@ -33,8 +33,8 @@ export const emailConfig = {
 
   // Informations de l'application
   app: {
-    name: process.env.APP_NAME || 'PADME S.A Simulateur',
-    url: process.env.FRONTEND_URL || 'https://fnda.aaviedigital.bj',
+    name: process.env.APP_NAME || 'RENACA Simulateur',
+    url: process.env.FRONTEND_URL || 'https://renaca.acs.v1.aaviedigital.bj',
     companyName: process.env.COMPANY_NAME || "L'Africaine Vie Bénin SA",
     companyEmail: process.env.COMPANY_EMAIL || 'africainevie@lafricaineviebenin.com',
     companyPhone: process.env.COMPANY_PHONE || '(00229) 21 30 39 93',

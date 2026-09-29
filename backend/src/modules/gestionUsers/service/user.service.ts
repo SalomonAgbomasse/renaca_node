@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, DeepPartial } from 'typeorm';
 import { User } from '../entity/user.entity';
@@ -126,7 +126,7 @@ export class UserService {
     };
   }
 
-  async findOne(id: number, options?: {
+  async findOne(identifier: string | number, options?: {
     includeRole?: boolean;
     includeAgency?: boolean;
     includePermissions?: boolean;
@@ -139,10 +139,39 @@ export class UserService {
       relations.push('agency');
     }
 
-    return this.userRepository.findOne({ 
-      where: { id },
+    if (typeof identifier === 'number') {
+      const user = await this.userRepository.findOne({ 
+        where: { id: identifier },
+        relations
+      });
+      if (user && !user.uuid) {
+        user.uuid = crypto.randomUUID();
+        await this.userRepository.update(user.id, { uuid: user.uuid }).catch(() => {});
+      }
+      return user;
+    }
+
+    const str = String(identifier).trim();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let where: any = { id: parseInt(str, 10) || 0 };
+    if (uuidRegex.test(str)) {
+      where = { uuid: str };
+    } else if (str.includes('-') && str.split('-').length >= 6) {
+      const extracted = str.split('-').slice(0, 5).join('-');
+      if (uuidRegex.test(extracted)) {
+        where = { uuid: extracted };
+      }
+    }
+
+    const user = await this.userRepository.findOne({ 
+      where,
       relations
     });
+    if (user && !user.uuid) {
+      user.uuid = crypto.randomUUID();
+      await this.userRepository.update(user.id, { uuid: user.uuid }).catch(() => {});
+    }
+    return user;
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -229,7 +258,10 @@ export class UserService {
     return savedUser;
   }
 
-  async update(id: number, userData: Partial<User>): Promise<User | null> {
+  async update(id: number | string, userData: Partial<User>): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) return null;
+    const numericId = user.id;
     const userFields = userData as any;
 
     if (userFields.email) {
@@ -237,7 +269,7 @@ export class UserService {
         where: { email: userFields.email },
         withDeleted: true,
       });
-      if (existingByEmail && existingByEmail.id !== id) {
+      if (existingByEmail && existingByEmail.id !== numericId) {
         throw new BadRequestException(
           `L'adresse email '${userFields.email}' est déjà utilisée par un autre utilisateur.`
         );
@@ -248,7 +280,7 @@ export class UserService {
         where: { phone: userFields.phone },
         withDeleted: true,
       });
-      if (existingByPhone && existingByPhone.id !== id) {
+      if (existingByPhone && existingByPhone.id !== numericId) {
         throw new BadRequestException(
           `Le numéro de téléphone '${userFields.phone}' est déjà utilisé par un autre utilisateur.`
         );
@@ -256,14 +288,77 @@ export class UserService {
     }
 
     if (Object.keys(userFields).length > 0) {
-      await this.userRepository.update(id, userFields);
+      await this.userRepository.update(numericId, userFields);
     }
 
-    return this.findOne(id);
+    return this.findOne(numericId);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.userRepository.delete(id);
+  async remove(id: number | string): Promise<void> {
+    const user = await this.findOne(id);
+    if (!user) return;
+    await this.userRepository.delete(user.id);
+  }
+
+  async findActivities(userId: string | number, page = 1, limit = 20): Promise<{ activities: UserActivity[]; total: number; totalPages: number }> {
+    let numId = typeof userId === 'number' ? userId : parseInt(userId, 10);
+    if (isNaN(numId) || (typeof userId === 'string' && userId.includes('-'))) {
+      const u = await this.findOne(userId);
+      if (u) {
+        numId = u.id;
+      }
+    }
+    const [activities, total] = await this.userActivityRepository.findAndCount({
+      where: { idUser: numId || 0 },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { activities, total, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getUserPermissions(identifier: string | number): Promise<any[]> {
+    const user = await this.findOne(identifier, { includeRole: true });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    const roleName = String(user.role?.libelle || user.role?.name || '').toUpperCase().trim();
+    const roleId = Number(user.idRole || user.role?.id);
+
+    const allPermissions = [
+      { id: 1, code: 'READ_USERS', name: 'Consulter les utilisateurs', module: 'Utilisateurs' },
+      { id: 2, code: 'CREATE_USER', name: 'Créer un utilisateur', module: 'Utilisateurs' },
+      { id: 3, code: 'UPDATE_USER', name: 'Modifier un utilisateur', module: 'Utilisateurs' },
+      { id: 4, code: 'DELETE_USER', name: 'Supprimer un utilisateur', module: 'Utilisateurs' },
+      { id: 5, code: 'READ_ROLES', name: 'Consulter les rôles', module: 'Rôles & Accès' },
+      { id: 6, code: 'MANAGE_ROLES', name: 'Gérer les rôles et permissions', module: 'Rôles & Accès' },
+      { id: 7, code: 'READ_CONTRACTS', name: 'Consulter les contrats', module: 'Contrats' },
+      { id: 8, code: 'CREATE_CONTRACT', name: 'Créer des contrats', module: 'Contrats' },
+      { id: 9, code: 'UPDATE_CONTRACT', name: 'Modifier les contrats', module: 'Contrats' },
+      { id: 10, code: 'DELETE_CONTRACT', name: 'Supprimer des contrats', module: 'Contrats' },
+      { id: 11, code: 'EXPORT_PRODUCTION', name: 'Exporter la production', module: 'Production' },
+      { id: 12, code: 'VIEW_REPORTS', name: 'Consulter les états et rapports', module: 'Rapports' },
+      { id: 13, code: 'READ_ACTIVITIES', name: 'Consulter le journal d\'activités', module: 'Sécurité' },
+      { id: 14, code: 'READ_AGENCIES', name: 'Consulter les agences', module: 'Agences' },
+      { id: 15, code: 'MANAGE_AGENCIES', name: 'Gérer les agences', module: 'Agences' },
+    ];
+
+    let allowedCodes: string[] = [];
+
+    if (roleId === 1 || roleId === 2 || ['ADMIN', 'SUPER ADMIN', 'SUPER_ADMIN'].includes(roleName)) {
+      allowedCodes = allPermissions.map(p => p.code);
+    } else if (roleId === 3 || roleId === 4 || ['MANAGER', 'RESPONSABLE_AGENCE', 'AGENCY_MANAGER'].includes(roleName)) {
+      allowedCodes = ['READ_USERS', 'CREATE_USER', 'UPDATE_USER', 'READ_ROLES', 'READ_CONTRACTS', 'CREATE_CONTRACT', 'UPDATE_CONTRACT', 'EXPORT_PRODUCTION', 'VIEW_REPORTS', 'READ_ACTIVITIES', 'READ_AGENCIES'];
+    } else if (roleId === 6 || ['BACK OFFICE', 'BACK_OFFICE', 'GESTIONNAIRE'].includes(roleName)) {
+      allowedCodes = ['READ_USERS', 'READ_ROLES', 'READ_CONTRACTS', 'CREATE_CONTRACT', 'UPDATE_CONTRACT', 'EXPORT_PRODUCTION', 'VIEW_REPORTS', 'READ_AGENCIES'];
+    } else if (roleId === 5 || ['AGENT', 'CONSEILLER'].includes(roleName)) {
+      allowedCodes = ['READ_CONTRACTS', 'CREATE_CONTRACT', 'UPDATE_CONTRACT', 'READ_AGENCIES'];
+    } else {
+      allowedCodes = ['READ_CONTRACTS', 'CREATE_CONTRACT'];
+    }
+
+    return allPermissions.filter(p => allowedCodes.includes(p.code));
   }
 
   async createMultiple(usersData: Partial<User>[]): Promise<User[]> {
@@ -347,42 +442,52 @@ export class UserService {
   }
 
   // Désactiver un utilisateur
-  async deactivateUser(id: number): Promise<User | null> {
-    await this.userRepository.update(id, { 
+  async deactivateUser(id: number | string): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) return null;
+    await this.userRepository.update(user.id, { 
       status: 'DESACTIVE',
       updatedAt: new Date()
     });
-    return this.findOne(id);
+    return this.findOne(user.id);
   }
 
   // Activer un utilisateur
-  async activateUser(id: number): Promise<User | null> {
-    await this.userRepository.update(id, { 
+  async activateUser(id: number | string): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) return null;
+    await this.userRepository.update(user.id, { 
       status: 'ACTIVE',
       updatedAt: new Date()
     });
-    return this.findOne(id);
+    return this.findOne(user.id);
   }
 
   // Suppression logique (soft delete)
-  async softDeleteUser(id: number, deletedBy: number): Promise<void> {
-    await this.userRepository.update(id, {
+  async softDeleteUser(id: number | string, deletedBy: number | string): Promise<void> {
+    const user = await this.findOne(id);
+    if (!user) return;
+    const actor = await this.findOne(deletedBy);
+    await this.userRepository.update(user.id, {
       deletedAt: new Date(),
-      deletedBy
+      deletedBy: actor ? actor.id : (typeof deletedBy === 'number' ? deletedBy : undefined)
     });
   }
 
   // Restaurer un utilisateur supprimé
-  async restoreUser(id: number): Promise<User | null> {
-    await this.userRepository.update(id, {
+  async restoreUser(id: number | string): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) return null;
+    await this.userRepository.update(user.id, {
       deletedAt: undefined,
-      deletedBy: undefined
+      deletedBy: undefined,
+      deletionReason: undefined
     });
-    return this.findOne(id);
+    return this.findOne(user.id);
   }
 
   // Réinitialiser le mot de passe
-  async resetPassword(id: number, newPassword: string): Promise<void> {
+  async resetPassword(id: number | string, newPassword: string): Promise<void> {
     const user = await this.findOne(id);
     if (!user) {
       throw new Error('Utilisateur non trouvé');
@@ -395,15 +500,50 @@ export class UserService {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = await bcrypt.hash(newPassword + salt, 10);
     
-    await this.userRepository.update(id, {
+    await this.userRepository.update(user.id, {
       password: hashedPassword,
       salt,
+      loginAttempts: 0,
+      lockedUntil: null as any,
       updatedAt: new Date()
     });
   }
 
+  // Verrouiller un utilisateur
+  async lockUser(id: string | number, minutes: number = 1440): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) return null;
+    const lockUntil = new Date(Date.now() + minutes * 60 * 1000);
+    await this.userRepository.update(user.id, {
+      loginAttempts: 5,
+      lockedUntil: lockUntil
+    });
+    return this.findOne(user.id);
+  }
+
+  // Déverrouiller un utilisateur
+  async unlockUser(id: string | number): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) return null;
+    await this.userRepository.update(user.id, {
+      loginAttempts: 0,
+      lockedUntil: null as any
+    });
+    return this.findOne(user.id);
+  }
+
+  // Réinitialiser les tentatives de connexion
+  async resetLoginAttempts(id: string | number): Promise<void> {
+    const user = await this.findOne(id);
+    if (!user) return;
+    await this.userRepository.update(user.id, {
+      loginAttempts: 0,
+      lockedUntil: null as any
+    });
+  }
+
   // Changer le mot de passe
-  async changePassword(id: number, oldPassword: string, newPassword: string): Promise<boolean> {
+  async changePassword(id: number | string, oldPassword: string, newPassword: string): Promise<boolean> {
     const user = await this.findOne(id);
     if (!user) return false;
 
@@ -417,7 +557,7 @@ export class UserService {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = await bcrypt.hash(newPassword + salt, 10);
     
-    await this.userRepository.update(id, {
+    await this.userRepository.update(user.id, {
       password: hashedPassword,
       salt,
       updatedAt: new Date()
@@ -427,7 +567,7 @@ export class UserService {
   }
 
   // Vérifier le mot de passe
-  async verifyPassword(id: number, password: string): Promise<boolean> {
+  async verifyPassword(id: number | string, password: string): Promise<boolean> {
     const user = await this.findOne(id);
     if (!user) return false;
     
@@ -465,7 +605,7 @@ export class UserService {
   }
 
   // Méthode pour calculer les statistiques de l'utilisateur
-  async getUserStatistics(userId: number, days: number = 30): Promise<any> {
+  async getUserStatistics(userId: number | string, days: number = 30): Promise<any> {
     try {
       // Calculer les dates
       const endDate = new Date();
@@ -481,7 +621,7 @@ export class UserService {
         throw new Error('Utilisateur non trouvé');
       }
 
-      const userIdNum = Number(userId);
+      const userIdNum = user.id;
 
       // 1. Statistiques générales
       const totalContracts = await this.contractRepository.count({
@@ -727,7 +867,7 @@ export class UserService {
     try {
       console.log(`📧 Envoi de l'email de bienvenue à ${userData.email}...`);
 
-      const appName = process.env.APP_NAME || 'SUD CAPITAL';
+      const appName = process.env.APP_NAME || 'RENACA Simulateur';
 
       // Configuration du transporteur email
       const transporter = nodemailer.createTransport({
@@ -736,7 +876,7 @@ export class UserService {
         secure: process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com',
-          pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
+          pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || 'omrg rmuc hpuz vhkx'
         }
       });
 
@@ -957,7 +1097,7 @@ export class UserService {
                 <div class="instructions">
                   <h3><span class="icon">📋</span> Instructions de connexion</h3>
                   <ol>
-                    <li>Accédez à l'application via : <a href="${process.env.FRONTEND_URL || 'https://fnda.aaviedigital.bj'}" class="button">Se connecter à PADME S.A</a></li>
+                    <li>Accédez à l'application via : <a href="${process.env.FRONTEND_URL || 'https://renaca.acs.v1.aaviedigital.bj'}" class="button">Se connecter à ${appName}</a></li>
                     <li>Utilisez vos identifiants ci-dessus pour vous connecter</li>
                     <li>Lors de votre première connexion, vous serez invité à changer votre mot de passe</li>
                   </ol>
@@ -980,7 +1120,7 @@ export class UserService {
               
               <div class="footer">
                 <p>Cet email a été envoyé automatiquement. Merci de ne pas y répondre.</p>
-                <p>© 2024 ${appName} - Système de gestion des cotations et contrats d'assurance</p>
+                <p>© ${new Date().getFullYear()} ${appName} - Système de gestion des cotations et contrats d'assurance</p>
               </div>
             </div>
           </div>
@@ -990,11 +1130,13 @@ export class UserService {
 
       // Options de l'email
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'notificationsaavie@gmail.com',
+        from: {
+          name: `${appName} - L'Africaine Vie Bénin SA`,
+          address: process.env.EMAIL_USER || 'notificationsaavie@gmail.com'
+        },
         to: userData.email,
         cc: [
           'sagbomasse@lafricaineviebenin.com', // Copie à Salomon
-          //'ggouclounon@lafricaineviebenin.com', // Copie à Grégoire
           'salomonagbomasse25@gmail.com', // Copie à Salomon
         ],
         subject: `🎉 Bienvenue sur ${appName} - Vos identifiants de connexion`,

@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, JoinColumn, ManyToOne, OneToMany, BeforeInsert } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { Agency } from './agency.entity';
 import { User } from 'src/modules/gestionUsers/entity/user.entity';
 
@@ -6,6 +7,16 @@ import { User } from 'src/modules/gestionUsers/entity/user.entity';
 export class Office {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
+
+  @Column({ name: 'uuid', type: 'varchar', length: 36, nullable: true, unique: true })
+  uuid: string;
+
+  @BeforeInsert()
+  generateUuid() {
+    if (!this.uuid) {
+      this.uuid = randomUUID();
+    }
+  }
 
   @Column({ name: 'idAgency', type: 'int' })
   idAgency: number;

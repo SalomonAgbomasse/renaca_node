@@ -815,51 +815,9 @@ export class DashboardService {
       contractsToReturn = broaderContracts;
     }
 
-    console.log('📋 Contrats trouvés pour échéance:', contractsToReturn.length);
-
-    // Si aucun contrat trouvé, créer des données de démonstration
+    // Si aucun contrat trouvé, retourner une liste vide
     if (contractsToReturn.length === 0) {
-      console.log('📋 Aucun contrat trouvé, création de données de démonstration');
-      const demoContracts = [
-        {
-          id: 1,
-          contractNumber: 'CT-2024-001',
-          customerName: 'Jean KOUAGOU',
-          agencyName: 'L\'Africaine Vie Bénin SA',
-          amount: 1500000,
-          expiryDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          daysUntilExpiry: 5
-        },
-        {
-          id: 2,
-          contractNumber: 'CT-2024-002',
-          customerName: 'Marie ADJOVI',
-          agencyName: 'L\'Africaine Vie Bénin SA',
-          amount: 2500000,
-          expiryDate: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          daysUntilExpiry: 15
-        },
-        {
-          id: 3,
-          contractNumber: 'CT-2024-003',
-          customerName: 'Paul DOSSOU',
-          agencyName: 'Parakou',
-          amount: 800000,
-          expiryDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-          daysUntilExpiry: 45
-        }
-      ];
-
-      // Filtrer selon la période
-      let filteredContracts = demoContracts;
-      if (period === '7days') {
-        filteredContracts = demoContracts.filter(c => c.daysUntilExpiry <= 7);
-      } else if (period === '30days') {
-        filteredContracts = demoContracts.filter(c => c.daysUntilExpiry <= 30);
-      }
-
-      console.log('📋 Données de démonstration filtrées:', filteredContracts);
-      return filteredContracts;
+      return [];
     }
 
     // Transformer les données réelles

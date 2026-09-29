@@ -72,44 +72,11 @@
           </div>
         </li>
 
-        <li class="sidebar-nav-item accordion-item bg-transparent border-0 rounded-0">
-          <a
-            href="#"
-            class="accordion-button rounded-0 shadow-none bg-transparent d-block"
-            data-bs-toggle="collapse"
-            data-bs-target="#contrats"
-            aria-expanded="false"
-            aria-controls="contrats"
-          >
+        <li class="sidebar-nav-item">
+          <router-link to="/liste-contrats" class="sidebar-nav-link d-block">
             <i class="flaticon-file"></i>
-            <span class="title">Contrats</span>
-          </a>
-          <div
-            id="contrats"
-            class="accordion-collapse collapse"
-            data-bs-parent="#sidebarNavAccordion"
-          >
-            <div class="accordion-body">
-              <ul class="sidebar-sub-menu ps-0 mb-0 list-unstyled">
-                <li class="sidebar-sub-menu-item">
-                  <router-link to="/liste-contrats" class="sidebar-sub-menu-link">
-                    Liste des Contrats
-                  </router-link>
-                </li>
-
-                <li class="sidebar-sub-menu-item">
-                  <router-link to="/liste-contrats-hors-convention" class="sidebar-sub-menu-link">
-                    Contrats Hors Convention
-                  </router-link>
-                </li>
-                <li class="sidebar-sub-menu-item">
-                  <router-link to="/liste-contrats-echus" class="sidebar-sub-menu-link">
-                    Contrats Échus
-                  </router-link>
-                </li>
-              </ul>
-            </div>
-          </div>
+            <span class="title">Liste des Contrats</span>
+          </router-link>
         </li>
 
         <li class="sidebar-nav-item">
@@ -119,38 +86,11 @@
           </router-link>
         </li>
 
-        <li class="sidebar-nav-item accordion-item bg-transparent border-0 rounded-0">
-          <a
-            href="#"
-            class="accordion-button rounded-0 shadow-none bg-transparent d-block"
-            data-bs-toggle="collapse"
-            data-bs-target="#production"
-            aria-expanded="false"
-            aria-controls="production"
-          >
+        <li class="sidebar-nav-item">
+          <router-link to="/generer-etat-production" class="sidebar-nav-link d-flex align-items-center">
             <i class="flaticon-menu-1"></i>
             <span class="title">États de production</span>
-          </a>
-          <div
-            id="production"
-            class="accordion-collapse collapse"
-            data-bs-parent="#sidebarNavAccordion"
-          >
-            <div class="accordion-body">
-              <ul class="sidebar-sub-menu ps-0 mb-0 list-unstyled">
-                <li class="sidebar-sub-menu-item">
-                  <router-link to="/generer-etat-production" class="sidebar-sub-menu-link">
-                    Générer un état
-                  </router-link>
-                </li>
-                <li class="sidebar-sub-menu-item">
-                  <router-link to="/liste-etats-production" class="sidebar-sub-menu-link">
-                    Liste des états
-                  </router-link>
-                </li>
-              </ul>
-            </div>
-          </div>
+          </router-link>
         </li>
 
         <!-- ===== ANALYSE & PILOTAGE BI ===== -->
@@ -208,38 +148,11 @@
           </span>
         </li>
 
-        <li v-if="checkPermission('users:read') || checkPermission('users:create')" class="sidebar-nav-item accordion-item bg-transparent border-0 rounded-0">
-          <a
-            href="#"
-            class="accordion-button rounded-0 shadow-none bg-transparent d-block"
-            data-bs-toggle="collapse"
-            data-bs-target="#utilisateurs"
-            aria-expanded="false"
-            aria-controls="utilisateurs"
-          >
+        <li v-if="checkPermission('users:read')" class="sidebar-nav-item">
+          <router-link :to="{ name: 'ListeUserPage' }" class="sidebar-nav-link d-block">
             <i class="flaticon-user-1"></i>
-            <span class="title">Utilisateurs</span>
-          </a>
-          <div
-            id="utilisateurs"
-            class="accordion-collapse collapse"
-            data-bs-parent="#sidebarNavAccordion"
-          >
-            <div class="accordion-body">
-              <ul class="sidebar-sub-menu ps-0 mb-0 list-unstyled">
-                <li v-if="checkPermission('users:create')" class="sidebar-sub-menu-item">
-                  <router-link :to="{ name: 'AddUserPage' }" class="sidebar-sub-menu-link">
-                    Enregistrer
-                  </router-link>
-                </li>
-                <li v-if="checkPermission('users:read')" class="sidebar-sub-menu-item">
-                  <router-link :to="{ name: 'ListeUserPage' }" class="sidebar-sub-menu-link">
-                    Liste
-                  </router-link>
-                </li>
-              </ul>
-            </div>
-          </div>
+            <span class="title">Gest. utilisateurs</span>
+          </router-link>
         </li>
 
         <li v-if="checkPermission('agency:manage') || checkPermission('agency:read') || checkPermission('agencies:read')" class="sidebar-nav-item accordion-item bg-transparent border-0 rounded-0">

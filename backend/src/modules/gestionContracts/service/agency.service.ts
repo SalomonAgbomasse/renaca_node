@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { Agency } from '../entity/agency.entity';
 import { Office } from '../entity/office.entity';
 import { User } from 'src/modules/gestionUsers/entity/user.entity';
@@ -20,9 +21,21 @@ export class AgencyService {
   ) {}
 
   /** Retourne les bureaux d'une agence donnée */
-  async findOfficesByAgency(idAgency: number): Promise<Office[]> {
+  async findOfficesByAgency(identifier: string | number): Promise<Office[]> {
+    let agencyId: number | null = null;
+    if (typeof identifier === 'number') {
+      agencyId = identifier;
+    } else if (/^\d+$/.test(String(identifier).trim())) {
+      agencyId = parseInt(String(identifier).trim(), 10);
+    } else {
+      const agency = await this.findOne(identifier);
+      agencyId = agency?.id || null;
+    }
+
+    if (!agencyId) return [];
+
     return this.officeRepository.find({
-      where: { idAgency },
+      where: { idAgency: agencyId },
       order: { officeName: 'ASC' },
     });
   }
@@ -118,6 +131,11 @@ export class AgencyService {
     if (!agency) {
       return null;
     }
+
+    if (!agency.uuid) {
+      agency.uuid = randomUUID();
+      await this.agencyRepository.update(agency.id, { uuid: agency.uuid }).catch(() => {});
+    }
     
     // Ajouter les compteurs pour cette agence
     const usersCount = await this.userRepository.count({
@@ -148,20 +166,40 @@ export class AgencyService {
   }
 
   async create(agencyData: Partial<Agency>): Promise<Agency> {
-    const agency = this.agencyRepository.create(agencyData);
+    const agency = this.agencyRepository.create({
+      ...agencyData,
+      uuid: agencyData.uuid || randomUUID(),
+    });
     return this.agencyRepository.save(agency);
   }
 
-  async update(id: number, agencyData: Partial<Agency>): Promise<Agency | null> {
-    await this.agencyRepository.update(id, agencyData);
-    return this.findOne(id);
+  async update(identifier: string | number, agencyData: Partial<Agency>): Promise<Agency | null> {
+    const existing = await this.findOne(identifier);
+    if (!existing) return null;
+    await this.agencyRepository.update(existing.id, agencyData);
+    return this.findOne(existing.id);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.agencyRepository.delete(id);
+  async remove(identifier: string | number): Promise<void> {
+    const existing = await this.findOne(identifier);
+    if (existing) {
+      await this.agencyRepository.delete(existing.id);
+    }
   }
 
-  async findUsersByAgency(agencyId: number): Promise<any[]> {
+  async findUsersByAgency(identifier: string | number): Promise<any[]> {
+    let agencyId: number | null = null;
+    if (typeof identifier === 'number') {
+      agencyId = identifier;
+    } else if (/^\d+$/.test(String(identifier).trim())) {
+      agencyId = parseInt(String(identifier).trim(), 10);
+    } else {
+      const agency = await this.findOne(identifier);
+      agencyId = agency?.id || null;
+    }
+
+    if (!agencyId) return [];
+
     const users = await this.userRepository.find({
       where: { idAgency: agencyId },
       relations: ['role', 'agency'],
@@ -182,7 +220,21 @@ export class AgencyService {
     return users;
   }
 
-  async findContractsByAgency(agencyId: number, page: number = 1, limit: number = 7): Promise<any> {
+  async findContractsByAgency(identifier: string | number, page: number = 1, limit: number = 7): Promise<any> {
+    let agencyId: number | null = null;
+    if (typeof identifier === 'number') {
+      agencyId = identifier;
+    } else if (/^\d+$/.test(String(identifier).trim())) {
+      agencyId = parseInt(String(identifier).trim(), 10);
+    } else {
+      const agency = await this.findOne(identifier);
+      agencyId = agency?.id || null;
+    }
+
+    if (!agencyId) {
+      return { contracts: [], total: 0, page, limit, totalPages: 0 };
+    }
+
     const queryBuilder = this.contractRepository.createQueryBuilder('contract')
       .leftJoinAndSelect('contract.customer', 'customer')
       .leftJoinAndSelect('contract.agency', 'agency')
@@ -223,7 +275,19 @@ export class AgencyService {
     };
   }
 
-  async getAgencyStats(agencyId: number): Promise<any> {
+  async getAgencyStats(identifier: string | number): Promise<any> {
+    let agencyId: number | null = null;
+    if (typeof identifier === 'number') {
+      agencyId = identifier;
+    } else if (/^\d+$/.test(String(identifier).trim())) {
+      agencyId = parseInt(String(identifier).trim(), 10);
+    } else {
+      const agency = await this.findOne(identifier);
+      agencyId = agency?.id || null;
+    }
+
+    if (!agencyId) return null;
+
     // Compter les utilisateurs par statut
     const totalUsers = await this.userRepository.count({
       where: { idAgency: agencyId }

@@ -509,7 +509,7 @@ export class ContractController {
   @Get('user/:idUser')
   @RequirePermissions(ContractPermission.READ)
   async findByUser(
-    @Param('idUser', ParseIntPipe) idUser: number,
+    @Param('idUser') idUser: string,
     @Req() request: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -521,7 +521,8 @@ export class ContractController {
     if (!user) {
       throw new UnauthorizedException('Utilisateur non authentifié');
     }
-    if (!this.isUserAdminOrManager(user) && idUser !== user.id) {
+    const isOwner = String(user.id) === String(idUser) || (user.uuid && user.uuid === idUser);
+    if (!this.isUserAdminOrManager(user) && !isOwner) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à consulter les contrats de cet utilisateur');
     }
     const result = await this.contractService.findByUserWithPagination(idUser, {
@@ -997,6 +998,7 @@ export class ContractController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Query('idAgency') idAgency?: string,
+    @Query('idAgencies') idAgencies?: string,
     @Query('idUser') idUser?: string,
     @Query('idNatureCredit') idNatureCredit?: string,
     @Query('idNatureCredits') idNatureCredits?: string
@@ -1007,9 +1009,14 @@ export class ContractController {
         ? rawNatureParam.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v))
         : undefined;
 
+      const rawAgencyParam = idAgencies || idAgency;
+      const agencyIds = rawAgencyParam
+        ? rawAgencyParam.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v))
+        : undefined;
+
       console.log('📊 Génération du rapport de production Excel...');
       console.log('📅 Période:', startDate, 'au', endDate);
-      console.log('🏢 Agence:', idAgency || 'Toutes');
+      console.log('🏢 Agence(s):', agencyIds || 'Toutes');
       console.log('👤 Utilisateur:', idUser || 'Tous');
       console.log('💳 Natures de Crédit:', natureIds || 'Toutes');
 
@@ -1026,7 +1033,7 @@ export class ContractController {
       const contracts = await this.contractService.findByPeriodAndFilters(
         startDateObj,
         endDateObj,
-        idAgency ? parseInt(idAgency) : undefined,
+        agencyIds,
         idUser ? parseInt(idUser) : undefined,
         natureIds
       );

@@ -2,119 +2,79 @@
   <div>
     <div class="card mb-25 border-0 rounded-0 bg-white letter-spacing">
     <div
-      class="card-head box-shadow bg-white d-flex align-items-center justify-content-between p-15 p-sm-20 p-md-25">
-      <div class="d-flex align-items-center">
+      class="card-head box-shadow bg-white d-flex align-items-center p-15 p-sm-20 p-md-25 gap-2 flex-nowrap">
+
+      <!-- Boutons actions (taille fixe) -->
+      <div class="d-flex align-items-center gap-2 flex-shrink-0">
         <button
+          v-if="filterState !== 'echu'"
           @click="openConversionModal"
-          class="default-btn position-relative transition border-0 fw-medium text-white pt-11 pb-11 ps-15 pe-15 ps-md-25 pe-md-25 pt-md-12 pb-md-12 ps-md-30 pe-md-30 rounded-1 bg-success fs-14 fs-md-15 fs-lg-16 d-inline-block me-10 mb-0 text-decoration-none">
-          <i class="flaticon-plus position-relative ms-2 ms-md-5 fs-12"></i>
-          <span class="d-none d-sm-inline">Ajouter un contrat</span>
+          class="default-btn position-relative transition border-0 fw-medium text-white pt-11 pb-11 ps-15 pe-15 pt-md-12 pb-md-12 rounded-1 bg-success fs-14 fs-md-15 d-inline-block mb-0 text-decoration-none text-nowrap">
+          <i class="flaticon-plus position-relative ms-2 fs-12"></i>
+          <span class="d-none d-sm-inline">{{ filterState === 'hla' && isAdminOrSuperAdmin ? 'Ajouter hors Convention' : 'Ajouter un contrat' }}</span>
           <span class="d-sm-none">Ajouter</span>
         </button>
-        
+
         <button
+          v-if="filterState !== 'echu'"
           @click="openImportModal"
-          class="default-btn position-relative transition border-0 fw-medium text-white pt-11 pb-11 ps-25 pe-25 pt-md-12 pb-md-12 ps-md-30 pe-md-30 rounded-1 fs-md-15 fs-lg-16 d-none d-md-inline-block me-10 mb-10 mb-lg-0 text-decoration-none"
-          style="background-color: #231f20; color: #ede947; border-color: #231f20;">
+          class="default-btn position-relative transition border-0 fw-medium text-white pt-11 pb-11 ps-15 pe-15 pt-md-12 pb-md-12 rounded-1 fs-md-15 d-none d-lg-inline-block mb-0 text-decoration-none text-nowrap"
+          style="background-color: #231f20; color: #ede947;">
           <i class="flaticon-upload position-relative ms-5 fs-12"></i>
-          Importer des contrats
+          Importer
         </button>
       </div>
-      <div class="d-flex align-items-center gap-3">
-        <!-- Filtre Nature Crédit -->
-        <div class="nature-credit-filter d-none d-sm-block" style="min-width: 220px;">
-          <select 
-            v-model="selectedNatureCredit" 
-            @change="filtrerParNature" 
-            class="form-select border-gray rounded-1 fs-14 py-2 px-3 shadow-none text-black bg-white"
-          >
-            <option value="">Toutes les natures de crédit</option>
-            <option v-for="nature in natureCredits" :key="nature.id" :value="nature.id">
-              {{ nature.libelle }}
-            </option>
-          </select>
-        </div>
 
-        <form class="search-box position-relative me-15" @submit.prevent="rechercher">
-          <input
-            type="text"
-            v-model="searchTerm"
-            @keyup="rechercher"
-            class="form-control shadow-none text-black rounded-0 border-0"
-            placeholder="Rechercher..."
-          />
-          <button
-            type="submit"
-            class="bg-transparent text-primary transition p-0 border-0"
-          >
-            <i class="flaticon-search-interface-symbol"></i>
-          </button>
-        </form>
+      <!-- Filtre État (taille fixe) -->
+      <div class="d-flex align-items-center flex-shrink-0">
+        <select
+          v-model="filterState"
+          @change="onFilterChange"
+          class="form-select shadow-none border rounded-1 py-2 px-3 fw-medium text-dark bg-white"
+          style="width: 175px; cursor: pointer; font-size: 13px;"
+        >
+          <option value="encours">🟢 En cours</option>
+          <option value="hla">🔵 HLA (Hors Conv.)</option>
+          <option value="echu">🔴 Échus</option>
+        </select>
       </div>
+
+      <!-- Filtre Nature de Crédit (taille fixe) -->
+      <div class="d-flex align-items-center flex-shrink-0">
+        <select
+          v-model="filterNatureCredit"
+          @change="onFilterChange"
+          class="form-select shadow-none border rounded-1 py-2 px-3 fw-medium text-dark bg-white"
+          style="width: 185px; cursor: pointer; font-size: 13px;"
+        >
+          <option value="">Toutes les natures</option>
+          <option v-for="nature in natureCredits" :key="nature.id" :value="nature.libelle">
+            {{ nature.libelle }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Barre de recherche (prend tout l'espace restant) -->
+      <form class="search-box position-relative flex-grow-1" @submit.prevent="rechercher" style="min-width:120px;">
+        <input
+          type="text"
+          v-model="searchTerm"
+          @keyup="rechercher"
+          class="form-control shadow-none text-black rounded-0 border-0 w-100"
+          placeholder="Rechercher..."
+        />
+        <button type="submit" class="bg-transparent text-primary transition p-0 border-0">
+          <i class="flaticon-search-interface-symbol"></i>
+        </button>
+      </form>
+
     </div>
    
     
-    <!-- Skeleton loader -->
-    <div v-if="loading" class="card-body p-15 p-sm-20 p-md-25">
-      <div class="table-responsive" style="overflow-x: auto;">
-        <table class="table text-nowrap align-middle mb-0">
-          <thead>
-            <tr>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Client</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Type client</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Police</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Référence</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Capital</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Durée</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Nature crédit</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Prime TTC</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Date effet</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">1ère échéance</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Échéance</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Gestionnaire</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Statut</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Établissement</th>
-              <th class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3 pe-0">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="i in 8" :key="i" class="skeleton-row">
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="skeleton-circle me-3"></div>
-                  <div>
-                    <div class="skeleton-line" style="width: 120px;"></div>
-                    <div class="skeleton-line mt-1" style="width: 80px; height: 10px;"></div>
-                  </div>
-                </div>
-              </td>
-              <td><div class="skeleton-badge"></div></td>
-              <td><div class="skeleton-line" style="width: 80px;"></div></td>
-              <td><div class="skeleton-line" style="width: 90px;"></div></td>
-              <td><div class="skeleton-line" style="width: 90px;"></div></td>
-              <td><div class="skeleton-line" style="width: 60px;"></div></td>
-              <td><div class="skeleton-line" style="width: 100px;"></div></td>
-              <td><div class="skeleton-line" style="width: 90px;"></div></td>
-              <td><div class="skeleton-line" style="width: 80px;"></div></td>
-              <td><div class="skeleton-line" style="width: 80px;"></div></td>
-              <td><div class="skeleton-line" style="width: 80px;"></div></td>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="skeleton-circle me-2"></div>
-                  <div class="skeleton-line" style="width: 80px;"></div>
-                </div>
-              </td>
-              <td><div class="skeleton-badge"></div></td>
-              <td><div class="skeleton-line" style="width: 90px;"></div></td>
-              <td>
-                <div class="d-flex gap-1">
-                  <div class="skeleton-btn"></div>
-                  <div class="skeleton-btn"></div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Indicateur de chargement -->
+    <div v-if="loading" class="text-center p-4">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Chargement...</span>
       </div>
     </div>
 
@@ -154,14 +114,21 @@
           </thead>
           <tbody>
             <tr v-if="contrats.length === 0">
-              <td colspan="14" class="text-center text-muted py-4">
-                Aucun contrat trouvé
+              <td colspan="15" class="text-center text-muted py-4">
+                <span v-if="filterState === 'hla'">Aucun contrat hors convention trouvé</span>
+                <span v-else-if="filterState === 'echu'">Aucun contrat échu trouvé</span>
+                <span v-else>Aucun contrat trouvé</span>
               </td>
             </tr>
             <tr v-for="(contrat, index) in contrats" :key="`contrat-${contrat.id || index}`">
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
                 <div v-if="contrat.customer">
-                  <strong>{{ contrat.customer.lastname }} {{ contrat.customer.firstname }}</strong>
+                  <router-link
+                    :to="`/detail-client/${contrat.customer.uuid || contrat.customer.id}`"
+                    class="text-dark fw-bold text-decoration-none hover-link"
+                  >
+                    <strong>{{ contrat.customer.lastname }} {{ contrat.customer.firstname }}</strong>
+                  </router-link>
                   <br>
                   <small class="text-muted">{{ contrat.customer.phone }}</small>
                 </div>
@@ -175,15 +142,21 @@
               </td>
               
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
-                <strong class="text-dark fw-bold">
+                <router-link
+                  :to="`/details-contrat/${contrat.uuid || contrat.id}`"
+                  class="text-primary fw-bold text-decoration-none hover-link"
+                >
                   {{ contrat.police }}
-                </strong>
+                </router-link>
               </td>
               
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
-                <strong class="text-dark fw-bold">
+                <router-link
+                  :to="`/details-contrat/${contrat.uuid || contrat.id}`"
+                  class="text-primary fw-bold text-decoration-none hover-link"
+                >
                   {{ contrat.reference }}
-                </strong>
+                </router-link>
               </td>
               
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
@@ -264,21 +237,20 @@
                     <i class="flaticon-eye"></i>
                   </button>
 
-                    <!-- Générer PDF -->
+                    <!-- Générer / Consulter PDF -->
                   <button 
-                    v-if="contrat.id"
+                    v-if="contrat.id || contrat.uuid"
                     type="button"
                     class="btn-action btn-action-pdf"
-                        @click="generateContractPDF(contrat)"
-                    :disabled="isGeneratingPDF"
-                    title="Générer PDF">
-                    <i v-if="!isGeneratingPDF" class="flaticon-file" style="font-size: 18px; display: block; width: 18px; height: 18px; line-height: 18px;"></i>
+                    @click="openContractPdf(contrat)"
+                    :disabled="viewerLoading"
+                    title="Consulter / Télécharger PDF">
+                    <i v-if="!viewerLoading" class="flaticon-file" style="font-size: 18px; display: block; width: 18px; height: 18px; line-height: 18px;"></i>
                     <div v-else class="spinner-border spinner-border-sm" role="status" style="width: 14px; height: 14px;">
-                          <span class="visually-hidden">Chargement...</span>
-                        </div>
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
                   </button>
                   
-                  <!-- Fin des actions (Modifier supprimé — accès via page de détails) -->
                 </div>
               </td>
             </tr>
@@ -314,7 +286,14 @@
     @update:visible="showConversionModal = $event"
   />
 
-
+  <!-- Modal de détails du contrat -->
+  <DetailsContratModal
+    :visible="showDetailsModal"
+    :contractId="contratDetails?.uuid || contratDetails?.id || null"
+    @close="closeDetailsModal"
+    @update:visible="showDetailsModal = $event"
+    @generate-pdf="handleGeneratePDFFromModal"
+  />
 
       <!-- Modal d'import de contrats -->
       <ImportContratModal
@@ -323,24 +302,62 @@
         @import-error="handleImportError"
         @update:visible="showImportModal = $event"
       />
+
+      <!-- Modal hors convention pour l'édition -->
+      <HorsConventionModal
+        :visible="showHorsConventionModal"
+        :selected-client="selectedClientForEdit"
+        :contract-to-edit="contractToEdit ? contractToEdit : undefined"
+        @hors-convention-success="handleHorsConventionSuccess"
+        @close="handleHorsConventionClose"
+        @update:visible="showHorsConventionModal = $event"
+      />
+
+      <!-- Modal pour créer un contrat hors convention avec client -->
+      <CreateHorsConventionWithCustomer
+        :visible="showCreateHorsConventionModal"
+        @create-success="handleCreateHorsConventionSuccess"
+        @close="handleCreateHorsConventionClose"
+        @update:visible="showCreateHorsConventionModal = $event"
+      />
+
+    <!-- Visionneur PDF intégré -->
+    <PdfViewerModal
+      :visible="viewerVisible"
+      :pdf-url="viewerPdfUrl"
+      :loading="viewerLoading"
+      :error-message="viewerErrorMessage"
+      :title="viewerTitle"
+      :subtitle="viewerSubtitle"
+      :document-key="viewerDocumentKey"
+      :filename="viewerFilename"
+      @close="closeViewer"
+      @download="handleViewerDownload"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, watch, nextTick } from "vue";
+import { defineComponent, onMounted, ref, watch, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
 import ApiService from "../../services/ApiService";
 import JwtService from "../../services/JwtService";
+import { useAuthStore } from "../../services/auth";
 import { suppression, error, success, extractFilenameFromResponse } from "../../utils/utils";
 import PaginationComponent from '../Utilities/Pagination.vue';
 import CotationToContratModal from '../Common/CotationToContratModal.vue';
 import ImportContratModal from '../Common/ImportContratModal.vue';
-
+import DetailsContratModal from './DetailsContratModal.vue';
+import HorsConventionModal from '../Common/HorsConventionModal.vue';
+import CreateHorsConventionWithCustomer from '../Common/CreateHorsConventionWithCustomer.vue';
+import PdfViewerModal from '../Common/PdfViewerModal.vue';
+import { usePdfViewer } from '../../composables/usePdfViewer';
 
 // Interface pour les contrats
 interface Contrat {
   id: number;
+  uuid?: string;
   idCustomer: number;
   idUser: number;
   updatedBy?: number;
@@ -379,6 +396,7 @@ interface Contrat {
   // Relations
   customer?: {
     id: number;
+    uuid?: string;
     code?: string;
     lastname: string;
     firstname: string;
@@ -431,13 +449,79 @@ export default defineComponent({
   components: {
     PaginationComponent,
     CotationToContratModal,
-    ImportContratModal
+    ImportContratModal,
+    DetailsContratModal,
+    HorsConventionModal,
+    CreateHorsConventionWithCustomer,
+    PdfViewerModal
   },
   setup() {
     // Composables
     const router = useRouter();
     const route = useRoute();
+    const authStore = useAuthStore();
     const isGeneratingPDF = ref(false);
+
+    // Visionneur PDF intégré
+    const {
+      viewerVisible,
+      viewerPdfUrl,
+      viewerLoading,
+      viewerErrorMessage,
+      viewerTitle,
+      viewerSubtitle,
+      viewerDocumentKey,
+      viewerFilename,
+      closeViewer,
+      handleViewerDownload,
+      openContractPdf
+    } = usePdfViewer();
+
+    // Filtre d'état des contrats : 'encours' | 'hla' | 'echu'
+    const filterState = ref<'encours' | 'hla' | 'echu'>('encours');
+    if (route.query.filter && ['encours', 'hla', 'echu'].includes(route.query.filter as string)) {
+      filterState.value = route.query.filter as 'encours' | 'hla' | 'echu';
+    }
+
+    // Filtre de nature de crédit
+    const filterNatureCredit = ref<string>((route.query.natureCredit as string) || '');
+    const natureCredits = ref<Array<{ id: number; libelle: string; code?: string }>>([]);
+
+    const loadNatureCredits = async () => {
+      try {
+        const response = await ApiService.get('/nature-credits');
+        const raw = response.data?.data?.data || response.data?.data || response.data?.natureCredits || [];
+        if (Array.isArray(raw) && raw.length > 0) {
+          natureCredits.value = raw;
+        } else {
+          natureCredits.value = [
+            { id: 1, libelle: 'AMORTISSABLE', code: 'A' },
+            { id: 2, libelle: 'CONSTANT', code: 'C' },
+            { id: 3, libelle: 'CREDIT SALARIE', code: 'CS' }
+          ];
+        }
+      } catch (err: any) {
+        console.error('Erreur chargement natures de crédit:', err);
+        natureCredits.value = [
+          { id: 1, libelle: 'AMORTISSABLE', code: 'A' },
+          { id: 2, libelle: 'CONSTANT', code: 'C' },
+          { id: 3, libelle: 'CREDIT SALARIE', code: 'CS' }
+        ];
+      }
+    };
+
+    // Role check
+    const isAdminOrSuperAdmin = computed(() => {
+      const user = authStore.user;
+      if (!user) return false;
+      const roleName = user.role?.libelle?.toUpperCase() || '';
+      return roleName === 'ADMIN' || roleName === 'SUPER ADMIN' || roleName === 'ADMINISTRATEUR' || roleName === 'SUPER ADMINISTRATEUR';
+    });
+
+    // Refs pour Hors Convention
+    const showHorsConventionModal = ref(false);
+    const showCreateHorsConventionModal = ref(false);
+    const selectedClientForEdit = ref<any>(null);
 
     // Refs
     const contrats = ref<Array<Contrat>>([]);   
@@ -448,8 +532,6 @@ export default defineComponent({
     const showConversionModal = ref(false);
     const isGeneratingPDFGlobal = ref(false);
     const contractToEdit = ref<Contrat | null>(null);
-    const selectedNatureCredit = ref('');
-    const natureCredits = ref<any[]>([]);
     
     // Variable pour le modal d'import
     const showImportModal = ref(false);
@@ -588,6 +670,21 @@ export default defineComponent({
       getAllContrats(page.value, limit.value, searchTerm.value);
     }
 
+    function onFilterChange() {
+      page.value = 1;
+      const query: any = { ...route.query, filter: filterState.value };
+      if (filterNatureCredit.value && filterNatureCredit.value.trim()) {
+        query.natureCredit = filterNatureCredit.value.trim();
+      } else {
+        delete query.natureCredit;
+      }
+      router.replace({
+        path: route.path,
+        query
+      });
+      getAllContrats(1, limit.value, searchTerm.value);
+    }
+
     async function getAllContrats(pageNum = 1, limitNum = 10, search = '') {
       try {
         loading.value = true;
@@ -602,17 +699,21 @@ export default defineComponent({
           queryParams.append('search', search.trim());
         }
 
-        // Ajouter le filtre natureCredit si sélectionné
-        if (selectedNatureCredit.value) {
-          queryParams.append('natureCredit', selectedNatureCredit.value);
-        }
-
-        if (route.query.my === '1' || route.query.my === 'true') {
-          queryParams.append('my', '1');
+        // Ajouter le filtre de nature de crédit si sélectionné
+        if (filterNatureCredit.value && filterNatureCredit.value.trim()) {
+          queryParams.append('natureCredit', filterNatureCredit.value.trim());
         }
         
+        // Déterminer l'endpoint selon le filtre sélectionné (en cours, hla, echu)
+        let endpoint = '/contracts';
+        if (filterState.value === 'hla') {
+          endpoint = '/contracts/hors-convention';
+        } else if (filterState.value === 'echu') {
+          endpoint = '/contracts/echus';
+        }
+
         // Appeler l'API avec les paramètres de pagination
-        const { data } = await ApiService.get(`/contracts?${queryParams.toString()}`);
+        const { data } = await ApiService.get(`${endpoint}?${queryParams.toString()}`);
         
         // Adapter à la structure de réponse du backend : { data: { message: string, contracts: Contract[], pagination: {...}, permissions?: { canModify: boolean } } }
         if (data && data.data) {
@@ -674,8 +775,26 @@ export default defineComponent({
         const { data } = await ApiService.get(`/contracts/${contractId}`);
         
         if (data && data.data && data.data.contract) {
-          contractToEdit.value = data.data.contract;
-          showConversionModal.value = true;
+          const contrat = data.data.contract;
+          if (contrat.isHorsConvention || contrat.contractType === 'HORS_CONVENTION') {
+            if (contrat.customer) {
+              selectedClientForEdit.value = contrat.customer;
+            } else if (contrat.idCustomer) {
+              try {
+                const customerResponse = await ApiService.get(`/customers/${contrat.idCustomer}`);
+                if (customerResponse.data && customerResponse.data.data && customerResponse.data.data.customer) {
+                  selectedClientForEdit.value = customerResponse.data.data.customer;
+                }
+              } catch (err) {
+                console.warn('Impossible de charger le client:', err);
+              }
+            }
+            contractToEdit.value = contrat;
+            showHorsConventionModal.value = true;
+          } else {
+            contractToEdit.value = contrat;
+            showConversionModal.value = true;
+          }
         } else {
           error('Impossible de charger les détails du contrat');
         }
@@ -688,9 +807,11 @@ export default defineComponent({
     }
 
     function voirDetails(contrat: Contrat) {
-      if (contrat.id || (contrat as any).uuid) {
-        const slug = (contrat as any).uuid || contrat.id;
-        router.push(`/details-contrat/${slug}`);
+      if (contrat) {
+        const identifier = contrat.uuid || contrat.id;
+        if (identifier) {
+          router.push(`/details-contrat/${identifier}`);
+        }
       }
     }
     
@@ -936,6 +1057,25 @@ export default defineComponent({
 
     // Watcher pour détecter les paramètres de requête
     watch(() => route.query, async (newQuery) => {
+      const filterParam = newQuery.filter as string;
+      const natureParam = (newQuery.natureCredit as string) || '';
+      let shouldReload = false;
+
+      if (filterParam && ['encours', 'hla', 'echu'].includes(filterParam) && filterParam !== filterState.value) {
+        filterState.value = filterParam as 'encours' | 'hla' | 'echu';
+        shouldReload = true;
+      }
+
+      if (natureParam !== filterNatureCredit.value) {
+        filterNatureCredit.value = natureParam;
+        shouldReload = true;
+      }
+
+      if (shouldReload) {
+        page.value = 1;
+        await getAllContrats(1, limit.value, searchTerm.value);
+      }
+
       const openContract = newQuery.openContract as string;
       const autoOpen = newQuery.autoOpen as string;
       
@@ -956,49 +1096,13 @@ export default defineComponent({
       }
     }, { immediate: true });
 
-    watch(() => route.query.my, () => {
-      page.value = 1;
-      getAllContrats(1, limit.value, searchTerm.value);
-    });
-
-    // Filtre par Nature de Crédit
-    async function loadNatureCredits() {
-      try {
-        const response = await ApiService.get('/nature-credits');
-        const responseData = response.data;
-        let credits: any[] | null = null;
-        if (Array.isArray(responseData)) {
-          credits = responseData;
-        } else if (Array.isArray(responseData?.data)) {
-          credits = responseData.data;
-        } else if (Array.isArray(responseData?.data?.data)) {
-          credits = responseData.data.data;
-        }
-        if (credits && credits.length > 0) {
-          natureCredits.value = credits;
-        } else {
-          throw new Error('Format inattendu');
-        }
-      } catch (err) {
-        console.error('❌ Erreur lors du chargement des natures de crédit:', err);
-        natureCredits.value = [
-          { id: 1, code: 'AMORT', libelle: 'Amortissable' },
-          { id: 2, code: 'CP', libelle: 'Crédit de Campagne' },
-          { id: 3, code: 'OBA', libelle: 'Obligation Cautionnée' }
-        ];
-      }
-    }
-
-    function filtrerParNature() {
-      page.value = 1;
-      getAllContrats(page.value, limit.value, searchTerm.value);
-    }
-
     // Lifecycle
     onMounted(async () => {
-      // Charger les natures de crédit et le rôle de l'utilisateur en premier
-      await loadNatureCredits();
+      // Charger le rôle de l'utilisateur en premier
       await loadUserRole();
+
+      // Charger les natures de crédit pour le filtre
+      await loadNatureCredits();
       
       await getAllContrats();
       
@@ -1017,10 +1121,33 @@ export default defineComponent({
       }
     });
 
-    // Fonction pour ouvrir le modal de conversion
+    // Fonction pour ouvrir le modal de conversion / création
     function openConversionModal() {
-      // Ouvrir le modal de conversion directement
-      showConversionModal.value = true;
+      if (filterState.value === 'hla' && isAdminOrSuperAdmin.value) {
+        showCreateHorsConventionModal.value = true;
+      } else {
+        showConversionModal.value = true;
+      }
+    }
+
+    // Handlers pour les modals Hors Convention
+    function handleHorsConventionSuccess() {
+      getAllContrats(page.value, limit.value, searchTerm.value);
+    }
+
+    function handleHorsConventionClose() {
+      showHorsConventionModal.value = false;
+      selectedClientForEdit.value = null;
+      contractToEdit.value = null;
+    }
+
+    function handleCreateHorsConventionSuccess(data: any) {
+      getAllContrats(page.value, limit.value, searchTerm.value);
+      success('Client et contrat hors convention créés avec succès');
+    }
+
+    function handleCreateHorsConventionClose() {
+      showCreateHorsConventionModal.value = false;
     }
 
     // Gestionnaire de succès de conversion
@@ -1222,6 +1349,18 @@ export default defineComponent({
     }
 
     return {
+      // Visionneur PDF
+      viewerVisible,
+      viewerPdfUrl,
+      viewerLoading,
+      viewerErrorMessage,
+      viewerTitle,
+      viewerSubtitle,
+      viewerDocumentKey,
+      viewerFilename,
+      closeViewer,
+      handleViewerDownload,
+      openContractPdf,
       // Refs
       contrats,
       contratDetails,
@@ -1233,6 +1372,18 @@ export default defineComponent({
       totalPages,
       limit,
       totalElements,
+      filterState,
+      filterNatureCredit,
+      natureCredits,
+      onFilterChange,
+      isAdminOrSuperAdmin,
+      showHorsConventionModal,
+      showCreateHorsConventionModal,
+      selectedClientForEdit,
+      handleHorsConventionSuccess,
+      handleHorsConventionClose,
+      handleCreateHorsConventionSuccess,
+      handleCreateHorsConventionClose,
       
       
       // Methods
@@ -1277,10 +1428,7 @@ export default defineComponent({
       canModify,
       canModifyContract,
       canModifyPermission,
-      userRole,
-      selectedNatureCredit,
-      natureCredits,
-      filtrerParNature
+      userRole
     };
   },
 });
@@ -1916,5 +2064,19 @@ export default defineComponent({
 
 .table-responsive:not(:hover)::after {
   opacity: 1;
+}
+
+.hover-link {
+  color: #3b82f6 !important;
+  font-size: 0.82rem;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+  text-decoration-color: #93c5fd !important;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  cursor: pointer;
+}
+.hover-link:hover {
+  color: #1d4ed8 !important;
+  text-decoration-color: #1d4ed8 !important;
 }
 </style>

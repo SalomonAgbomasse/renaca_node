@@ -1,389 +1,310 @@
 <template>
-  <div class="card mb-25 border-0 rounded-3 shadow-sm bg-white letter-spacing overflow-hidden">
-    <!-- Card Header Premium -->
-    <div class="card-header bg-white border-bottom py-3 px-4">
-      <div class="d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center">
-          <div class="icon-box bg-soft-fnda rounded-3 p-2 me-3">
-            <i class="ph-bold ph-chart-line text-fnda fs-4"></i>
-          </div>
-          <div>
-            <h4 class="mb-0 fw-bold text-dark">Génération d’État de Production</h4>
-            <p class="text-muted mb-0 fs-xs">Analyse et extraction des données de production par période</p>
-          </div>
+  <div class="prod-page mb-25">
+
+    <!-- PAGE HEADER -->
+    <div class="prod-header">
+      <div class="prod-header-left">
+        <div class="prod-header-icon">
+          <i class="ph-bold ph-chart-line-up"></i>
         </div>
-        <div v-if="dateRangeInfo" class="badge bg-soft-info-fnda text-info border-soft-info px-3 py-2 rounded-pill">
-          <i class="ph-bold ph-calendar me-1"></i>
-          {{ dateRangeInfo }}
+        <div>
+          <h3 class="prod-title">Etats de Production</h3>
+          <p class="prod-subtitle">Extraction et analyse des donnees par periode</p>
         </div>
+      </div>
+      <div v-if="dateRangeInfo" class="prod-period-badge">
+        <i class="ph-bold ph-calendar-blank me-1"></i>{{ dateRangeInfo }}
       </div>
     </div>
 
-    <div class="card-body p-4">
+    <!-- FILTER PANEL -->
+    <div class="prod-filter-panel">
       <Form ref="productionStateForm" @submit="addProductionState" :validation-schema="productionStateSchema">
-        <!-- Section Filtres -->
-        <div class="row g-4 mb-4">
 
-          <!-- Filtres de base : Agence & Période -->
-          <div class="col-lg-6">
-            <div class="filter-group p-3 rounded-3 bg-light-gray border h-100">
-              <h6 class="fw-bold mb-3 d-flex align-items-center text-secondary">
-                <i class="ph-bold ph-funnel me-2 fs-xs"></i>Sélection des Filtres
-              </h6>
-              <div class="row">
-                <!-- Agence -->
-                <div class="col-md-6 mb-3">
-                  <label class="d-block text-dark fw-semibold mb-2 fs-sm">Agence</label>
-                  <Field name="agence" v-slot="{ field, setValue }">
-                    <Multiselect
-                      :options="agenceOptions"
-                      :searchable="agenceOptions.length > 1"
-                      track-by="value"
-                      label="label"
-                      :modelValue="field.value"
-                      @update:modelValue="(val) => { setValue(val); isFormDirty = true; }"
-                      :placeholder="agenceOptions.length > 1 ? 'Toutes les agences' : 'Agence assignée'"
-                      :object="true"
-                      :disabled="agenceOptions.length === 1"
-                      :clearable="agenceOptions.length > 1"
-                      class="custom-multiselect shadow-sm"
-                    />
-                  </Field>
-                  <ErrorMessage name="agence" class="text-danger fs-xs mt-1"/>
-                </div>
-                <!-- Nature de crédit -->
-                <div class="col-md-6 mb-3">
-                  <label class="d-block text-dark fw-semibold mb-2 fs-sm">Nature(s) de crédit</label>
-                  <Field name="natureCredit" v-slot="{ field, setValue }">
-                    <Multiselect
-                      mode="tags"
-                      :options="natureCreditOptions"
-                      :searchable="natureCreditOptions.length > 1"
-                      trackBy="value"
-                      valueProp="value"
-                      label="label"
-                      :modelValue="field.value || []"
-                      @update:modelValue="(val) => { setValue(val); isFormDirty = true; }"
-                      placeholder="Toutes les natures (Sélection multiple)"
-                      :object="true"
-                      :closeOnSelect="false"
-                      :clearable="true"
-                      class="custom-multiselect shadow-sm"
-                    >
-                      <template #tag="{ option, handleTagRemove }">
-                        <span class="custom-tag-badge">
-                          <span>{{ option.label }}</span>
-                          <span class="tag-remove-btn" @click.prevent="handleTagRemove(option, $event)">×</span>
-                        </span>
-                      </template>
-                    </Multiselect>
-                  </Field>
-                  <ErrorMessage name="natureCredit" class="text-danger fs-xs mt-1"/>
-                </div>
-                <!-- Période prédéfinie -->
-                <div class="col-12">
-                  <label class="d-block text-dark fw-semibold mb-2 fs-sm">Période Rapide</label>
-                  <Multiselect
-                    v-model="selectedPeriod"
-                    :options="periodOptions"
-                    :searchable="false"
-                    :clearable="true"
-                    track-by="value"
-                    label="label"
-                    placeholder="Choisir un raccourci..."
-                    :object="true"
-                    @update:modelValue="applyPredefinedPeriod"
-                    class="custom-multiselect shadow-sm"
-                  />
-                </div>
-              </div>
-            </div>
+        <div class="prod-filter-grid">
+          <!-- Agence -->
+          <div class="prod-filter-item">
+            <label class="prod-label"><i class="ph-bold ph-buildings me-1 text-fnda"></i>Agence(s)</label>
+            <Field name="agence" v-slot="{ field, setValue }">
+              <Multiselect
+                mode="tags"
+                :options="agenceOptions"
+                :searchable="agenceOptions.length > 1"
+                trackBy="value"
+                valueProp="value"
+                label="label"
+                :modelValue="Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])"
+                @update:modelValue="(val) => { setValue(val); isFormDirty = true; }"
+                :placeholder="agenceOptions.length > 1 ? 'Toutes (sélection multiple)' : 'Agence assignée'"
+                :object="true"
+                :disabled="agenceOptions.length === 1"
+                :closeOnSelect="false"
+                :clearable="agenceOptions.length > 1"
+                class="prod-multiselect"
+              >
+                <template #tag="{ option, handleTagRemove }">
+                  <span class="prod-tag">
+                    <span>{{ option.label }}</span>
+                    <span v-if="agenceOptions.length > 1" class="prod-tag-remove" @click.prevent="handleTagRemove(option, $event)">x</span>
+                  </span>
+                </template>
+              </Multiselect>
+            </Field>
+            <ErrorMessage name="agence" class="prod-error"/>
           </div>
 
-          <!-- Dates Manuelles -->
-          <div class="col-lg-6">
-            <div class="filter-group p-3 rounded-3 bg-light-gray border h-100">
-              <h6 class="fw-bold mb-3 d-flex align-items-center text-secondary">
-                <i class="ph-bold ph-calendar-check me-2 fs-xs"></i>Définition de la Période
-              </h6>
-              <div class="row">
-                <!-- Date de début -->
-                <div class="col-md-6 mb-3">
-                  <label class="d-block text-dark fw-semibold mb-2 fs-sm">Date de début <span class="text-danger">*</span></label>
-                  <Field name="startDate" v-slot="{ field }">
-                    <input
-                      id="startDate"
-                      v-bind="field"
-                      type="date"
-                      class="form-control border shadow-sm fs-md-15 text-black"
-                      @change="handleDateChange"
-                    />
-                  </Field>
-                  <ErrorMessage name="startDate" class="text-danger fs-xs mt-1"/>
-                </div>
-                <!-- Date de fin -->
-                <div class="col-md-6 mb-3">
-                  <label class="d-block text-dark fw-semibold mb-2 fs-sm">Date de fin <span class="text-danger">*</span></label>
-                  <Field name="endDate" v-slot="{ field }">
-                    <input
-                      id="endDate"
-                      v-bind="field"
-                      type="date"
-                      class="form-control border shadow-sm fs-md-15 text-black"
-                      @change="handleDateChange"
-                    />
-                  </Field>
-                  <ErrorMessage name="endDate" class="text-danger fs-xs mt-1"/>
-                </div>
-              </div>
-              <div class="p-2 mt-1 rounded-2 bg-white border fs-xs text-muted d-flex align-items-center">
-                <i class="ph-bold ph-info text-fnda me-2"></i>
-                Définissez manuellement les dates pour un rapport précis.
-              </div>
-            </div>
+          <!-- Nature de credit -->
+          <div class="prod-filter-item">
+            <label class="prod-label"><i class="ph-bold ph-tag me-1 text-fnda"></i>Natures de credit</label>
+            <Field name="natureCredit" v-slot="{ field, setValue }">
+              <Multiselect
+                mode="tags"
+                :options="natureCreditOptions"
+                :searchable="natureCreditOptions.length > 1"
+                trackBy="value"
+                valueProp="value"
+                label="label"
+                :modelValue="field.value || []"
+                @update:modelValue="(val) => { setValue(val); isFormDirty = true; }"
+                placeholder="Toutes (selection multiple)"
+                :object="true"
+                :closeOnSelect="false"
+                :clearable="true"
+                class="prod-multiselect"
+              >
+                <template #tag="{ option, handleTagRemove }">
+                  <span class="prod-tag">
+                    <span>{{ option.label }}</span>
+                    <span class="prod-tag-remove" @click.prevent="handleTagRemove(option, $event)">x</span>
+                  </span>
+                </template>
+              </Multiselect>
+            </Field>
+            <ErrorMessage name="natureCredit" class="prod-error"/>
           </div>
 
-          <!-- Statut (mode édition) -->
-          <div v-if="isEditMode" class="col-md-6">
-            <div class="filter-group p-3 rounded-3 bg-light-gray border">
-              <h6 class="fw-bold mb-3 d-flex align-items-center text-secondary">
-                <i class="ph-bold ph-tag me-2 fs-xs"></i>Statut
-              </h6>
-              <Field name="status" v-slot="{ field, setValue }">
-                <Multiselect
-                  :modelValue="field.value"
-                  @update:modelValue="(val) => { setValue(val); isFormDirty = true; }"
-                  :options="statusOptions"
-                  :searchable="true"
-                  :clearable="false"
-                  valueProp="value"
-                  trackBy="value"
-                  label="label"
-                  placeholder="Sélectionner le statut"
-                  :object="true"
-                  :multiple="false"
-                  :closeOnSelect="true"
-                  mode="single"
-                  class="custom-multiselect shadow-sm"
-                >
-                  <template #option="{ option }">
-                    <div class="flex items-center">
-                      <span class="badge me-2" :class="getStatusBadgeClass(option.value)">{{ option.label }}</span>
-                      <span class="text-sm text-gray-500">{{ option.description }}</span>
-                    </div>
-                  </template>
-                  <template #tag="{ option }">
-                    <div class="flex items-center">
-                      <span class="badge" :class="getStatusBadgeClass(option.value)">{{ option.label }}</span>
-                    </div>
-                  </template>
-                </Multiselect>
-              </Field>
-              <ErrorMessage name="status" class="text-danger fs-xs mt-1"/>
-            </div>
+          <!-- Date debut -->
+          <div class="prod-filter-item">
+            <label class="prod-label"><i class="ph-bold ph-calendar-blank me-1 text-fnda"></i>Date de debut <span class="text-danger">*</span></label>
+            <Field name="startDate" v-slot="{ field }">
+              <input id="startDate" v-bind="field" type="date" class="prod-input" @change="handleDateChange"/>
+            </Field>
+            <ErrorMessage name="startDate" class="prod-error"/>
           </div>
 
-          <!-- Message d'erreur (mode édition + statut échoué) -->
-          <div v-if="isEditMode && showErrorMessage" class="col-12">
-            <div class="form-group mb-15 mb-sm-20 mb-md-25">
-              <label class="d-block text-black fw-semibold mb-10" for="errorMessage">Message d’erreur</label>
-              <Field name="errorMessage" v-slot="{ field }">
-                <textarea id="errorMessage" v-bind="field" class="form-control shadow-none fs-md-15 text-black bg-light" rows="3" placeholder="Message d'erreur (si applicable)" readonly></textarea>
-              </Field>
-            </div>
+          <!-- Date fin -->
+          <div class="prod-filter-item">
+            <label class="prod-label"><i class="ph-bold ph-calendar-check me-1 text-fnda"></i>Date de fin <span class="text-danger">*</span></label>
+            <Field name="endDate" v-slot="{ field }">
+              <input id="endDate" v-bind="field" type="date" class="prod-input" @change="handleDateChange"/>
+            </Field>
+            <ErrorMessage name="endDate" class="prod-error"/>
           </div>
 
-          <!-- Résumé (mode édition + statut completé) -->
-          <div v-if="isEditMode && showSummary" class="col-12">
-            <div class="form-group mb-15 mb-sm-20 mb-md-25">
-              <label class="d-block text-black fw-semibold mb-10">Résumé de production</label>
-              <div class="bg-light p-3 rounded">
-                <div class="row" v-if="summaryData">
-                  <div class="col-md-3"><strong>Total contrats:</strong><br><span class="fs-5 text-fnda">{{ summaryData.totalContracts?.toLocaleString() || 0 }}</span></div>
-                  <div class="col-md-3"><strong>Capital total:</strong><br><span class="fs-5 text-fnda">{{ formatCurrency(summaryData.totalCapital) }}</span></div>
-                  <div class="col-md-3"><strong>Prime TTC totale:</strong><br><span class="fs-5" style="color: #231f20;">{{ formatCurrency(summaryData.totalPrimeTTC) }}</span></div>
-                  <div class="col-md-3"><strong>Capital moyen:</strong><br><span class="fs-5" style="color: #231f20;">{{ formatCurrency(summaryData.avgCapital) }}</span></div>
-                </div>
-                <div v-else class="text-muted">Aucun résumé disponible</div>
-              </div>
-            </div>
+          <!-- Periode rapide -->
+          <div class="prod-filter-item">
+            <label class="prod-label"><i class="ph-bold ph-lightning me-1 text-fnda"></i>Raccourci periode</label>
+            <Multiselect
+              v-model="selectedPeriod"
+              :options="periodOptions"
+              :searchable="false"
+              :clearable="true"
+              track-by="value"
+              label="label"
+              placeholder="Selectionner..."
+              :object="true"
+              @update:modelValue="applyPredefinedPeriod"
+              class="prod-multiselect"
+            />
           </div>
-
-          <!-- Chemin du fichier (mode édition + statut completé) -->
-          <div v-if="isEditMode && showFilePath" class="col-12">
-            <div class="form-group mb-15 mb-sm-20 mb-md-25">
-              <label class="d-block text-black fw-semibold mb-10">Fichier généré</label>
-              <div class="d-flex align-items-center">
-                <Field name="filePath" v-slot="{ field }">
-                  <input v-bind="field" type="text" class="form-control shadow-none fs-md-15 text-black bg-light me-2" placeholder="Chemin du fichier généré" readonly />
-                </Field>
-                <button v-if="hasValidFilePath" type="button" class="btn btn-fnda" @click="downloadFile">
-                  <i class="ph-bold ph-download-simple me-1"></i>Télécharger
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Barre d’actions intégrée -->
-          <div class="col-12 text-end">
-            <div class="d-inline-flex align-items-center gap-2 flex-wrap bg-white p-2 border rounded-3 shadow-sm">
-              <!-- Reset Filter Button (Only when preview is active) -->
-              <button v-if="hasActivePreview" type="button" @click="resetActiveFilter" class="btn btn-sm btn-outline-secondary d-flex align-items-center py-2 px-3 rounded-2 fw-semibold fs-xs">
-                <i class="ph-bold ph-x me-1 fs-xs"></i> Réinitialiser le filtre
-              </button>
-              
-              <!-- Export PDF -->
-              <button type="button" @click="handlePdfExport" class="btn btn-sm btn-danger d-flex align-items-center py-2 px-3 rounded-2 fw-semibold fs-xs" :disabled="hasActivePreview ? isDownloadingPdf : isDownloadingWeeklyPdf">
-                <span v-if="hasActivePreview ? isDownloadingPdf : isDownloadingWeeklyPdf" class="spinner-border spinner-border-sm me-1" role="status" style="width: 12px; height: 12px;"></span>
-                <i v-else class="ph-bold ph-file-pdf me-1 fs-xs"></i> PDF
-              </button>
-              
-              <!-- Export Excel -->
-              <button type="button" @click="handleExcelExport" class="btn btn-sm btn-info text-white d-flex align-items-center py-2 px-3 rounded-2 fw-semibold fs-xs" :disabled="hasActivePreview ? isDownloadingExcel : isDownloadingWeeklyExcel">
-                <span v-if="hasActivePreview ? isDownloadingExcel : isDownloadingWeeklyExcel" class="spinner-border spinner-border-sm me-1" role="status" style="width: 12px; height: 12px;"></span>
-                <i v-else class="ph-bold ph-file-xls me-1 fs-xs"></i> Excel
-              </button>
-              
-              <!-- Enregistrer Excel -->
-              <button v-if="!isEditMode" type="button" @click="handleSaveExcel" class="btn btn-sm btn-success d-flex align-items-center py-2 px-3 rounded-2 fw-semibold fs-xs" :disabled="hasActivePreview ? isSaving : isSavingWeekly">
-                <span v-if="hasActivePreview ? isSaving : isSavingWeekly" class="spinner-border spinner-border-sm me-1" role="status" style="width: 12px; height: 12px;"></span>
-                <i v-else class="ph-bold ph-floppy-disk me-1 fs-xs"></i> Enregistrer
-              </button>
-
-              <!-- Actualiser (Only when showing weekly production) -->
-              <button v-if="!hasActivePreview" type="button" @click="loadCurrentWeekProduction" class="btn btn-sm btn-outline-success d-flex align-items-center py-2 px-3 rounded-2 fw-semibold fs-xs" :disabled="loadingCurrentWeek">
-                <span v-if="loadingCurrentWeek" class="spinner-border spinner-border-sm me-1" role="status" style="width: 12px; height: 12px;"></span>
-                <i v-else class="ph-bold ph-arrows-clockwise me-1 fs-xs"></i> Actualiser
-              </button>
-
-              <div class="divider-v d-none d-sm-block"></div>
-              
-              <!-- Submit Button -->
-              <button class="btn btn-fnda d-inline-flex align-items-center px-4 py-2 fw-bold shadow-sm" type="submit" :disabled="isSubmitting">
-                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
-                <i v-else class="ph-bold ph-magnifying-glass me-2"></i>
-                {{ isEditMode ? 'Mettre à jour' : 'Prévisualiser les données' }}
-              </button>
-            </div>
-          </div>
-
-
-
         </div>
+
+        <!-- Edit mode extras -->
+        <div v-if="isEditMode" class="prod-edit-extras">
+          <div class="prod-filter-item" style="max-width:280px">
+            <label class="prod-label">Statut</label>
+            <Field name="status" v-slot="{ field, setValue }">
+              <Multiselect
+                :modelValue="field.value"
+                @update:modelValue="(val) => { setValue(val); isFormDirty = true; }"
+                :options="statusOptions"
+                :searchable="true"
+                :clearable="false"
+                valueProp="value"
+                trackBy="value"
+                label="label"
+                placeholder="Selectionner le statut"
+                :object="true"
+                mode="single"
+                class="prod-multiselect"
+              >
+                <template #option="{ option }">
+                  <span class="badge me-2" :class="getStatusBadgeClass(option.value)">{{ option.label }}</span>
+                  <span class="text-muted" style="font-size:12px">{{ option.description }}</span>
+                </template>
+              </Multiselect>
+            </Field>
+            <ErrorMessage name="status" class="prod-error"/>
+          </div>
+          <div v-if="showErrorMessage" class="prod-filter-item flex-grow-1">
+            <label class="prod-label">Message d erreur</label>
+            <Field name="errorMessage" v-slot="{ field }">
+              <textarea v-bind="field" class="prod-input" rows="2" readonly placeholder="Message d erreur"></textarea>
+            </Field>
+          </div>
+          <div v-if="showFilePath" class="prod-filter-item flex-grow-1">
+            <label class="prod-label">Fichier genere</label>
+            <div class="d-flex gap-2">
+              <Field name="filePath" v-slot="{ field }">
+                <input v-bind="field" type="text" class="prod-input flex-grow-1" readonly placeholder="Chemin du fichier"/>
+              </Field>
+              <button v-if="hasValidFilePath" type="button" class="prod-btn prod-btn-primary" @click="downloadFile">
+                <i class="ph-bold ph-download-simple"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTION BAR -->
+        <div class="prod-action-bar">
+          <div class="prod-action-left">
+            <button v-if="hasActivePreview" type="button" @click="resetActiveFilter" class="prod-btn prod-btn-ghost">
+              <i class="ph-bold ph-x me-1"></i>Reinitialiser
+            </button>
+            <button v-if="!hasActivePreview" type="button" @click="loadCurrentWeekProduction" class="prod-btn prod-btn-ghost" :disabled="loadingCurrentWeek">
+              <span v-if="loadingCurrentWeek" class="spinner-border spinner-border-sm me-1" style="width:13px;height:13px;"></span>
+              <i v-else class="ph-bold ph-arrows-clockwise me-1"></i>Actualiser
+            </button>
+          </div>
+          <div class="prod-action-right">
+            <button
+              type="button"
+              @click="handlePdfExport"
+              class="prod-btn prod-btn-danger"
+              :disabled="activeContracts.length === 0 || (hasActivePreview ? isDownloadingPdf : isDownloadingWeeklyPdf)"
+              :title="activeContracts.length === 0 ? 'Aucune donnée à exporter' : 'Exporter en PDF'"
+            >
+              <span v-if="hasActivePreview ? isDownloadingPdf : isDownloadingWeeklyPdf" class="spinner-border spinner-border-sm me-1" style="width:13px;height:13px;"></span>
+              <i v-else class="ph-bold ph-file-pdf me-1"></i>PDF
+            </button>
+            <button
+              type="button"
+              @click="handleExcelExport"
+              class="prod-btn prod-btn-excel"
+              :disabled="activeContracts.length === 0 || (hasActivePreview ? isDownloadingExcel : isDownloadingWeeklyExcel)"
+              :title="activeContracts.length === 0 ? 'Aucune donnée à exporter' : 'Exporter en Excel'"
+            >
+              <span v-if="hasActivePreview ? isDownloadingExcel : isDownloadingWeeklyExcel" class="spinner-border spinner-border-sm me-1" style="width:13px;height:13px;"></span>
+              <i v-else class="ph-bold ph-file-xls me-1"></i>Excel
+            </button>
+            <div class="prod-separator"></div>
+            <button class="prod-btn prod-btn-primary" type="submit" :disabled="isSubmitting">
+              <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1" style="width:13px;height:13px;"></span>
+              <i v-else class="ph-bold ph-magnifying-glass me-1"></i>
+              {{ isEditMode ? 'Mettre a jour' : 'Previsualiser' }}
+            </button>
+          </div>
+        </div>
+
       </Form>
     </div>
 
-    <!-- Section Résultats Unifiée -->
-    <div class="border-top mt-2 px-4 pb-4 bg-light-gray">
-      <!-- Section Header: Title left + Inline KPI chips right -->
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 py-3">
-        <!-- Left: Icon + Title -->
-        <div class="d-flex align-items-center">
-          <div class="icon-box bg-soft-fnda rounded-3 p-2 me-3">
-            <i :class="hasActivePreview ? 'ph-bold ph-funnel text-fnda fs-4' : 'ph-bold ph-calendar text-fnda fs-4'"></i>
+    <!-- RESULTS SECTION -->
+    <div class="prod-results">
+
+      <!-- Results Header -->
+      <div class="prod-results-header">
+        <div class="prod-results-title">
+          <div class="prod-results-icon" :class="hasActivePreview ? 'prod-icon--preview' : 'prod-icon--week'">
+            <i :class="hasActivePreview ? 'ph-bold ph-funnel' : 'ph-bold ph-calendar-blank'"></i>
           </div>
           <div>
-            <h5 class="mb-0 fw-bold text-dark">
-              {{ hasActivePreview ? 'Résultats de la Prévisualisation' : 'Production de la Semaine en Cours' }}
-            </h5>
-            <p class="text-muted mb-0 fs-xs">
-              {{ hasActivePreview ? getPreviewPeriodText() : `Du ${formatDate(getStartOfWeek())} au ${formatDate(new Date())}` }}
-            </p>
+            <div class="prod-results-label">{{ hasActivePreview ? 'Resultats de la previsualisation' : 'Production - Semaine en cours' }}</div>
+            <div class="prod-results-period">{{ hasActivePreview ? getPreviewPeriodText() : `Du ${formatDate(getStartOfWeek())} au ${formatDate(new Date())}` }}</div>
           </div>
         </div>
-
-        <!-- Right: Inline KPI Chips -->
-        <div v-if="!(hasActivePreview ? isSubmitting : loadingCurrentWeek)" class="d-flex align-items-center gap-3 flex-wrap">
-          <!-- Contrats -->
-          <div class="d-flex align-items-center gap-2 bg-white border rounded-pill px-3 py-2 shadow-sm">
-            <div class="rounded-circle bg-soft-success d-flex align-items-center justify-content-center" style="width:28px;height:28px;">
-              <i class="ph-bold ph-file-text text-success" style="font-size:13px;"></i>
-            </div>
+        <div v-if="!(hasActivePreview ? isSubmitting : loadingCurrentWeek)" class="prod-kpi-row">
+          <div class="prod-kpi">
+            <div class="prod-kpi-icon prod-kpi--contracts"><i class="ph-bold ph-file-text"></i></div>
             <div>
-              <div class="text-muted fw-bold" style="font-size:10px;line-height:1;text-transform:uppercase;">Contrats</div>
-              <div class="fw-bold text-dark" style="font-size:14px;line-height:1.2;">{{ activeSummary.totalContracts }}</div>
+              <div class="prod-kpi-label">Contrats</div>
+              <div class="prod-kpi-value">{{ activeSummary.totalContracts }}</div>
             </div>
           </div>
-          <!-- Capital -->
-          <div class="d-flex align-items-center gap-2 bg-white border rounded-pill px-3 py-2 shadow-sm">
-            <div class="rounded-circle bg-soft-fnda d-flex align-items-center justify-content-center" style="width:28px;height:28px;">
-              <i class="ph-bold ph-bank text-fnda" style="font-size:13px;"></i>
-            </div>
+          <div class="prod-kpi">
+            <div class="prod-kpi-icon prod-kpi--capital"><i class="ph-bold ph-bank"></i></div>
             <div>
-              <div class="text-muted fw-bold" style="font-size:10px;line-height:1;text-transform:uppercase;">Capital</div>
-              <div class="fw-bold text-dark text-nowrap" style="font-size:14px;line-height:1.2;">{{ formatCurrency(activeSummary.totalCapital) }} FCFA</div>
+              <div class="prod-kpi-label">Capital</div>
+              <div class="prod-kpi-value prod-kpi-nowrap">{{ formatCurrency(activeSummary.totalCapital) }} FCFA</div>
             </div>
           </div>
-          <!-- Prime TTC -->
-          <div class="d-flex align-items-center gap-2 bg-white border rounded-pill px-3 py-2 shadow-sm">
-            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:rgba(35,31,32,0.1);">
-              <i class="ph-bold ph-coins text-dark" style="font-size:13px;"></i>
-            </div>
+          <div class="prod-kpi">
+            <div class="prod-kpi-icon prod-kpi--prime"><i class="ph-bold ph-coins"></i></div>
             <div>
-              <div class="text-muted fw-bold" style="font-size:10px;line-height:1;text-transform:uppercase;">Prime TTC</div>
-              <div class="fw-bold text-success text-nowrap" style="font-size:14px;line-height:1.2;">{{ formatCurrency(activeSummary.totalPrimeTTC) }} FCFA</div>
+              <div class="prod-kpi-label">Prime TTC</div>
+              <div class="prod-kpi-value prod-kpi-success prod-kpi-nowrap">{{ formatCurrency(activeSummary.totalPrimeTTC) }} FCFA</div>
             </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Loader (Skeleton) -->
-      <div v-if="hasActivePreview ? isSubmitting : loadingCurrentWeek" class="row g-3">
-        <div v-for="i in 3" :key="i" class="col-md-4">
-          <div class="card p-3 shadow-sm border-0 bg-white">
-            <div class="skeleton-line mb-2" style="width: 50%;"></div>
-            <div class="skeleton-line" style="width: 80%; height: 24px;"></div>
           </div>
         </div>
       </div>
 
-
-      <!-- Results Content -->
-      <div v-else>
-
-        <!-- Table Details -->
-        <div v-if="activeContracts.length > 0" class="card border border-light shadow-sm rounded-3 overflow-hidden bg-white">
-          <div class="card-header bg-white py-2 border-bottom">
-            <span class="fs-xs fw-bold text-dark">
-              <i class="ph-bold ph-list me-1 text-fnda"></i>Détails des Contrats
-            </span>
-          </div>
-          <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-              <table class="table table-hover mb-0 align-middle table-sm" style="font-size: 12px;">
-                <thead class="bg-light sticky-top">
-                  <tr>
-                    <th class="ps-3 py-2">Réf / Police</th>
-                    <th class="py-2">Client</th>
-                    <th class="py-2">Agence</th>
-                    <th class="py-2">Gestionnaire</th>
-                    <th class="text-end py-2">Capital (FCFA)</th>
-                    <th class="text-end py-2">Prime TTC (FCFA)</th>
-                    <th class="text-center py-2">Date Effet</th>
-                    <th class="pe-3 py-2">Nature Crédit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="contract in activeContracts" :key="contract.id">
-                    <td class="ps-3 fw-bold text-fnda">{{ getContractCode(contract) }}</td>
-                    <td>{{ getCustomerName(contract) }}</td>
-                    <td><span class="text-muted fs-xs">{{ contract.agency?.name || 'N/A' }}</span></td>
-                    <td><span class="badge bg-light text-dark fw-normal border fs-xxs">{{ getUserName(contract) }}</span></td>
-                    <td class="text-end fw-semibold">{{ formatCurrency(getCapital(contract)) }}</td>
-                    <td class="text-end fw-bold text-success">{{ formatCurrency(getPrimeTTC(contract)) }}</td>
-                    <td class="text-center text-muted">{{ formatDate(contract.dateEff) }}</td>
-                    <td class="pe-3"><span class="badge bg-light text-secondary border">{{ getNatureCredit(contract) }}</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div v-else class="text-center py-3 text-muted fs-xs bg-white rounded-3 mt-3 border">
-          Aucun contrat trouvé pour cette sélection.
+      <!-- Skeleton -->
+      <div v-if="hasActivePreview ? isSubmitting : loadingCurrentWeek" class="prod-skeleton-wrap">
+        <div v-for="i in 7" :key="i" class="prod-skeleton-row">
+          <div class="prod-sk" style="width:90px"></div>
+          <div class="prod-sk" style="width:140px"></div>
+          <div class="prod-sk" style="width:100px"></div>
+          <div class="prod-sk" style="width:80px"></div>
+          <div class="prod-sk" style="width:110px"></div>
+          <div class="prod-sk" style="width:110px"></div>
+          <div class="prod-sk" style="width:90px"></div>
+          <div class="prod-sk" style="width:80px"></div>
         </div>
       </div>
+
+      <!-- Table -->
+      <div v-else class="prod-table-wrap">
+        <table class="prod-table">
+          <thead>
+            <tr>
+              <th>Réf / Police</th>
+              <th>Client</th>
+              <th>Agence</th>
+              <th>Gestionnaire</th>
+              <th class="text-end">Capital (FCFA)</th>
+              <th class="text-end">Prime TTC (FCFA)</th>
+              <th class="text-center">Date Effet</th>
+              <th>Nature Crédit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="activeContracts.length === 0">
+              <td colspan="8" class="text-center py-5">
+                <div class="d-flex flex-column align-items-center justify-content-center py-4">
+                  <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3" style="width: 54px; height: 54px;">
+                    <i class="ph-bold ph-folder-open text-muted fs-3"></i>
+                  </div>
+                  <h6 class="fw-semibold text-dark mb-1" style="font-size: 14px;">Aucun contrat trouvé</h6>
+                  <p class="text-muted mb-0" style="font-size: 12px; max-width: 420px;">
+                    Aucune production n'a été enregistrée pour les critères ou la période sélectionnée.
+                  </p>
+                </div>
+              </td>
+            </tr>
+            <tr v-for="contract in activeContracts" :key="contract.id" v-else>
+              <td class="prod-td-code">{{ getContractCode(contract) }}</td>
+              <td class="prod-td-client">{{ getCustomerName(contract) }}</td>
+              <td class="prod-td-muted">{{ contract.agency?.name || 'N/A' }}</td>
+              <td><span class="prod-badge-light">{{ getUserName(contract) }}</span></td>
+              <td class="text-end fw-semibold">{{ formatCurrency(getCapital(contract)) }}</td>
+              <td class="text-end prod-td-prime">{{ formatCurrency(getPrimeTTC(contract)) }}</td>
+              <td class="text-center prod-td-muted">{{ formatDate(contract.dateEff) }}</td>
+              <td><span class="prod-badge-secondary">{{ getNatureCredit(contract) }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 </template>
@@ -490,6 +411,22 @@ export default defineComponent({
         return id ? [Number(id)] : [];
       }
       if (typeof natureCreditVal === 'number') return [natureCreditVal];
+      return [];
+    };
+
+    const getSelectedAgencyIds = (agenceVal: any): number[] => {
+      if (!agenceVal) return [];
+      if (Array.isArray(agenceVal)) {
+        return agenceVal
+          .map((item: any) => (typeof item === 'object' ? (item.id || item.value) : item))
+          .filter(Boolean)
+          .map(Number);
+      }
+      if (typeof agenceVal === 'object') {
+        const id = agenceVal.id || agenceVal.value;
+        return id ? [Number(id)] : [];
+      }
+      if (typeof agenceVal === 'number') return [agenceVal];
       return [];
     };
 
@@ -750,8 +687,14 @@ export default defineComponent({
         const form = productionStateForm.value as any;
         const startDate = form.values?.startDate;
         const endDate = form.values?.endDate;
-        const agenceName = form.values?.agence?.name || 'Toutes les agences';
-        return `Période du ${formatDate(startDate)} au ${formatDate(endDate)} - ${agenceName}`;
+        const agenceVal = form.values?.agence;
+        let agenceLabel = 'Toutes les agences';
+        if (Array.isArray(agenceVal) && agenceVal.length > 0) {
+          agenceLabel = agenceVal.map((a: any) => a.label || a.name).join(', ');
+        } else if (agenceVal?.label || agenceVal?.name) {
+          agenceLabel = agenceVal.label || agenceVal.name;
+        }
+        return `Période du ${formatDate(startDate)} au ${formatDate(endDate)} - ${agenceLabel}`;
       }
       return '';
     };
@@ -764,18 +707,20 @@ export default defineComponent({
         const today = new Date().toISOString().split('T')[0];
         const formData: any = {
           startDate: today,
-          endDate: today
+          endDate: today,
+          natureCredit: []
         };
         if (agenceOptions.value.length === 1) {
-          formData.agence = agenceOptions.value[0];
+          formData.agence = [agenceOptions.value[0]];
         } else {
-          formData.agence = null;
+          formData.agence = [];
         }
         (productionStateForm.value as any).setValues(formData);
       }
     };
 
     const handlePdfExport = () => {
+      if (activeContracts.value.length === 0) return;
       if (hasActivePreview.value) {
         downloadPdfReport();
       } else {
@@ -784,6 +729,7 @@ export default defineComponent({
     };
 
     const handleExcelExport = () => {
+      if (activeContracts.value.length === 0) return;
       if (hasActivePreview.value) {
         downloadExcelReport();
       } else {
@@ -819,7 +765,7 @@ export default defineComponent({
     // Schema de validation
     const productionStateSchema = computed(() => {
       const baseSchema = {
-        agence: Yup.object().nullable(),
+        agence: Yup.mixed().nullable(),
         startDate: Yup.date()
           .typeError('Veuillez entrer une date de début valide')
           .required('La date de début est obligatoire')
@@ -1112,15 +1058,20 @@ export default defineComponent({
           endDate: formData.endDate
         };
         
-        // Ajouter l'agence seulement si elle est sélectionnée
-        if (formData.agence?.id) {
-          params.idAgency = formData.agence.id.toString();
+        // Ajouter les agences si sélectionnées
+        const agencyIds = getSelectedAgencyIds(formData.agence);
+        if (agencyIds.length === 1) {
+          params.idAgency = agencyIds[0].toString();
+        } else if (agencyIds.length > 1) {
+          params.idAgencies = agencyIds.join(',');
         }
 
-        // Ajouter la nature de crédit si elle est sélectionnée
-        const natureCreditId = formData.natureCredit?.id || formData.natureCredit?.value;
-        if (natureCreditId) {
-          params.idNatureCredit = natureCreditId.toString();
+        // Ajouter les natures de crédit si sélectionnées
+        const natureIds = getSelectedNatureIds(formData.natureCredit);
+        if (natureIds.length === 1) {
+          params.idNatureCredit = natureIds[0].toString();
+        } else if (natureIds.length > 1) {
+          params.idNatureCredits = natureIds.join(',');
         }
 
         // Ajouter l'utilisateur si ce n'est pas un admin/manager
@@ -1239,14 +1190,19 @@ export default defineComponent({
           endDate: formData.endDate
         };
         
-        // Ajouter l'agence seulement si elle est sélectionnée
-        if (formData.agence?.id) {
-          params.idAgency = formData.agence.id.toString();
+        // Ajouter les agences si sélectionnées
+        const agencyIds = getSelectedAgencyIds(formData.agence);
+        if (agencyIds.length === 1) {
+          params.idAgency = agencyIds[0].toString();
+        } else if (agencyIds.length > 1) {
+          params.idAgencies = agencyIds.join(',');
         }
 
         // Ajouter la nature de crédit si elle est sélectionnée
         const natureIds = getSelectedNatureIds(formData.natureCredit);
-        if (natureIds.length > 0) {
+        if (natureIds.length === 1) {
+          params.idNatureCredit = natureIds[0].toString();
+        } else if (natureIds.length > 1) {
           params.idNatureCredits = natureIds.join(',');
         }
 
@@ -1442,7 +1398,7 @@ export default defineComponent({
       return 'N/A';
     };
 
-    const fetchPreviewData = async (startDate: string, endDate: string, idAgency?: number | null, idNatureCredits?: number[] | null): Promise<void> => {
+    const fetchPreviewData = async (startDate: string, endDate: string, idAgencies?: number[] | number | null, idNatureCredits?: number[] | null): Promise<void> => {
       try {
         isSubmitting.value = true;
         
@@ -1454,8 +1410,16 @@ export default defineComponent({
         const queryParams = new URLSearchParams();
         queryParams.append('startDate', startDate);
         queryParams.append('endDate', endDate);
-        if (idAgency) {
-          queryParams.append('idAgency', idAgency.toString());
+        if (idAgencies) {
+          if (Array.isArray(idAgencies)) {
+            if (idAgencies.length === 1) {
+              queryParams.append('idAgency', idAgencies[0].toString());
+            } else if (idAgencies.length > 1) {
+              queryParams.append('idAgencies', idAgencies.join(','));
+            }
+          } else {
+            queryParams.append('idAgency', idAgencies.toString());
+          }
         }
         if (idNatureCredits && idNatureCredits.length > 0) {
           queryParams.append('idNatureCredits', idNatureCredits.join(','));
@@ -1581,10 +1545,11 @@ export default defineComponent({
         } else {
           // Mode création - récupérer les données pour prévisualisation
           const selectedNatureIds = getSelectedNatureIds(values.natureCredit);
+          const selectedAgencyIds = getSelectedAgencyIds(values.agence);
           await fetchPreviewData(
             values.startDate,
             values.endDate,
-            values.agence?.id || null,
+            selectedAgencyIds.length > 0 ? selectedAgencyIds : null,
             selectedNatureIds
           );
           
@@ -1642,12 +1607,17 @@ export default defineComponent({
         }
 
         const selectedNatureIds = getSelectedNatureIds(formData.natureCredit);
-        const generateData = {
+        const selectedAgencyIds = getSelectedAgencyIds(formData.agence);
+        const generateData: any = {
           startDate: formData.startDate,
           endDate: formData.endDate,
-          idAgency: formData.agence?.id || null,
           idNatureCredits: selectedNatureIds.length > 0 ? selectedNatureIds : undefined
         };
+        if (selectedAgencyIds.length === 1) {
+          generateData.idAgency = selectedAgencyIds[0];
+        } else if (selectedAgencyIds.length > 1) {
+          generateData.idAgencies = selectedAgencyIds;
+        }
 
         // console.log('📊 Génération et sauvegarde du fichier Excel...', generateData);
 
@@ -1896,7 +1866,9 @@ export default defineComponent({
               
               // Si une seule agence disponible (cas USER), la pré-sélectionner automatiquement
               if (agenceOptions.value.length === 1) {
-                formData.agence = agenceOptions.value[0];
+                formData.agence = [agenceOptions.value[0]];
+              } else {
+                formData.agence = [];
               }
               
               (productionStateForm.value as any).setValues(formData);
@@ -1994,217 +1966,187 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* ===== FNDA Green Color System ===== */
-.text-fnda { color: #33b04a !important; }
-.bg-soft-fnda { background-color: rgba(51, 176, 74, 0.12) !important; }
-.bg-soft-info-fnda { background-color: rgba(0, 188, 212, 0.1) !important; }
-.border-soft-info { border: 1px solid rgba(0, 188, 212, 0.2) !important; }
-
-.btn-fnda {
-  background-color: #33b04a;
-  color: #ffffff;
-  border-color: #33b04a;
-  transition: all 0.3s ease;
-}
-.btn-fnda:hover, .btn-fnda:focus {
-  background-color: #2d9a41;
-  color: #ffffff;
-  border-color: #2d9a41;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(51, 176, 74, 0.3);
+/* ===== PROD PAGE DESIGN SYSTEM ===== */
+.prod-page {
+  display: flex; flex-direction: column; gap: 20px;
+  background: transparent;
+  margin-bottom: 25px;
 }
 
-/* ===== Card Header ===== */
-.icon-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
+/* Header Card */
+.prod-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px; background: #fff;
+  border: 1px solid #e8eaf0; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.03);
+}
+.prod-header-left { display: flex; align-items: center; gap: 14px; }
+.prod-header-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: rgba(51,176,74,.1); display: flex; align-items: center;
+  justify-content: center; font-size: 20px; color: #33b04a;
+}
+.prod-title { font-size: 17px; font-weight: 700; color: #1a1d2e; margin: 0; }
+.prod-subtitle { font-size: 12px; color: #8b90a7; margin: 0; }
+.prod-period-badge {
+  font-size: 11.5px; font-weight: 600; color: #0d6efd;
+  background: rgba(13,110,253,.08); border: 1px solid rgba(13,110,253,.15);
+  border-radius: 20px; padding: 5px 12px; display: flex; align-items: center;
 }
 
-/* ===== Filter Groups ===== */
-.filter-group { transition: all 0.3s ease; }
-.filter-group:hover {
-  background-color: #fff !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+/* Filter Panel Card */
+.prod-filter-panel {
+  background: #fff; padding: 22px 24px;
+  border: 1px solid #e8eaf0; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.03);
 }
-.bg-light-gray { background-color: #fcfcfc; }
-
-/* ===== Custom Multiselect ===== */
-:deep(.custom-multiselect) {
-  --ms-border-color: #cbd5e1;
-  --ms-radius: 8px;
-  --ms-placeholder-color: #94a3b8;
-  --ms-option-bg-selected: #059669;
-  --ms-option-bg-selected-pointed: #047857;
-  --ms-tag-bg: #ecfdf5;
-  --ms-tag-color: #047857;
-  --ms-tag-radius: 6px;
-  --ms-tag-font-size: 0.75rem;
-  --ms-tag-font-weight: 600;
+.prod-filter-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 14px;
 }
-
-:deep(.custom-multiselect .multiselect-tags) {
-  gap: 4px;
-  padding: 3px 6px;
+@media (max-width: 1100px) { .prod-filter-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .prod-filter-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px)  { .prod-filter-grid { grid-template-columns: 1fr; } }
+.prod-filter-item { display: flex; flex-direction: column; gap: 5px; }
+.prod-label {
+  font-size: 11.5px; font-weight: 600; color: #5a607f;
+  text-transform: uppercase; letter-spacing: .4px; display: flex; align-items: center;
 }
-
-:deep(.custom-multiselect .multiselect-tag) {
-  background-color: #ecfdf5 !important;
-  color: #047857 !important;
-  border: 1px solid #a7f3d0 !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  border-radius: 6px !important;
-  padding: 2px 8px !important;
-  margin: 2px !important;
-  letter-spacing: 0.01em;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+.prod-input {
+  height: 38px; border: 1px solid #dde1ed; border-radius: 8px; padding: 0 11px;
+  font-size: 13px; color: #1a1d2e; background: #fff;
+  transition: border-color .2s, box-shadow .2s; width: 100%; outline: none;
+}
+.prod-input:focus { border-color: #33b04a; box-shadow: 0 0 0 3px rgba(51,176,74,.1); }
+.prod-input[readonly] { background: #f8f9fc; color: #8b90a7; }
+.prod-error { font-size: 11px; color: #dc3545; }
+.prod-multiselect { font-size: 13px; }
+.prod-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(51,176,74,.12); color: #1e7e34;
+  border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 600;
+}
+.prod-tag-remove { cursor: pointer; font-size: 13px; line-height: 1; }
+.prod-edit-extras {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  padding-top: 12px; border-top: 1px dashed #e8eaf0; margin-top: 4px;
 }
 
-:deep(.custom-multiselect .multiselect-tag-remove) {
-  background: transparent !important;
-  color: #059669 !important;
-  border-radius: 4px;
-  margin-left: 4px;
-  padding: 0 2px;
+/* Action Bar */
+.prod-action-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 16px; border-top: 1px solid #f0f1f5; margin-top: 8px;
+  flex-wrap: wrap; gap: 8px;
 }
+.prod-action-left, .prod-action-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.prod-separator { width: 1px; height: 24px; background: #dde1ed; }
+.prod-btn {
+  display: inline-flex; align-items: center; height: 36px; padding: 0 14px;
+  border-radius: 8px; border: none; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all .18s ease; white-space: nowrap;
+}
+.prod-btn:disabled { opacity: .55; cursor: not-allowed; }
+.prod-btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.12); }
+.prod-btn-ghost { background: #f5f6fa; color: #5a607f; border: 1px solid #dde1ed; }
+.prod-btn-danger { background: #dc3545; color: #fff; }
+.prod-btn-excel  { background: #1d7843; color: #fff; }
+.prod-btn-primary { background: #33b04a; color: #fff; }
 
-:deep(.custom-multiselect .multiselect-tag-remove:hover) {
-  background-color: rgba(4, 120, 87, 0.15) !important;
-  color: #064e3b !important;
+/* Results Card */
+.prod-results {
+  background: #fff; padding: 20px 24px 24px;
+  border: 1px solid #e8eaf0; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.03);
 }
+.prod-results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; padding: 0 0 16px;
+  border-bottom: 1px solid #f0f1f5; margin-bottom: 18px;
+}
+.prod-results-title { display: flex; align-items: center; gap: 12px; }
+.prod-results-icon {
+  width: 38px; height: 38px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+}
+.prod-icon--week    { background: rgba(13,110,253,.1); color: #0d6efd; }
+.prod-icon--preview { background: rgba(51,176,74,.1);  color: #33b04a; }
+.prod-results-label { font-size: 14px; font-weight: 700; color: #1a1d2e; }
+.prod-results-period { font-size: 11.5px; color: #8b90a7; }
 
-.custom-tag-badge {
-  display: inline-flex;
-  align-items: center;
-  background-color: #ecfdf5;
-  color: #047857;
-  border: 1px solid #a7f3d0;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  margin: 2px;
-  line-height: 1.2;
+/* KPI chips */
+.prod-kpi-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.prod-kpi {
+  display: flex; align-items: center; gap: 8px;
+  background: #f8f9fc; border: 1px solid #e8eaf0;
+  border-radius: 10px; padding: 7px 12px;
 }
+.prod-kpi-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+}
+.prod-kpi--contracts { background: rgba(25,135,84,.12); color: #198754; }
+.prod-kpi--capital   { background: rgba(51,176,74,.12);  color: #33b04a; }
+.prod-kpi--prime     { background: rgba(13,110,253,.1);  color: #0d6efd; }
+.prod-kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #8b90a7; }
+.prod-kpi-value { font-size: 13.5px; font-weight: 700; color: #1a1d2e; line-height: 1.2; }
+.prod-kpi-success { color: #198754; }
+.prod-kpi-nowrap { white-space: nowrap; }
 
-.tag-remove-btn {
-  margin-left: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #059669;
-  line-height: 1;
+/* Skeleton */
+.prod-skeleton-wrap { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; overflow: hidden; }
+.prod-skeleton-row {
+  display: flex; gap: 20px; align-items: center;
+  padding: 14px 16px; border-bottom: 1px solid #f0f1f5;
 }
+.prod-skeleton-row:last-child { border-bottom: none; }
+.prod-sk {
+  height: 13px; border-radius: 6px;
+  background: linear-gradient(90deg, #eef0f5 25%, #f8f9fc 50%, #eef0f5 75%);
+  background-size: 400% 100%; animation: sk-shimmer 1.4s ease infinite; flex-shrink: 0;
+}
+@keyframes sk-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-.tag-remove-btn:hover {
-  color: #064e3b;
-}
-
-/* ===== Action Bar Status Badges ===== */
-.bg-soft-success-badge {
-  background-color: rgba(40, 167, 69, 0.1);
-  border: 1px solid rgba(40, 167, 69, 0.25);
-}
-.bg-soft-warning-badge {
-  background-color: rgba(243, 156, 18, 0.1);
-  border: 1px solid rgba(243, 156, 18, 0.25);
-}
-
-/* ===== Vertical Divider ===== */
-.divider-v {
-  width: 1px;
-  height: 30px;
-  background-color: #dee2e6;
-  margin: 0 5px;
-  align-self: center;
-}
-
-/* ===== KPI Cards Glassmorphism ===== */
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.kpi-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06) !important;
-}
-.kpi-icon-wrapper {
-  width: 50px;
-  height: 50px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* KPI soft backgrounds */
-.bg-soft-success { background-color: rgba(40, 167, 69, 0.12) !important; }
-.bg-soft-dark    { background-color: rgba(35, 31, 32, 0.10) !important; }
-
-/* ===== Table Premium ===== */
-.table-responsive-custom {
+/* Table */
+.prod-table-wrap {
+  background: #fff; border: 1px solid #e8eaf0;
+  border-radius: 10px; overflow: auto;
   max-height: 520px;
-  overflow-y: auto;
 }
-.table-responsive-custom::-webkit-scrollbar { width: 6px; }
-.table-responsive-custom::-webkit-scrollbar-track { background: #f1f1f1; }
-.table-responsive-custom::-webkit-scrollbar-thumb { background: #33b04a; border-radius: 10px; }
-.table-responsive-custom::-webkit-scrollbar-thumb:hover { background: #2d9a41; }
-
-.table thead th {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: #6c757d;
-  padding: 0.9rem 0.5rem;
-  border-top: none;
+.prod-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.prod-table thead tr { background: #f8f9fc; position: sticky; top: 0; z-index: 2; }
+.prod-table th {
+  padding: 11px 14px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px; color: #8b90a7;
+  border-bottom: 1px solid #e8eaf0; white-space: nowrap;
 }
-.table tbody td {
-  padding: 0.85rem 0.5rem;
-  font-size: 0.875rem;
-  border-bottom: 1px solid #f3f3f3;
-  vertical-align: middle;
+.prod-table tbody tr { border-bottom: 1px solid #f0f1f5; transition: background .12s; }
+.prod-table tbody tr:last-child { border-bottom: none; }
+.prod-table tbody tr:hover { background: #f8f9fc; }
+.prod-table td { padding: 11px 14px; color: #3a3f5c; vertical-align: middle; }
+.prod-td-code   { font-weight: 700; color: #33b04a; font-family: monospace; }
+.prod-td-client { font-weight: 600; color: #1a1d2e; }
+.prod-td-muted  { color: #8b90a7; font-size: 12px; }
+.prod-td-prime  { font-weight: 700; color: #198754; }
+.prod-badge-light {
+  background: #f5f6fa; color: #5a607f; border: 1px solid #dde1ed;
+  border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 600;
 }
-.table tbody tr:hover { background-color: #f8fff9; }
-
-.avatar-sm {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  font-size: 0.65rem;
+.prod-badge-secondary {
+  background: rgba(13,110,253,.07); color: #0d6efd; border: 1px solid rgba(13,110,253,.15);
+  border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 600;
 }
 
-/* ===== Typography Utilities ===== */
-.fs-xs  { font-size: 0.75rem !important; }
-.fs-xxs { font-size: 0.65rem !important; }
-.fs-sm  { font-size: 0.825rem !important; }
-.font-xs { font-size: 0.7rem !important; }
-
-/* ===== Misc ===== */
-.cursor-pointer { cursor: pointer; }
-.badge-success-custom { background-color: #33b04a !important; color: #fff !important; }
-
-.btn:hover {
-  opacity: 0.92;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
+/* Empty */
+.prod-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 40px 20px;
+  background: #fff; border-radius: 10px; border: 1px solid #e8eaf0;
 }
 
-/* ===== Responsive ===== */
+/* Responsive */
 @media (max-width: 768px) {
-  .kpi-card h3 { font-size: 1.1rem; }
-  .btn { font-size: 13px !important; padding: 8px 12px !important; }
-  .actions-group { width: 100%; }
-  .divider-v { display: none; }
-  .table-responsive-custom { max-height: 400px; }
-  .table td, .table th { padding: 0.5rem; }
+  .prod-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .prod-kpi-row { display: none; }
+  .prod-action-bar { flex-direction: column; align-items: stretch; }
+  .prod-action-right { justify-content: flex-end; }
 }
 </style>

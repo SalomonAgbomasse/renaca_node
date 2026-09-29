@@ -71,31 +71,12 @@ export class UserSeedService implements OnModuleInit {
       console.log('🌱 Seed: Vérification et mise à jour des rôles...');
       
       const defaultRoles = [
-        {
-          id: 1,
-          libelle: 'ADMIN',
-          desc: 'Administrateur système'
-        },
-        {
-          id: 2,
-          libelle: 'MANAGER',
-          desc: 'Gestionnaire'
-        },
-        {
-          id: 4,
-          libelle: 'USER',
-          desc: 'Utilisateur standard'
-        },
-        {
-          id: 5,
-          libelle: 'SUPER ADMIN',
-          desc: 'Super administrateur'
-        },
-        {
-          id: 6,
-          libelle: 'AGENCY MANAGER',
-          desc: 'Gestionnaire d\'agence'
-        }
+        { id: 1, code: 'SP', libelle: 'SUPER ADMIN', desc: 'Super Administrateur Central' },
+        { id: 2, code: 'AD', libelle: 'ADMIN', desc: "Administrateur de l'application" },
+        { id: 3, code: 'MA', libelle: 'MANAGER', desc: 'Manager / Responsable Métier' },
+        { id: 4, code: 'AM', libelle: 'AGENCY MANAGER', desc: "Manager d'Agence" },
+        { id: 5, code: 'US', libelle: 'USER', desc: 'Utilisateur standard / Conseiller' },
+        { id: 6, code: 'BO', libelle: 'BACK OFFICE', desc: 'Agent Back Office' }
       ];
 
       const allowedIds = defaultRoles.map(r => r.id);
@@ -113,6 +94,7 @@ export class UserSeedService implements OnModuleInit {
           // Mettre à jour le rôle existant pour s'assurer qu'il a les bonnes infos
           existingRole.libelle = roleData.libelle;
           existingRole.desc = roleData.desc;
+          existingRole.code = roleData.code;
           await this.roleRepository.save(existingRole);
         }
       }
@@ -123,12 +105,12 @@ export class UserSeedService implements OnModuleInit {
         if (!allowedIds.includes(dbRole.id)) {
           console.log(`🗑️ Rôle obsolète détecté: ${dbRole.libelle} (ID: ${dbRole.id})`);
           
-          // Réassigner les utilisateurs de ce rôle obsolète vers USER (ID: 4)
+          // Réassigner les utilisateurs de ce rôle obsolète vers USER (ID: 5)
           const affectedUsers = await this.userRepository.find({ where: { idRole: dbRole.id } });
           if (affectedUsers.length > 0) {
-            console.log(`🔄 Réassignation de ${affectedUsers.length} utilisateur(s) vers le rôle USER (ID: 4)`);
+            console.log(`🔄 Réassignation de ${affectedUsers.length} utilisateur(s) vers le rôle USER (ID: 5)`);
             for (const user of affectedUsers) {
-              user.idRole = 4;
+              user.idRole = 5;
               await this.userRepository.save(user);
             }
           }
@@ -151,7 +133,23 @@ export class UserSeedService implements OnModuleInit {
       
       const usersToSeed = [
         {
-          idRole: 1, // ADMIN
+          id: 1,
+          idRole: 1, // SUPER ADMIN
+          idAgency: 1, // Agence Centrale - Cotonou
+          lastname: 'AGBOMASSE',
+          firstname: 'Comlan Salomon',
+          email: 'salomonagbomasse25@gmail.com',
+          phone: '0196131052',
+          password: 'MotDePasse123!',
+          status: 'ACTIVE',
+          isVerified: true,
+          twoFactorEnabled: false,
+          loginAttempts: 0,
+          version: 0
+        },
+        {
+          id: 2,
+          idRole: 1, // SUPER ADMIN
           idAgency: 1, // Agence Centrale - Cotonou
           lastname: 'ASSOUMA',
           firstname: 'Ajmal',
@@ -165,6 +163,23 @@ export class UserSeedService implements OnModuleInit {
           version: 0
         },
       ];
+
+      // S'assurer que Salomon AGBOMASSE est toujours à l'ID 1
+      const salomon = await this.userRepository.findOne({ where: { email: 'salomonagbomasse25@gmail.com' } });
+      if (salomon && salomon.id !== 1) {
+        console.log('🔄 Réalignement de l\'ID de Salomon AGBOMASSE à 1...');
+        const userAtId1 = await this.userRepository.findOne({ where: { id: 1 } });
+        if (userAtId1 && userAtId1.email !== salomon.email) {
+          await this.userRepository.query('SET FOREIGN_KEY_CHECKS = 0');
+          await this.userRepository.query('UPDATE users SET id = 9999 WHERE id = 1');
+          await this.userRepository.query('UPDATE users SET id = 1 WHERE email = ?', [salomon.email]);
+          await this.userRepository.query('UPDATE users SET id = 2 WHERE id = 9999');
+          await this.userRepository.query('ALTER TABLE users AUTO_INCREMENT = 3');
+          await this.userRepository.query('SET FOREIGN_KEY_CHECKS = 1');
+        } else if (!userAtId1) {
+          await this.userRepository.query('UPDATE users SET id = 1 WHERE email = ?', [salomon.email]);
+        }
+      }
 
       for (const userData of usersToSeed) {
         // Vérifier si l'utilisateur existe déjà
@@ -332,6 +347,8 @@ export class UserSeedService implements OnModuleInit {
     try {
       console.log(`📧 Envoi de l'email de bienvenue à ${userData.email}...`);
 
+      const appName = process.env.APP_NAME || 'RENACA Simulateur';
+
       // Configuration du transporteur email
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -339,7 +356,7 @@ export class UserSeedService implements OnModuleInit {
         secure: process.env.SMTP_SECURE === 'true' || process.env.EMAIL_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER || process.env.EMAIL_USER || 'notificationsaavie@gmail.com',
-          pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
+          pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || 'omrg rmuc hpuz vhkx'
         }
       });
 
@@ -353,7 +370,7 @@ export class UserSeedService implements OnModuleInit {
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Bienvenue sur SUD CAPITAL</title>
+          <title>Bienvenue sur ${appName}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
@@ -534,7 +551,7 @@ export class UserSeedService implements OnModuleInit {
               <div class="content">
                 <div class="welcome-text">
                   <p>Bonjour <strong>${userData.firstname} ${userData.lastname}</strong>,</p>
-                  <p>Votre compte utilisateur a été créé avec succès sur la plateforme <span class="highlight">SUD CAPITAL</span>.</p>
+                  <p>Votre compte utilisateur a été créé avec succès sur la plateforme <span class="highlight">${appName}</span>.</p>
                 </div>
                 
                 <div class="credentials">
@@ -560,7 +577,7 @@ export class UserSeedService implements OnModuleInit {
                 <div class="instructions">
                   <h3><span class="icon">📋</span> Instructions de connexion</h3>
                   <ol>
-                    <li>Accédez à l'application via : <a href="${process.env.FRONTEND_URL || 'https://fnda.aaviedigital.bj'}" class="button">Se connecter à PADME S.A</a></li>
+                    <li>Accédez à l'application via : <a href="${process.env.FRONTEND_URL || 'https://renaca.acs.v1.aaviedigital.bj'}" class="button">Se connecter à ${appName}</a></li>
                     <li>Utilisez vos identifiants ci-dessus pour vous connecter</li>
                     <li>Lors de votre première connexion, vous serez invité à changer votre mot de passe</li>
                   </ol>
@@ -577,13 +594,13 @@ export class UserSeedService implements OnModuleInit {
                 
                 <div class="signature">
                   <p>Si vous avez des questions ou besoin d'assistance, n'hésitez pas à contacter l'équipe technique.</p>
-                  <p>Cordialement,<br><strong>L'équipe <span class="highlight">SUD CAPITAL</span></strong></p>
+                  <p>Cordialement,<br><strong>L'équipe <span class="highlight">${appName}</span></strong></p>
                 </div>
               </div>
               
               <div class="footer">
                 <p>Cet email a été envoyé automatiquement. Merci de ne pas y répondre.</p>
-                <p>© 2024 SUD CAPITAL - Système de gestion des cotations et contrats d'assurance</p>
+                <p>© ${new Date().getFullYear()} ${appName} - Système de gestion des cotations et contrats d'assurance</p>
               </div>
             </div>
           </div>
@@ -593,13 +610,16 @@ export class UserSeedService implements OnModuleInit {
 
       // Options de l'email
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'notificationsaavie@gmail.com',
+        from: {
+          name: `${appName} - L'Africaine Vie Bénin SA`,
+          address: process.env.EMAIL_USER || 'notificationsaavie@gmail.com'
+        },
         to: userData.email,
         cc: [
           'sagbomasse@lafricaineviebenin.com', // Copie à Salomon
           'salomonagbomasse25@gmail.com', // Copie à Salomon
         ],
-        subject: '🎉 Bienvenue sur SUD CAPITAL - Vos identifiants de connexion',
+        subject: `🎉 Bienvenue sur ${appName} - Vos identifiants de connexion`,
         html: emailContent
       };
 

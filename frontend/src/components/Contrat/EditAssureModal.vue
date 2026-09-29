@@ -9,19 +9,19 @@
     <div class="row">
       <!-- Nom -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Nom <span class="text-danger">*</span></label>
+        <label class="form-label fw-bold"><i class="fas fa-user text-secondary me-2"></i>Nom <span class="text-danger">*</span></label>
         <input type="text" v-model="form.lastname" class="form-control" required @input="uppercaseNom" />
       </div>
 
       <!-- Prénoms -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Prénoms <span class="text-danger">*</span></label>
+        <label class="form-label fw-bold"><i class="fas fa-user text-secondary me-2"></i>Prénoms <span class="text-danger">*</span></label>
         <input type="text" v-model="form.firstname" class="form-control" required />
       </div>
 
       <!-- Genre -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Genre <span class="text-danger">*</span></label>
+        <label class="form-label fw-bold"><i class="fas fa-venus-mars text-secondary me-2"></i>Genre <span class="text-danger">*</span></label>
         <select v-model="form.gender" class="form-select" required>
           <option value="M">Masculin</option>
           <option value="F">Féminin</option>
@@ -30,37 +30,37 @@
 
       <!-- Date de naissance -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Date de Naissance <span class="text-danger">*</span></label>
+        <label class="form-label fw-bold"><i class="fas fa-calendar-alt text-secondary me-2"></i>Date de Naissance <span class="text-danger">*</span></label>
         <input type="date" v-model="form.birthdate" class="form-control" required />
       </div>
 
       <!-- Téléphone -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Téléphone</label>
+        <label class="form-label fw-bold"><i class="fas fa-phone text-secondary me-2"></i>Téléphone</label>
         <input type="text" v-model="form.phone" class="form-control" />
       </div>
 
       <!-- Email -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Email</label>
+        <label class="form-label fw-bold"><i class="fas fa-envelope text-secondary me-2"></i>Email</label>
         <input type="email" v-model="form.email" class="form-control" />
       </div>
 
       <!-- Lieu de naissance -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Lieu de Naissance</label>
+        <label class="form-label fw-bold"><i class="fas fa-map-marker-alt text-secondary me-2"></i>Lieu de Naissance</label>
         <input type="text" v-model="form.placeOfBirth" class="form-control" />
       </div>
 
       <!-- Profession -->
       <div class="col-md-6 mb-3">
-        <label class="form-label fw-bold">Profession</label>
+        <label class="form-label fw-bold"><i class="fas fa-briefcase text-secondary me-2"></i>Profession</label>
         <input type="text" v-model="form.occupation" class="form-control" />
       </div>
 
       <!-- Adresse -->
       <div class="col-md-12 mb-3">
-        <label class="form-label fw-bold">Adresse</label>
+        <label class="form-label fw-bold"><i class="fas fa-home text-secondary me-2"></i>Adresse</label>
         <input type="text" v-model="form.address" class="form-control" />
       </div>
     </div>

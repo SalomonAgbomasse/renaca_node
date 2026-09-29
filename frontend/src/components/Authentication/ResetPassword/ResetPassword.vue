@@ -168,7 +168,6 @@ export default defineComponent({
         const result = await authStore.resetPasswordWithCode(requestData);
         
         if (result.success) {
-          localStorage.setItem('migration_warning_dismissed', 'true');
           await Swal.fire({
             icon: 'success',
             title: 'Succès !',

@@ -151,7 +151,7 @@ export class ProductionStateController {
     };
   }
 
-  private parseNatureIds(val?: any): number[] | undefined {
+  private parseIds(val?: any): number[] | undefined {
     if (!val) return undefined;
     if (Array.isArray(val)) {
       const parsed = val.map(v => parseInt(v)).filter(v => !isNaN(v));
@@ -165,12 +165,17 @@ export class ProductionStateController {
     return undefined;
   }
 
+  private parseNatureIds(val?: any): number[] | undefined {
+    return this.parseIds(val);
+  }
+
   @Get('preview')
   @RequirePermissions(ContractPermission.READ)
   async getPreviewData(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Query('idAgency') idAgency?: string,
+    @Query('idAgencies') idAgencies?: string,
     @Query('idUser') idUser?: string,
     @Query('idNatureCredit') idNatureCredit?: string,
     @Query('idNatureCredits') idNatureCredits?: string
@@ -183,8 +188,9 @@ export class ProductionStateController {
       totalPrimeTTC: number;
     };
   }> {
-    const natureIds = this.parseNatureIds(idNatureCredits || idNatureCredit);
-    console.log('📊 [Preview] Appel de getPreviewData avec:', { startDate, endDate, idAgency, idUser, natureIds });
+    const natureIds = this.parseIds(idNatureCredits || idNatureCredit);
+    const agencyIds = this.parseIds(idAgencies || idAgency);
+    console.log('📊 [Preview] Appel de getPreviewData avec:', { startDate, endDate, agencyIds, idUser, natureIds });
     try {
       if (!startDate || !endDate) {
         console.error('❌ [Preview] Dates manquantes');
@@ -196,7 +202,7 @@ export class ProductionStateController {
       const contracts = await this.contractService.findByPeriodAndFilters(
         new Date(startDate),
         new Date(endDate),
-        idAgency ? parseInt(idAgency) : undefined,
+        agencyIds,
         idUser ? parseInt(idUser) : undefined,
         natureIds
       );
@@ -269,17 +275,19 @@ export class ProductionStateController {
     @Body() requestData: {
       startDate: string;
       endDate: string;
-      idAgency?: number;
+      idAgency?: any;
+      idAgencies?: any;
       idUser?: number;
       idNatureCredit?: any;
       idNatureCredits?: any;
     }
   ): Promise<{ message: string; productionState: any; filePath: string }> {
     try {
-      const natureIds = this.parseNatureIds(requestData.idNatureCredits || requestData.idNatureCredit);
+      const natureIds = this.parseIds(requestData.idNatureCredits || requestData.idNatureCredit);
+      const agencyIds = this.parseIds(requestData.idAgencies || requestData.idAgency);
       console.log('📊 Génération du rapport de production Excel...');
       console.log('📅 Période:', requestData.startDate, 'au', requestData.endDate);
-      console.log('🏢 Agence:', requestData.idAgency || 'Toutes');
+      console.log('🏢 Agence(s):', agencyIds || 'Toutes');
       console.log('👤 Utilisateur:', requestData.idUser || 'Tous');
       console.log('💳 Natures de Crédit:', natureIds || 'Toutes');
 
@@ -287,7 +295,7 @@ export class ProductionStateController {
       const contracts = await this.contractService.findByPeriodAndFilters(
         new Date(requestData.startDate),
         new Date(requestData.endDate),
-        requestData.idAgency,
+        agencyIds,
         requestData.idUser,
         natureIds
       );
@@ -449,14 +457,16 @@ export class ProductionStateController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Query('idAgency') idAgency?: string,
+    @Query('idAgencies') idAgencies?: string,
     @Query('idUser') idUser?: string,
     @Query('idNatureCredit') idNatureCredit?: string,
     @Query('idNatureCredits') idNatureCredits?: string
   ): Promise<void> {
-    const natureIds = this.parseNatureIds(idNatureCredits || idNatureCredit);
+    const natureIds = this.parseIds(idNatureCredits || idNatureCredit);
+    const agencyIds = this.parseIds(idAgencies || idAgency);
     console.log('📄 ========== ROUTE PDF APPELÉE ==========');
     console.log('📄 ========== DÉBUT GÉNÉRATION PDF ==========');
-    console.log('📄 Paramètres reçus:', { startDate, endDate, idAgency, idUser, natureIds });
+    console.log('📄 Paramètres reçus:', { startDate, endDate, agencyIds, idUser, natureIds });
     
     try {
       if (!startDate || !endDate) {
@@ -473,7 +483,7 @@ export class ProductionStateController {
       const contracts = await this.contractService.findByPeriodAndFilters(
         new Date(startDate),
         new Date(endDate),
-        idAgency ? parseInt(idAgency) : undefined,
+        agencyIds,
         idUser ? parseInt(idUser) : undefined,
         natureIds
       );

@@ -143,7 +143,12 @@
             </tr>
             <tr v-for="(user, index) in filteredUsers" :key="`user-${user.id || index}`">
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
-                <div class="d-flex align-items-center">
+                <div 
+                  class="d-flex align-items-center user-col-clickable"
+                  style="cursor: pointer;"
+                  @click="voirDetails(user)"
+                  :title="`Voir les détails de ${user.firstname} ${user.lastname}`"
+                >
                   <div class="me-3">
                     <div 
                       class="avatar-circle"
@@ -154,7 +159,7 @@
                     </div>
                   </div>
                   <div>
-                    <strong class="text-dark">{{ user.lastname }} {{ user.firstname }}</strong>
+                    <strong class="text-dark user-name-link">{{ user.lastname }} {{ user.firstname }}</strong>
                     <br>
                     <small class="text-muted">
                       <i :class="user.gender === 'M' ? 'flaticon-male' : 'flaticon-female'" class="me-1"></i>
@@ -191,9 +196,16 @@
               </td>
 
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
-                <div>
-                  <strong class="text-info">
-                    {{ user.agency?.name || user.agency?.libelle || (user.idAgency ? 'Agence #' + user.idAgency : 'Non assignée') }}
+                <div 
+                  v-if="user.agency?.id || user.idAgency"
+                  class="agency-col-clickable"
+                  style="cursor: pointer;"
+                  @click="voirDetailsAgence(user.agency?.uuid || user.agency?.id || user.idAgency)"
+                  :title="`Voir les détails de l'agence ${user.agency?.name || user.agency?.libelle || ''}`"
+                >
+                  <strong class="text-info agency-name-link">
+                    <i class="ph-bold ph-storefront me-1 text-fnda"></i>
+                    {{ user.agency?.name || user.agency?.libelle || ('Agence #' + user.idAgency) }}
                   </strong>
                   <div v-if="user.agency?.location" class="mt-1">
                     <small class="text-muted">
@@ -201,6 +213,9 @@
                       {{ user.agency.location }}
                     </small>
                   </div>
+                </div>
+                <div v-else>
+                  <span class="text-muted fst-italic">Non assignée</span>
                 </div>
               </td>
 
@@ -984,6 +999,7 @@ import { XlsxExporter, XlsxFormatters, type XlsxSheet } from '../../utils/xlsxUt
 // Interface pour les utilisateurs
 interface User {
   id: number;
+  uuid?: string;
   idRole: number;
   idAgency: number;
   lastname: string;
@@ -1010,6 +1026,7 @@ interface User {
   };
   agency?: {
     id: number;
+    uuid?: string;
     name: string;
     libelle?: string;
     location?: string;
@@ -1282,15 +1299,29 @@ function modifier(editUser: User) {
   }
 }
     function voirDetails(user: User) {
-      if (!user || !user.id) return;
+      const identifier = user.uuid || user.id?.toString();
+      if (!user || !identifier) return;
       try {
         router.push({
           name: "UserDetailPage",
-          params: { id: user.id.toString() }
+          params: { id: identifier }
         });
       } catch (err) {
         console.error('❌ Erreur lors de la navigation:', err);
         error('Erreur lors de la navigation vers la page de détails.');
+      }
+    }
+
+    function voirDetailsAgence(agencyIdentifier: number | string | undefined) {
+      if (!agencyIdentifier) return;
+      try {
+        router.push({
+          name: "AgencyDetailPage",
+          params: { id: String(agencyIdentifier) }
+        });
+      } catch (err) {
+        console.error('❌ Erreur lors de la navigation vers l\'agence:', err);
+        error('Erreur lors de la navigation vers la page de l\'agence.');
       }
     }
 
@@ -2815,6 +2846,7 @@ function gererPermissions(user: User) {
       confirmerSuppression,
       toggleSuspension,
       voirDetails,
+      voirDetailsAgence,
       closeDetailsModal,
       voirContrats,
       voirContrat,
@@ -3947,5 +3979,28 @@ code {
 .card-head {
   padding-top: 12px !important;
   padding-bottom: 12px !important;
+}
+
+.user-col-clickable {
+  transition: all 0.2s ease;
+}
+.user-col-clickable:hover .user-name-link {
+  color: #33b04a !important;
+  text-decoration: underline !important;
+}
+.user-col-clickable:hover .avatar-circle {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.agency-col-clickable {
+  transition: all 0.2s ease;
+}
+.agency-col-clickable:hover .agency-name-link {
+  color: #33b04a !important;
+  text-decoration: underline !important;
+}
+.agency-col-clickable:hover {
+  opacity: 0.85;
 }
 </style>

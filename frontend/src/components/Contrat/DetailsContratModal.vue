@@ -85,7 +85,11 @@
                     </div>
                     <div class="info-card">
                       <label class="info-label">Établissement</label>
-                      <div class="info-value">{{ contratDetails.agency?.libelle || 'Non spécifié' }}</div>
+                      <div class="info-value">{{ contratDetails.etablissement || contratDetails.agency?.libelle || 'Non spécifié' }}</div>
+                    </div>
+                    <div class="info-card">
+                      <label class="info-label">Bénéficiaire</label>
+                      <div class="info-value">{{ contratDetails.benef || 'Non spécifié' }}</div>
                     </div>
                   </div>
                 </div>
@@ -416,6 +420,8 @@ interface Contrat {
   duree?: number;
   isActive: boolean;
   codeCustomer?: string;
+  etablissement?: string;
+  benef?: string;
   taux?: string;
   pd: number;
   pc: number;

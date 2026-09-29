@@ -18,6 +18,8 @@ import { SmsService } from './services/sms.service';
 import { DailyProductionReportService } from './services/daily-production-report.service';
 import { ExcelService } from './services/excel.service';
 
+import { getDatabaseConfig } from './configs/database.config';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,17 +41,7 @@ import { ExcelService } from './services/excel.service';
       ignoreEnvFile: false,
     }),
     ScheduleModule.forRoot(),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST || (process.env.NODE_ENV === 'production' ? '144.91.119.9' : 'localhost'),
-      port: parseInt(process.env.DB_PORT || (process.env.NODE_ENV === 'production' ? '43000' : '3306')),
-      username: process.env.DB_USERNAME || (process.env.NODE_ENV === 'production' ? 'padme_fnda_user' : 'root'),
-      password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : (process.env.NODE_ENV === 'production' ? 'PadmeFNDA2024!' : ''),
-      database: process.env.DB_DATABASE || process.env.DB_NAME || (process.env.NODE_ENV === 'production' ? 'padme_fnda_db' : 'fnda_node'),
-      entities: [__dirname + '/modules/**/entity/*.entity{.ts,.js}'],
-      synchronize: true,
-      logging: true,
-    }),
+    TypeOrmModule.forRoot(getDatabaseConfig()),
     TypeOrmModule.forFeature([User, UserSession, ProductionState, Contract, SystemSetting]),
     GestionContractsModule,
     GestionUsersModule,

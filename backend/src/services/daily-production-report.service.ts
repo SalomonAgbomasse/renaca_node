@@ -248,9 +248,10 @@ export class DailyProductionReportService {
 
     const htmlContent = this.generateEmailHtml(stats, dateFormatted);
 
+    const appName = process.env.APP_NAME || 'RENACA Simulateur';
     const mailOptions: any = {
       to: recipients.join(', '),
-      subject: `Rapport quotidien de production - ${dateFormatted}`,
+      subject: `[${appName}] Rapport quotidien de production - ${dateFormatted}`,
       html: htmlContent,
     };
 
@@ -310,10 +311,11 @@ export class DailyProductionReportService {
       .map(([user, count]) => `<li><strong>${user}:</strong> ${count} contrat(s)</li>`)
       .join('');
 
+    const appName = process.env.APP_NAME || 'RENACA Simulateur';
     return `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5;">
         <div style="background-color: #2c3e50; color: white; padding: 32px 40px; text-align: center;">
-          <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Rapport Quotidien de Production</h1>
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600;">${appName} - Rapport Quotidien de Production</h1>
           <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">${dateFormatted}</p>
         </div>
         

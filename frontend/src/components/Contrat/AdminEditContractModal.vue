@@ -7,33 +7,40 @@
     :closeOnOverlay="false"
     @close="closeModal"
   >
-    <!-- STEPPER HEADER -->
-    <div class="stepper-wrapper mb-4 px-2">
-      <!-- Step 1: Paramètres -->
-      <div 
-        class="stepper-item" 
-        :class="{ active: currentStep === 1, completed: currentStep > 1 }"
-        @click="goToStep(1)"
-      >
-        <div class="step-counter">
-          <i v-if="currentStep > 1" class="flaticon-check"></i>
-          <span v-else>1</span>
+    <template #header-right>
+      <div class="modal-header-stepper">
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === 1, completed: currentStep > 1 }"
+          @click="goToStep(1)"
+          role="button"
+          tabindex="0"
+          title="Étape 1 : Paramètres"
+        >
+          <div class="header-step-circle">
+            <i v-if="currentStep > 1" class="fas fa-check"></i>
+            <span v-else>1</span>
+          </div>
+          <span class="header-step-text">Paramètres</span>
         </div>
-        <div class="step-name">1. Paramètres</div>
-      </div>
 
-      <div class="stepper-line"></div>
+        <div class="header-step-line"></div>
 
-      <!-- Last Step: Récapitulatif & Saisie Manuelle des Primes -->
-      <div 
-        class="stepper-item" 
-        :class="{ active: currentStep === totalSteps }"
-        @click="goToStep(totalSteps)"
-      >
-        <div class="step-counter">{{ totalSteps }}</div>
-        <div class="step-name">{{ totalSteps }}. Récapitulatif & Primes</div>
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === totalSteps }"
+          @click="goToStep(totalSteps)"
+          role="button"
+          tabindex="0"
+          title="Étape 2 : Récapitulatif & Primes"
+        >
+          <div class="header-step-circle">
+            <span>{{ totalSteps }}</span>
+          </div>
+          <span class="header-step-text">Récapitulatif & Primes</span>
+        </div>
       </div>
-    </div>
+    </template>
 
     <!-- ============================================================== -->
     <!-- STEP 1: PARAMÈTRES DU CONTRAT SELON NATURE                      -->
@@ -44,9 +51,14 @@
         <!-- CAS : AMORTISSABLE ou CONSTANT (RENACA)    -->
         <!-- ========================================== -->
         <template v-if="creditType === 'AMORT' || creditType === 'CONST'">
+          <!-- Champ Périodicité caché (défaut Mensuelle = 1) -->
+          <input type="hidden" v-model.number="form.idPeriodicite" />
+
           <!-- Ligne 1 : Nature & Référence -->
           <div class="col-md-6">
-            <label class="form-label fw-bold small text-muted text-uppercase">Nature de crédit <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-credit-card text-secondary me-2"></i>Nature de crédit <span class="text-danger">*</span>
+            </label>
             <select v-model.number="form.idNatureCredit" class="form-select" :disabled="loadingNatureCredits" required>
               <option v-for="nc in natureCredits" :key="nc.id" :value="nc.id">
                 {{ nc.libelle }}
@@ -55,7 +67,9 @@
           </div>
 
           <div class="col-md-6">
-            <label class="form-label fw-bold small text-muted text-uppercase">Référence Contrat <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-file-alt text-secondary me-2"></i>Référence Contrat <span class="text-danger">*</span>
+            </label>
             <input
               type="text"
               v-model="form.reference"
@@ -65,9 +79,11 @@
             />
           </div>
 
-          <!-- Ligne 2 : Capital, Taux, Périodicité -->
-          <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Capital (FCFA) <span class="text-danger">*</span></label>
+          <!-- Ligne 2 : Capital & Taux -->
+          <div class="col-md-6">
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-coins text-secondary me-2"></i>Capital (FCFA) <span class="text-danger">*</span>
+            </label>
             <input
               type="number"
               v-model.number="form.capital"
@@ -78,8 +94,10 @@
             />
           </div>
 
-          <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Taux d'intérêt (%) <span class="text-danger">*</span></label>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-percentage text-secondary me-2"></i>Taux d'intérêt (%) <span class="text-danger">*</span>
+            </label>
             <input
               type="number"
               step="0.01"
@@ -91,23 +109,11 @@
             />
           </div>
 
-          <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Périodicité <span class="text-danger">*</span></label>
-            <select
-              v-model.number="form.idPeriodicite"
-              class="form-select"
-              required
-              :disabled="loadingPeriodicites"
-            >
-              <option v-for="p in periodicites" :key="p.id" :value="p.id">
-                {{ p.libelle }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Ligne 3 : Durée, Perte d'Emploi, Établissement (Optionnel) -->
-          <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Durée (mois) <span class="text-danger">*</span></label>
+          <!-- Ligne 3 : Durée & Perte d'Emploi -->
+          <div :class="creditType === 'AMORT' ? 'col-md-6' : 'col-md-12'">
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-clock text-secondary me-2"></i>Durée (mois) <span class="text-danger">*</span>
+            </label>
             <input
               type="number"
               v-model.number="form.duration"
@@ -118,8 +124,10 @@
             />
           </div>
 
-          <div class="col-md-4" v-if="creditType === 'AMORT'">
-            <label class="form-label fw-bold small text-muted text-uppercase">Perte d'Emploi <span class="text-danger">*</span></label>
+          <div class="col-md-6" v-if="creditType === 'AMORT'">
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-shield-alt text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span>
+            </label>
             <div class="d-flex gap-3 mt-2">
               <label class="d-flex align-items-center gap-2">
                 <input type="radio" v-model="form.perteEmploi" value="OUI" />
@@ -132,8 +140,11 @@
             </div>
           </div>
 
-          <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Établissement / Employeur</label>
+          <!-- Ligne 4 : Établissement & Bénéficiaire -->
+          <div class="col-md-6">
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-building text-secondary me-2"></i>Établissement / Employeur
+            </label>
             <input
               type="text"
               v-model="form.etablissement"
@@ -142,9 +153,23 @@
             />
           </div>
 
-          <!-- Ligne 4 : 3 Dates -->
+          <div class="col-md-6">
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-user-friends text-secondary me-2"></i>Bénéficiaire
+            </label>
+            <input
+              type="text"
+              v-model="form.benef"
+              class="form-control"
+              placeholder="Nom et prénoms du bénéficiaire"
+            />
+          </div>
+
+          <!-- Ligne 5 : 3 Dates -->
           <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Date d'effet <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-calendar-check text-secondary me-2"></i>Date d'effet <span class="text-danger">*</span>
+            </label>
             <input
               type="date"
               v-model="form.dateEffet"
@@ -154,7 +179,9 @@
           </div>
 
           <div class="col-md-4">
-            <label class="form-label fw-bold small text-muted text-uppercase">Date 1re échéance <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold small text-muted text-uppercase">
+              <i class="fas fa-calendar-alt text-secondary me-2"></i>Date 1re échéance <span class="text-danger">*</span>
+            </label>
             <input
               type="date"
               v-model="form.datePremiereEcheance"
@@ -165,7 +192,9 @@
 
           <div class="col-md-4">
             <div class="d-flex justify-content-between align-items-center">
-              <label class="form-label fw-bold small text-muted text-uppercase mb-0">Date échéance finale <span class="text-danger">*</span></label>
+              <label class="form-label fw-bold small text-muted text-uppercase mb-0">
+                <i class="fas fa-calendar-day text-secondary me-2"></i>Date échéance finale <span class="text-danger">*</span>
+              </label>
             </div>
             <input
               type="date"
@@ -511,6 +540,7 @@ export default defineComponent({
       tauxInteret: 0,
       perteEmploi: 'NON',
       etablissement: '',
+      benef: '',
       // Primes éditables manuellement par l'admin
       pd: 0,
       pc: 0,
@@ -565,6 +595,7 @@ export default defineComponent({
         tauxInteret: c.taux !== undefined ? Number(c.taux) : 0,
         perteEmploi: c.garantieCompl === 'OUI' ? 'OUI' : 'NON',
         etablissement: c.etablissement || '',
+        benef: c.benef || '',
         // Primes initialisées avec les montants actuels du contrat
         pd: Number(c.pd || 0),
         pc: Number(c.pc || 0),
@@ -671,6 +702,12 @@ export default defineComponent({
           oldVal: formatDateDisplay(c.dateEch),
           newVal: formatDateDisplay(form.value.dateEch1),
           changed: (c.dateEch ? c.dateEch.split('T')[0] : '') !== form.value.dateEch1
+        },
+        {
+          label: 'Bénéficiaire',
+          oldVal: c.benef || '-',
+          newVal: form.value.benef || '-',
+          changed: (c.benef || '') !== (form.value.benef || '')
         }
       ];
 
@@ -762,6 +799,7 @@ export default defineComponent({
           dateEch: form.value.dateEch1,
           taux: form.value.tauxInteret,
           etablissement: form.value.etablissement,
+          benef: form.value.benef || null,
           garantieCompl: (creditType.value === 'AMORT' && form.value.perteEmploi === 'OUI') ? 'OUI' : 'NON',
           // Primes saisies manuellement par l'administrateur
           pd: Number(form.value.pd) || 0,

@@ -1,10 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, AfterLoad } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ name: 'code', type: 'varchar', length: 10, nullable: true })
+  code: string;
 
   @Column({ name: 'idPermision', type: 'int', nullable: true })
   idPermision: number;
@@ -26,6 +29,16 @@ export class Role {
 
   @DeleteDateColumn({ name: 'deletedAt', type: 'datetime' })
   deletedAt: Date;
+
+  // Aliases for compatibility across frontend and services
+  name?: string;
+  description?: string;
+
+  @AfterLoad()
+  populateAliases() {
+    this.name = this.libelle;
+    this.description = this.desc;
+  }
 
   // Relations
   @OneToMany(() => User, (user) => user.role)

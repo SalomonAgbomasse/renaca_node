@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, JoinColumn, ManyToOne, OneToMany, BeforeInsert } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { Subscriber } from './subscriber.entity';
 import { User } from 'src/modules/gestionUsers/entity/user.entity';
 
@@ -9,6 +10,13 @@ export class Agency {
 
   @Column({ name: 'uuid', type: 'varchar', length: 36, nullable: true, unique: true })
   uuid: string;
+
+  @BeforeInsert()
+  generateUuid() {
+    if (!this.uuid) {
+      this.uuid = randomUUID();
+    }
+  }
 
   @Column({ name: 'idSubscriber', type: 'int', default: 1 })
   idSubscriber: number;

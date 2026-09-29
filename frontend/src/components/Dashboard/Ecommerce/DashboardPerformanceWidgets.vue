@@ -79,7 +79,7 @@
               <tbody>
                 <tr v-for="c in expiringContracts" :key="c.id">
                   <td class="ps-0">
-                    <div class="fw-semibold text-fnda">{{ c.contractNumber }}</div>
+                    <div class="fw-semibold text-primary">{{ c.contractNumber }}</div>
                     <div class="text-muted fs-xs text-truncate" style="max-width: 160px;">{{ c.customerName }}</div>
                   </td>
                   <td class="text-center text-muted">{{ formatDate(c.expiryDate) }}</td>

@@ -56,8 +56,9 @@
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Type</th>
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Naissance</th>
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Adresse</th>
+              <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Créé par</th>
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Statut</th>
-              <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3 pe-0">ACTIONS</th>
+              <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3 text pe-0 sticky-actions">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -66,23 +67,28 @@
                 <div class="d-flex align-items-center">
                   <div class="skeleton-circle me-3"></div>
                   <div>
-                    <div class="skeleton-line" style="width: 130px;"></div>
-                    <div class="skeleton-line mt-1" style="width: 90px; height: 10px;"></div>
+                    <div class="skeleton-line" style="width: 140px;"></div>
+                    <div class="skeleton-line mt-1" style="width: 60px; height: 10px;"></div>
                   </div>
                 </div>
               </td>
-              <td><div class="skeleton-line" style="width: 110px;"></div></td>
+              <td>
+                <div class="skeleton-line" style="width: 110px;"></div>
+                <div class="skeleton-line mt-1" style="width: 80px; height: 10px;"></div>
+              </td>
               <td><div class="skeleton-line" style="width: 90px;"></div></td>
               <td><div class="skeleton-badge"></div></td>
-              <td><div class="skeleton-line" style="width: 80px;"></div></td>
-              <td><div class="skeleton-line" style="width: 120px;"></div></td>
-              <td><div class="skeleton-badge"></div></td>
               <td>
-                <div class="d-flex gap-1">
-                  <div class="skeleton-btn"></div>
-                  <div class="skeleton-btn"></div>
-                </div>
+                <div class="skeleton-line" style="width: 90px;"></div>
+                <div class="skeleton-line mt-1" style="width: 70px; height: 10px;"></div>
               </td>
+              <td><div class="skeleton-line" style="width: 120px;"></div></td>
+              <td>
+                <div class="skeleton-line" style="width: 110px;"></div>
+                <div class="skeleton-line mt-1" style="width: 80px; height: 10px;"></div>
+              </td>
+              <td><div class="skeleton-badge"></div></td>
+              <td class="pe-0 sticky-actions"><div class="skeleton-btn"></div></td>
             </tr>
           </tbody>
         </table>
@@ -100,13 +106,14 @@
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Type</th>
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Naissance</th>
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Adresse</th>
+              <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Créé par</th>
               <th scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3">Statut</th>
               <th key="actions" scope="col" class="text-uppercase fw-semibold shadow-none text-body-tertiary fs-7 py-3 text pe-0 sticky-actions">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="clients.length === 0">
-              <td colspan="8" class="text-center text-muted py-4">
+              <td colspan="9" class="text-center text-muted py-4">
                 Aucun client trouvé
               </td>
             </tr>
@@ -119,12 +126,8 @@
                     </div>
                   </div>
                   <div>
-                    <a href="javascript:void(0);" @click="voirDetails(client)" class="text-primary text-decoration-underline fw-bold">
-                      {{ client.lastname }} {{ client.firstname }}
-                    </a>
-                    <div class="text-secondary small my-1">
-                      N° Client : <span class="fw-bold">{{ client.numCustomer || client.code }}</span>
-                    </div>
+                    <strong class="text-dark">{{ client.lastname }} {{ client.firstname }}</strong>
+                    <br>
                     <small class="text-muted">
                       <i :class="isMale(client.gender) ? 'flaticon-male' : 'flaticon-female'" class="me-1"></i>
                       {{ getGenderText(client.gender) }}
@@ -186,6 +189,16 @@
                   <small class="badge bg-light text-dark">{{ client.residenceArea }}</small>
                 </div>
                 <span v-if="!client.address && !client.residenceArea" class="text-muted">Non renseignée</span>
+              </td>
+
+              <td class="shadow-none lh-1 fw-medium text-black-emphasis">
+                <div v-if="client.user">
+                  <strong class="text-dark">{{ client.user.lastname }} {{ client.user.firstname }}</strong>
+                  <div v-if="client.user.email" class="mt-1">
+                    <small class="text-muted">{{ client.user.email }}</small>
+                  </div>
+                </div>
+                <span v-else class="text-muted">-</span>
               </td>
 
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
@@ -339,16 +352,6 @@
     @createHorsConvention="creerContratHorsConvention"
   />
 
-  <!-- Modal de conversion cotation -->
-  <CotationToContratModal
-    ref="conversionModalRef"
-    :visible="showConversionModal"
-    :client-editable="true"
-    modal-title="Nouveau Contrat"
-    @conversion-success="handleConversionSuccess"
-    @close="handleConversionClose"
-    @update:visible="showConversionModal = $event"
-  />
 
         <!-- Modal de cotation -->
         <CotationModal
@@ -363,6 +366,10 @@
         <PrimesCalculatedModal
           :visible="showPrimesSection"
           :primes="calculatedPrimes"
+          :cotation-id="cotationData?.id || cotationData?.uuid"
+          :cotation="cotationData"
+          :cotation-data="cotationData"
+          :client-data="selectedClientForCotation || undefined"
           :is-converting="isConverting"
           context="cotation-modal"
           @close="closePrimesSection"
@@ -374,23 +381,27 @@
           :visible="showPrimesModal"
           :primes="examplePrimes"
           :show-convert-button="true"
-          :client-data="clients[0] || null"
+          :client-data="clients[0] || undefined"
           :cotation-data="exampleCotation"
           @close="handlePrimesClose"
           @convert="handlePrimesConvert"
           @conversion-success="handlePrimesConversionSuccess"
         />
 
-        <!-- Modal de conversion cotation vers contrat -->
+        <!-- Modal unique de contrat (Création / Conversion / Modification standard) -->
         <CotationToContratModal
-          :visible="showCotationToContratModal"
-          :selected-client="selectedClientForConversion || undefined"
-          :selected-cotation="selectedCotationForConversion || undefined"
-          :client-editable="false"
-          :modal-title="'Nouveau Contrat - ' + (selectedClientForConversion ? selectedClientForConversion.lastname + ' ' + selectedClientForConversion.firstname : '')"
-          @conversion-success="handleCotationToContratSuccess"
-          @close="handleCotationToContratClose"
-          @update:visible="showCotationToContratModal = $event"
+          ref="contractModalRef"
+          :visible="showContractModal"
+          :selected-client="selectedClientForContract || undefined"
+          :selected-cotation="selectedCotationForContract || undefined"
+          :contract-to-edit="contractToEdit || undefined"
+          :client-editable="isClientEditable"
+          :skip-client-step="!isClientEditable && !!selectedClientForContract"
+          :modal-title="contractModalTitle"
+          @conversion-success="handleContractSuccess"
+          @creation-success="handleContractSuccess"
+          @close="closeContractModal"
+          @update:visible="showContractModal = $event"
         />
 
         <!-- Modal hors convention -->
@@ -400,17 +411,6 @@
           @hors-convention-success="handleHorsConventionSuccess"
           @close="closeHorsConventionModal"
           @update:visible="showHorsConventionModal = $event"
-        />
-
-        <!-- Modal création contrat -->
-        <CotationToContratModal
-          :visible="showCreateContratModal"
-          :selected-client="selectedClientForCreateContrat || undefined"
-          :client-editable="false"
-          :modal-title="'Créer un Contrat - ' + (selectedClientForCreateContrat ? selectedClientForCreateContrat.lastname + ' ' + selectedClientForCreateContrat.firstname : '')"
-          @conversion-success="handleCreateContratSuccess"
-          @close="closeCreateContratModal"
-          @update:visible="showCreateContratModal = $event"
         />
 
         <!-- Modal ajouter client -->
@@ -437,7 +437,6 @@
 import { defineComponent, onMounted, ref, computed, nextTick, Teleport, watch } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
-import { useAuthStore } from "../../services/auth";
 import ApiService from "../../services/ApiService";
 import { error, success } from "../../utils/utils";
 import PaginationComponent from '../Utilities/Pagination.vue';
@@ -477,9 +476,14 @@ interface Client {
     id: number;
     libelle: string;
   };
+  user?: {
+    id?: number;
+    firstname?: string;
+    lastname?: string;
+    email?: string;
+  };
   // Champs optionnels pour compatibilité
   code?: string;
-  numCustomer?: string;
   profession?: string;
   phone2?: string;
   maritalStatus?: string;
@@ -561,14 +565,11 @@ export default defineComponent({
   setup() {
     // Composables
     const router = useRouter();
-    const authStore = useAuthStore();
 
     // Refs
     const clients = ref<Array<Client>>([]);   
     const selectedClientId = ref<number | null>(null);
     const loading = ref(false);
-    const conversionModalRef = ref<any>(null);
-    const showConversionModal = ref(false);
     const cotationModalRef = ref<any>(null);
     const selectedClientForCotation = ref<Client | null>(null);
     const showCotationModal = ref(false);
@@ -582,10 +583,14 @@ export default defineComponent({
     const buttonRefs = ref<Record<number, HTMLElement>>({});
     const menuPosition = ref<Record<number, { top: string; left: string }>>({});
     
-    // Modal de conversion cotation vers contrat
-    const showCotationToContratModal = ref(false);
-    const selectedClientForConversion = ref<Client | null>(null);
-    const selectedCotationForConversion = ref<any>(null);
+    // Modal unique Contrat (Création directe / Conversion cotation / Modification standard)
+    const contractModalRef = ref<any>(null);
+    const showContractModal = ref(false);
+    const selectedClientForContract = ref<any>(null);
+    const selectedCotationForContract = ref<any>(null);
+    const contractToEdit = ref<any>(null);
+    const isClientEditable = ref(true);
+    const contractModalTitle = ref('Nouveau Contrat');
     
     // Modal des primes calculées (exemple d'utilisation)
     const showPrimesModal = ref(false);
@@ -593,10 +598,6 @@ export default defineComponent({
     // Modal hors convention
     const showHorsConventionModal = ref(false);
     const selectedClientForHorsConvention = ref<Client | null>(null);
-    
-    // Modal création contrat
-    const showCreateContratModal = ref(false);
-    const selectedClientForCreateContrat = ref<Client | null>(null);
     
     // Modal ajouter client
     const showAddClientModal = ref(false);
@@ -617,7 +618,7 @@ export default defineComponent({
       creditType: 'AMORT',
       duration: 12,
       capital: 25000000,
-      garantieCompl: 'OUI'
+      garantieCompl: 'NON'
     });
 
     // Variables pour le flux cotation → conversion
@@ -651,7 +652,7 @@ export default defineComponent({
       try {
         page.value = page_;
         limit.value = limit_;
-        getAllClients(page_, limit_, searchTerm.value);
+        getAllClients(page_, limit_);
       } catch (err) {
         console.error('Erreur pagination:', err);
       }
@@ -666,27 +667,40 @@ export default defineComponent({
       try {
         loading.value = true;
         
-        const response = await ApiService.get(`/customers?page=${pageNum}&limit=${limitNum}&search=${encodeURIComponent(search)}`);
+
+        const response = await ApiService.get('/customers');
         
         const { data } = response;
         
-        // Structure réelle : { code: 200, message: string, data: { customers: Customer[], pagination: { total, page, limit, totalPages } }, timestamp: string }
+        // Structure réelle : { code: 200, message: string, data: { message: string, customers: Customer[] }, timestamp: string }
         if (data && data.data && data.data.customers && Array.isArray(data.data.customers)) {
-          clients.value = data.data.customers;
+          let allClients = data.data.customers;
           
-          const pagination = data.data.pagination;
-          if (pagination) {
-            totalElements.value = pagination.total || 0;
-            totalPages.value = pagination.totalPages || 0;
-            page.value = pagination.page || pageNum;
-            limit.value = pagination.limit || limitNum;
-          } else {
-            // Rétrocompatibilité
-            totalElements.value = data.data.customers.length;
-            totalPages.value = Math.ceil(data.data.customers.length / limitNum);
-            page.value = pageNum;
-            limit.value = limitNum;
+          // Filtrer par recherche si un terme est fourni
+          if (search && search.trim()) {
+            const searchLower = search.toLowerCase().trim();
+            allClients = allClients.filter(client => 
+              client.lastname?.toLowerCase().includes(searchLower) ||
+              client.firstname?.toLowerCase().includes(searchLower) ||
+              client.phone?.toLowerCase().includes(searchLower) ||
+              client.email?.toLowerCase().includes(searchLower) ||
+              client.code?.toLowerCase().includes(searchLower) ||
+              client.user?.lastname?.toLowerCase().includes(searchLower) ||
+              client.user?.firstname?.toLowerCase().includes(searchLower) ||
+              client.user?.email?.toLowerCase().includes(searchLower)
+            );
           }
+          
+          // Pagination côté frontend
+          const startIndex = (pageNum - 1) * limitNum;
+          const endIndex = startIndex + limitNum;
+          clients.value = allClients.slice(startIndex, endIndex);
+          
+          // Calculer les infos de pagination
+          totalElements.value = allClients.length;
+          totalPages.value = Math.ceil(allClients.length / limitNum);
+          page.value = pageNum;
+          limit.value = limitNum;
           
         } else {
           console.warn("⚠️ Structure de données inattendue:", data);
@@ -729,9 +743,8 @@ export default defineComponent({
     }
 
     function voirDetails(client: Client) {
-      if (client.uuid || client.id) {
-        router.push(`/details-client/${client.uuid || client.id}`);
-      }
+      const targetId = client.uuid || client.id;
+      router.push({ name: 'DetailsCustomerPage', params: { id: targetId.toString() } });
     }
 
     function closeDetailsModal() {
@@ -868,10 +881,13 @@ export default defineComponent({
       // Fermer le modal de détails s'il est ouvert
       closeModalBeforeNavigation();
       
-      // Stocker le client sélectionné et ouvrir le modal de création de contrat
-      selectedClientForCreateContrat.value = client;
-      showCreateContratModal.value = true;
-      
+      // Stocker le client sélectionné et ouvrir le modal unique de contrat
+      selectedClientForContract.value = client;
+      selectedCotationForContract.value = null;
+      contractToEdit.value = null;
+      isClientEditable.value = false;
+      contractModalTitle.value = `Nouveau Contrat - ${client.lastname} ${client.firstname}`;
+      showContractModal.value = true;
     }
 
     function creerContratHorsConvention(client: Client) {
@@ -898,23 +914,24 @@ export default defineComponent({
     }
 
     // Fonction pour gérer le succès de création d'un contrat hors convention
-    function handleHorsConventionSuccess() {
-      success('Contrat hors convention créé avec succès');
+    function handleHorsConventionSuccess(data?: any) {
+      success(data?.message || 'Contrat hors convention créé avec succès');
       
       // Recharger la liste des clients
       getAllClients(page.value, limit.value, searchTerm.value);
     }
 
-    // Fonctions pour le modal de création de contrat
-    function closeCreateContratModal() {
-      showCreateContratModal.value = false;
-      selectedClientForCreateContrat.value = null;
+    // Fonctions pour le modal unique de contrat
+    function closeContractModal() {
+      showContractModal.value = false;
+      selectedClientForContract.value = null;
+      selectedCotationForContract.value = null;
+      contractToEdit.value = null;
     }
 
-    function handleCreateContratSuccess(contract: any) {
-      success('Contrat créé avec succès');
-      
-      // Recharger la liste des clients
+    function handleContractSuccess(data?: any) {
+      const msg = data?.message || (data?.contract ? `Contrat "${data.contract.reference || data.contract.id}" créé avec succès` : 'Contrat créé avec succès');
+      success(msg);
       getAllClients(page.value, limit.value, searchTerm.value);
     }
 
@@ -1111,16 +1128,15 @@ export default defineComponent({
     // Utilitaires de style
     function getTypeClass(type: string): string {
       const baseClass = 'badge fs-7 px-2 py-1';
-      const normalized = (type || '').toUpperCase();
-
-      switch (normalized) {
-        case 'PERSONNEL RENACA':
+      
+      switch (type) {
+        case 'Personnel':
           return `${baseClass} bg-warning text-dark`;
-        case 'ENTREPRISE':
+        case 'Entreprise':
           return `${baseClass} bg-info text-white`;
-        case 'PROFESSIONNEL':
+        case 'Professionnel':
           return `${baseClass} bg-primary text-white`;
-        case 'PARTICULIER':
+        case 'Particulier':
         default:
           return `${baseClass} bg-secondary text-white`;
       }
@@ -1128,15 +1144,14 @@ export default defineComponent({
 
     // Fonction pour obtenir l'icône selon le type
     function getTypeIcon(type: string): string {
-      const normalized = (type || '').toUpperCase();
-      switch (normalized) {
-        case 'PERSONNEL RENACA':
+      switch (type) {
+        case 'Personnel':
           return 'flaticon-user-1';
-        case 'ENTREPRISE':
+        case 'Entreprise':
           return 'flaticon-briefcase';
-        case 'PROFESSIONNEL':
+        case 'Professionnel':
           return 'flaticon-user';
-        case 'PARTICULIER':
+        case 'Particulier':
         default:
           return 'flaticon-user';
       }
@@ -1282,15 +1297,20 @@ export default defineComponent({
 
     // Fonctions pour le modal de conversion
     function openConversionModal() {
-      showConversionModal.value = true;
+      selectedClientForContract.value = null;
+      selectedCotationForContract.value = null;
+      contractToEdit.value = null;
+      isClientEditable.value = true;
+      contractModalTitle.value = 'Nouveau Contrat';
+      showContractModal.value = true;
     }
 
-    function handleConversionSuccess() {
-      getAllClients(page.value, limit.value, searchTerm.value);
+    function handleConversionSuccess(data?: any) {
+      handleContractSuccess(data);
     }
 
     function handleConversionClose() {
-      showConversionModal.value = false;
+      closeContractModal();
     }
 
     // Fonctions pour le modal de cotation
@@ -1348,27 +1368,20 @@ export default defineComponent({
 
     // Fonctions pour le modal de conversion cotation vers contrat
     function openCotationToContratModal(client: Client, cotation?: any) {
-      selectedClientForConversion.value = client;
-      selectedCotationForConversion.value = cotation || null;
-      showCotationToContratModal.value = true;
+      selectedClientForContract.value = client;
+      selectedCotationForContract.value = cotation || null;
+      contractToEdit.value = null;
+      isClientEditable.value = false;
+      contractModalTitle.value = `Conversion en Contrat - ${client.lastname} ${client.firstname}`;
+      showContractModal.value = true;
     }
 
-    function handleCotationToContratSuccess(contract: any) {
-      // success('Contrat créé avec succès depuis la cotation'); // Supprimé pour éviter de fermer le modal
-      
-      // Ne pas fermer le modal automatiquement - l'utilisateur doit cliquer sur "Fermer"
-      // showCotationToContratModal.value = false;
-      // selectedClientForConversion.value = null;
-      // selectedCotationForConversion.value = null;
-      
-      // Recharger la liste des clients
-      getAllClients(page.value, limit.value, searchTerm.value);
+    function handleCotationToContratSuccess(data?: any) {
+      handleContractSuccess(data);
     }
 
     function handleCotationToContratClose() {
-      showCotationToContratModal.value = false;
-      selectedClientForConversion.value = null;
-      selectedCotationForConversion.value = null;
+      closeContractModal();
     }
 
     // Fonctions pour le modal des primes calculées
@@ -1397,37 +1410,29 @@ export default defineComponent({
         typeClient: selectedClientForCotation.value.typeCustomer?.id?.toString() || '1',
         birthdate: selectedClientForCotation.value.birthdate,
         placeOfBirth: selectedClientForCotation.value.placeOfBirth || '',
-        occupation: selectedClientForCotation.value.occupation || '',
-        numCustomer: selectedClientForCotation.value.numCustomer,
-        code: selectedClientForCotation.value.code
+        occupation: selectedClientForCotation.value.occupation || ''
       };
-
-      // Déterminer le type de crédit
-      const idNC = cotationData.value.idNatureCredit || cotationData.value.natureCredit?.id;
-      const codeNC = cotationData.value.natureCredit?.code;
-      let mappedCreditType = cotationData.value.creditType || codeNC;
-      if (!mappedCreditType && idNC) {
-        mappedCreditType = idNC === 2 ? 'CP' : idNC === 3 ? 'OBA' : 'AMORT';
-      }
 
       // Préparer les données de cotation
       const cotationInfo = {
         capital: cotationData.value.capital || 0,
         duration: cotationData.value.duration || 0,
-        creditType: mappedCreditType || 'AMORT',
-        idNatureCredit: idNC,
+        creditType: cotationData.value.creditType || 'AMORT',
         garantieCompl: cotationData.value.garantieCompl || 'NON'
       };
 
-      // Configurer les données pour le modal de conversion
-      selectedClientForConversion.value = clientData as any;
-      selectedCotationForConversion.value = cotationInfo;
+      // Configurer les données pour le modal unique de contrat
+      selectedClientForContract.value = clientData as any;
+      selectedCotationForContract.value = cotationInfo;
+      contractToEdit.value = null;
+      isClientEditable.value = false;
+      contractModalTitle.value = `Conversion en Contrat - ${clientData.lastname} ${clientData.firstname}`;
 
       // Fermer le modal des primes
       showPrimesSection.value = false;
 
-      // Ouvrir le modal de conversion avec champs client verrouillés (CotationToContratModal)
-      showCotationToContratModal.value = true;
+      // Ouvrir le modal de conversion avec champs client verrouillés
+      showContractModal.value = true;
     }
 
     // Fonction pour vérifier si le client a des actions supplémentaires
@@ -1535,43 +1540,76 @@ export default defineComponent({
       }
     }
 
-    // Charger le rôle depuis le store Pinia (déjà disponible après login, sans appel API)
-    function loadUserRole() {
-      const roleMapping: { [key: string]: number } = {
-        'ADMIN': 1,
-        'MANAGER': 2,
-        'USER': 3,
-        'SUPER ADMIN': 5
-      };
-
-      const storeUser = (authStore.user as any);
-      
-      // Lire depuis idRole en priorité (toujours disponible)
-      if (storeUser?.idRole) {
-        userRole.value = storeUser.idRole;
-        return;
+    // Fonction pour charger le rôle de l'utilisateur
+    async function loadUserRole() {
+      try {
+        const response = await ApiService.get('auth/profile');
+        
+        if (response.data && response.data.data && response.data.data.user) {
+          const user = response.data.data.user;
+          
+          // Mapping des rôles (comme dans MainSidebar.vue)
+          const roleMapping: { [key: string]: number } = {
+            'ADMIN': 1,
+            'MANAGER': 2,
+            'USER': 3,
+            'SUPER ADMIN': 5
+          };
+          
+          if (user.role && user.role.libelle) {
+            userRole.value = roleMapping[user.role.libelle] || null;
+          } else {
+            console.warn('⚠️ Rôle utilisateur non trouvé');
+            userRole.value = null;
+          }
+        } else {
+          console.warn('⚠️ Structure de réponse profil inattendue');
+          userRole.value = null;
+        }
+      } catch (err: any) {
+        console.error('❌ Erreur lors du chargement du rôle utilisateur:', err);
+        userRole.value = null;
       }
-      
-      // Sinon lire depuis role.name ou role.libelle
-      const roleName = storeUser?.role?.name || storeUser?.role?.libelle;
-      if (roleName && roleMapping[roleName] !== undefined) {
-        userRole.value = roleMapping[roleName];
-        return;
-      }
+    }
 
-      userRole.value = null;
+    // Test de l'API pour débogage
+    async function testApiService() {
+      try {
+        const response1 = await ApiService.get('/customers');
+
+        const response2 = await ApiService.get('/customers?page=1&limit=5');
+
+        return { success: true, response1, response2 };
+      } catch (err: any) {
+        console.error('❌ Test ApiService échoué:', err);
+        console.error('❌ URL de base ApiService:', 'Configuration non accessible');
+        return { success: false, error: err };
+      }
     }
 
 
     // Lifecycle
-    onMounted(() => {
-      // Lire le rôle depuis le store Pinia (synchrone, pas d'appel API)
-      loadUserRole();
-
-      // Charger la liste immédiatement sans attendre le profil
-      getAllClients().catch(err => {
+    onMounted(async () => {
+      
+      // Charger le rôle de l'utilisateur
+      await loadUserRole();
+      
+      // Test de l'ApiService d'abord
+      const testResult = await testApiService();
+      
+      if (!testResult.success) {
+        console.error('❌ ApiService ne fonctionne pas, arrêt du processus');
+        error('Erreur de connexion à l\'API. Vérifiez votre configuration.');
+        loading.value = false;
+        return;
+      }
+      
+      try {
+        await getAllClients();
+      } catch (err) {
         console.error('❌ Erreur dans onMounted:', err);
-      });
+      }
+      
     });
 
     return {
@@ -1579,7 +1617,6 @@ export default defineComponent({
       clients,
       selectedClientId,
       loading,
-      showConversionModal,
       showDetailsModal,
       searchTerm,
       page, 
@@ -1614,10 +1651,21 @@ export default defineComponent({
       isMale,
       getGenderText,
       dupliquerClient,
+      testApiService,
       openConversionModal,
       handleConversionSuccess,
       handleConversionClose,
-      conversionModalRef,
+      // Modal unique de contrat
+      contractModalRef,
+      showContractModal,
+      selectedClientForContract,
+      selectedCotationForContract,
+      contractToEdit,
+      isClientEditable,
+      contractModalTitle,
+      closeContractModal,
+      handleContractSuccess,
+      // Modal de cotation
       cotationModalRef,
       selectedClientForCotation,
       showCotationModal,
@@ -1630,13 +1678,19 @@ export default defineComponent({
       handlePrimesClose,
       handlePrimesConvert,
       handlePrimesConversionSuccess,
-      // Modal de conversion cotation vers contrat
-      showCotationToContratModal,
-      selectedClientForConversion,
-      selectedCotationForConversion,
+      // Modal de conversion cotation vers contrat (alias)
+      showCotationToContratModal: showContractModal,
+      showConversionModal: showContractModal,
+      showCreateContratModal: showContractModal,
+      selectedClientForConversion: selectedClientForContract,
+      selectedCotationForConversion: selectedCotationForContract,
+      selectedClientForCreateContrat: selectedClientForContract,
+      conversionModalRef: contractModalRef,
       openCotationToContratModal,
-      handleCotationToContratSuccess,
-      handleCotationToContratClose,
+      handleCotationToContratSuccess: handleContractSuccess,
+      handleCotationToContratClose: closeContractModal,
+      closeCreateContratModal: closeContractModal,
+      handleCreateContratSuccess: handleContractSuccess,
       // Variables pour le flux cotation → conversion
       showPrimesSection,
       isConverting,
@@ -1653,11 +1707,6 @@ export default defineComponent({
       selectedClientForHorsConvention,
       closeHorsConventionModal,
       handleHorsConventionSuccess,
-      // Modal création contrat
-      showCreateContratModal,
-      selectedClientForCreateContrat,
-      closeCreateContratModal,
-      handleCreateContratSuccess,
       // Modal ajouter client
       showAddClientModal,
       ajouterClient,

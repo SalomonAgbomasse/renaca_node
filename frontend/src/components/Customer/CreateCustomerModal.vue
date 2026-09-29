@@ -8,10 +8,13 @@
   >
     <form @submit.prevent="submitForm">
       <div class="row g-3 pb-3">
+        <!-- Champ caché numCustomer -->
+        <input type="hidden" v-model="numCustomer" v-bind="numCustomerAttrs" />
+
         <!-- Informations personnelles -->
         <div class="col-md-6">
           <label class="form-label fw-bold" :class="mode === 'edit' && !canEditIdentityFields ? 'text-muted' : ''">
-            Prénom <span v-if="mode !== 'edit' || canEditIdentityFields" class="text-danger">*</span>
+            <i class="fas fa-user text-secondary me-2"></i>Prénoms <span v-if="mode !== 'edit' || canEditIdentityFields" class="text-danger">*</span>
           </label>
           <input 
             type="text" 
@@ -33,7 +36,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold" :class="mode === 'edit' && !canEditIdentityFields ? 'text-muted' : ''">
-            Nom <span v-if="mode !== 'edit' || canEditIdentityFields" class="text-danger">*</span>
+            <i class="fas fa-user text-secondary me-2"></i>Nom <span v-if="mode !== 'edit' || canEditIdentityFields" class="text-danger">*</span>
           </label>
           <input 
             type="text" 
@@ -50,24 +53,8 @@
           </div>
         </div>
 
-        <div class="col-md-12">
-          <label class="form-label fw-bold">
-            Numéro de client <span class="text-danger">*</span>
-          </label>
-          <input 
-            type="text" 
-            class="form-control"
-            :class="{ 'is-invalid': errors.numCustomer }"
-            v-model="numCustomer"
-            v-bind="numCustomerAttrs"
-            placeholder="Numéro de client"
-          />
-          <div v-if="errors.numCustomer" class="invalid-feedback d-block">
-            {{ errors.numCustomer }}
-          </div>
-        </div>
         <div class="col-md-6">
-          <label class="form-label fw-bold">Téléphone <span class="text-danger">*</span></label>
+          <label class="form-label fw-bold"><i class="fas fa-phone text-secondary me-2"></i>Téléphone <span class="text-danger">*</span></label>
           <input 
             type="tel" 
             class="form-control"
@@ -81,7 +68,7 @@
           </div>
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-bold">Email</label>
+          <label class="form-label fw-bold"><i class="fas fa-envelope text-secondary me-2"></i>Email</label>
           <input 
             type="email" 
             class="form-control"
@@ -96,7 +83,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">
-            Genre <span class="text-danger">*</span>
+            <i class="fas fa-venus-mars text-secondary me-2"></i>Genre <span class="text-danger">*</span>
           </label>
           <select 
             class="form-select"
@@ -114,7 +101,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold" :class="mode === 'edit' && !canEditIdentityFields ? 'text-muted' : ''">
-            Date de naissance <span v-if="mode !== 'edit' || canEditIdentityFields" class="text-danger">*</span>
+            <i class="fas fa-calendar-alt text-secondary me-2"></i>Date de naissance <span v-if="mode !== 'edit' || canEditIdentityFields" class="text-danger">*</span>
           </label>
           <input 
             v-if="mode === 'edit' && !canEditIdentityFields"
@@ -138,7 +125,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">
-            Type de client <span class="text-danger">*</span>
+            <i class="fas fa-user-tag text-secondary me-2"></i>Type de client <span class="text-danger">*</span>
           </label>
           <select
             class="form-select"
@@ -156,7 +143,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">
-            Lieu de naissance <span v-if="mode !== 'edit'" class="text-danger">*</span>
+            <i class="fas fa-map-marker-alt text-secondary me-2"></i>Lieu de naissance <span v-if="mode !== 'edit'" class="text-danger">*</span>
           </label>
           <input 
             type="text" 
@@ -172,7 +159,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">
-            Profession <span v-if="mode !== 'edit'" class="text-danger">*</span>
+            <i class="fas fa-briefcase text-secondary me-2"></i>Profession <span v-if="mode !== 'edit'" class="text-danger">*</span>
           </label>
           <input 
             type="text" 
@@ -186,9 +173,9 @@
             {{ errors.occupation }}
           </div>
         </div>
-        <div class="col-6">
+        <div class="col-md-6">
           <label class="form-label fw-bold">
-            Adresse <span v-if="mode !== 'edit'" class="text-danger">*</span>
+            <i class="fas fa-home text-secondary me-2"></i>Adresse <span v-if="mode !== 'edit'" class="text-danger">*</span>
           </label>
           <textarea 
             class="form-control"
@@ -477,7 +464,7 @@ export default defineComponent({
     const createClientSchema = yup.object({
       firstname: yup.string().required('Le prénom est obligatoire').min(2, 'Le prénom doit contenir au moins 2 caractères'),
       lastname: yup.string().required('Le nom est obligatoire').min(2, 'Le nom doit contenir au moins 2 caractères'),
-      numCustomer: yup.string().required('Le numéro de client est obligatoire'),
+      numCustomer: yup.string().nullable().optional(),
       phone: yup.string().required('Le téléphone est obligatoire').matches(/^[0-9+\-\s()]+$/, 'Format de téléphone invalide'),
       email: yup.string().email('Format d\'email invalide').nullable(),
       gender: yup.string().required('Le genre est obligatoire').oneOf(['M', 'F'], 'Genre invalide'),
@@ -711,7 +698,7 @@ export default defineComponent({
           const clientData = {
             firstname: values.firstname.trim().toUpperCase(),
             lastname: values.lastname.trim().toUpperCase(),
-            numCustomer: values.numCustomer.trim(),
+            numCustomer: values.numCustomer?.trim() || null,
             phone: values.phone.trim(),
             email: values.email?.trim().toLowerCase() || null,
             gender: values.gender,

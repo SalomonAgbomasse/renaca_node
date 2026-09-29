@@ -99,6 +99,9 @@ export class Contract {
   @Column({ name: 'etablissement', type: 'varchar', length: 255, nullable: true })
   etablissement: string;
 
+  @Column({ name: 'benef', type: 'varchar', length: 250, nullable: true })
+  benef: string;
+
   @Column({ name: 'description', type: 'text', nullable: true })
   description: string;
 
@@ -107,6 +110,9 @@ export class Contract {
 
   @Column({ name: 'isActive', type: 'boolean', default: true })
   isActive: boolean;
+
+  @Column({ name: 'version', type: 'varchar', length: 30, nullable: true, default: '0' })
+  version: string;
 
   @Column({ name: 'contractType', type: 'varchar', length: 50, default: 'STANDARD' })
   contractType: string; // STANDARD, HORS_CONVENTION, COTATION_CONVERTED, etc.

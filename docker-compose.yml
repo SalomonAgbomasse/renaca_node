@@ -4,7 +4,7 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ${PROJECT_ID}-backend
+    container_name: renaca-backend
     restart: unless-stopped
     env_file:
       - .env
@@ -14,23 +14,23 @@ services:
     networks:
       proxy:
         aliases:
-          - padme_backend
-          - ${PROJECT_ID}-backend
+          - renaca_backend
+          - renaca-backend
       databases:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_ID}-backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.${PROJECT_ID}-backend.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_ID}-backend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${PROJECT_ID}-backend-http.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.${PROJECT_ID}-backend-http.entrypoints=web"
-      - "traefik.http.routers.${PROJECT_ID}-backend-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.renaca-backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.renaca-backend.entrypoints=websecure"
+      - "traefik.http.routers.renaca-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.renaca-backend-http.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.renaca-backend-http.entrypoints=web"
+      - "traefik.http.routers.renaca-backend-http.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.services.${PROJECT_ID}-backend.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.${PROJECT_ID}-buffering.buffering.maxRequestBodyBytes=52428800"
-      - "traefik.http.middlewares.${PROJECT_ID}-buffering.buffering.maxResponseBodyBytes=52428800"
-      - "traefik.http.routers.${PROJECT_ID}-backend.middlewares=${PROJECT_ID}-buffering@docker"
-      - "traefik.http.routers.${PROJECT_ID}-backend-http.middlewares=${PROJECT_ID}-buffering@docker,redirect-to-https@docker"
+      - "traefik.http.services.renaca-backend.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.renaca-buffering.buffering.maxRequestBodyBytes=52428800"
+      - "traefik.http.middlewares.renaca-buffering.buffering.maxResponseBodyBytes=52428800"
+      - "traefik.http.routers.renaca-backend.middlewares=renaca-buffering@docker"
+      - "traefik.http.routers.renaca-backend-http.middlewares=renaca-buffering@docker,redirect-to-https@docker"
       - "traefik.docker.network=proxy"
 
   # Frontend Vue.js
@@ -38,7 +38,7 @@ services:
     build: 
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: ${PROJECT_ID}-frontend
+    container_name: renaca-frontend
     restart: unless-stopped
     depends_on:
       - backend
@@ -46,14 +46,14 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_ID}-frontend.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.${PROJECT_ID}-frontend.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_ID}-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${PROJECT_ID}-frontend-http.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.${PROJECT_ID}-frontend-http.entrypoints=web"
-      - "traefik.http.routers.${PROJECT_ID}-frontend-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.renaca-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.renaca-frontend.entrypoints=websecure"
+      - "traefik.http.routers.renaca-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.renaca-frontend-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.renaca-frontend-http.entrypoints=web"
+      - "traefik.http.routers.renaca-frontend-http.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.services.${PROJECT_ID}-frontend.loadbalancer.server.port=80"
+      - "traefik.http.services.renaca-frontend.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
 
 networks:

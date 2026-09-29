@@ -45,21 +45,37 @@ export class TicketService {
     });
   }
 
-  async findOne(id: number): Promise<Ticket> {
+  async findOne(identifier: string | number): Promise<Ticket> {
+    const str = String(identifier).trim();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let where: any = null;
+    if (uuidRegex.test(str)) {
+      where = { uuid: str, deletedAt: IsNull() };
+    } else if (str.includes('-') && str.split('-').length >= 6) {
+      const extracted = str.split('-').slice(0, 5).join('-');
+      if (uuidRegex.test(extracted)) {
+        where = { uuid: extracted, deletedAt: IsNull() };
+      }
+    } else if (/^\d+$/.test(str)) {
+      where = { id: parseInt(str, 10), deletedAt: IsNull() };
+    } else {
+      where = { id: 0, deletedAt: IsNull() };
+    }
+
     const ticket = await this.ticketRepository.findOne({
-      where: { id, deletedAt: IsNull() },
+      where,
       relations: ['user', 'assignedUser', 'reponduParUser', 'user.role', 'user.agency']
     });
 
     if (!ticket) {
-      throw new NotFoundException(`Ticket avec l'ID ${id} non trouvé`);
+      throw new NotFoundException(`Ticket avec l'identifiant ${identifier} non trouvé`);
     }
 
     return ticket;
   }
 
-  async update(id: number, updateTicketDto: UpdateTicketDto, updatedBy?: number): Promise<Ticket> {
-    const ticket = await this.findOne(id);
+  async update(identifier: string | number, updateTicketDto: UpdateTicketDto, updatedBy?: number): Promise<Ticket> {
+    const ticket = await this.findOne(identifier);
 
     if (updateTicketDto.status) ticket.status = updateTicketDto.status;
     if (updateTicketDto.priority) ticket.priority = updateTicketDto.priority;
@@ -77,13 +93,13 @@ export class TicketService {
     return this.ticketRepository.save(ticket);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.findOne(id);
-    await this.ticketRepository.softDelete(id);
+  async remove(identifier: string | number): Promise<void> {
+    const ticket = await this.findOne(identifier);
+    await this.ticketRepository.softDelete(ticket.id);
   }
 
-  async addFiles(id: number, files: string[]): Promise<Ticket> {
-    const ticket = await this.findOne(id);
+  async addFiles(identifier: string | number, files: string[]): Promise<Ticket> {
+    const ticket = await this.findOne(identifier);
 
     let existingFiles: string[] = [];
     if (ticket.fichiers) {

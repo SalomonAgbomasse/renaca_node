@@ -11,7 +11,9 @@ export class RoleService {
   ) {}
 
   async findAll(): Promise<Role[]> {
-    return this.roleRepository.find();
+    return this.roleRepository.find({
+      order: { id: 'ASC' }
+    });
   }
 
   async findOne(id: number): Promise<Role | null> {
@@ -22,13 +24,41 @@ export class RoleService {
     return this.roleRepository.findOne({ where: { libelle } });
   }
 
-  async create(roleData: Partial<Role>): Promise<Role> {
-    const role = this.roleRepository.create(roleData);
+  async findByCode(code: string): Promise<Role | null> {
+    return this.roleRepository.findOne({ where: { code } });
+  }
+
+  async create(roleData: any): Promise<Role> {
+    const data: any = { ...roleData };
+    if (data.title && !data.libelle) {
+      data.libelle = data.title;
+      delete data.title;
+    }
+    if (data.libelle) {
+      data.libelle = data.libelle.trim().toUpperCase();
+    }
+    if (data.code) {
+      data.code = data.code.trim().toUpperCase();
+    }
+    delete data.permissions;
+    const role = this.roleRepository.create(data as Partial<Role>);
     return this.roleRepository.save(role);
   }
 
-  async update(id: number, roleData: Partial<Role>): Promise<Role | null> {
-    await this.roleRepository.update(id, roleData);
+  async update(id: number, roleData: any): Promise<Role | null> {
+    const data: any = { ...roleData };
+    if (data.title && !data.libelle) {
+      data.libelle = data.title;
+      delete data.title;
+    }
+    if (data.libelle) {
+      data.libelle = data.libelle.trim().toUpperCase();
+    }
+    if (data.code) {
+      data.code = data.code.trim().toUpperCase();
+    }
+    delete data.permissions;
+    await this.roleRepository.update(id, data);
     return this.findOne(id);
   }
 

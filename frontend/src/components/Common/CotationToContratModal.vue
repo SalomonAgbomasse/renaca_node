@@ -9,6 +9,62 @@
     @update:is-visible="$emit('update:visible', $event)"
     class="conversion-modal-wrapper"
   >
+    <template #header-right>
+      <div v-if="!conversionSuccess" class="modal-header-stepper">
+        <!-- Étape 1: Infos Client -->
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === 1, completed: currentStep > 1 || shouldSkipClientStep }"
+          :style="shouldSkipClientStep ? { cursor: 'default' } : {}"
+          @click="!shouldSkipClientStep && goToStep(1)"
+          role="button"
+          tabindex="0"
+          :title="shouldSkipClientStep ? 'Infos Client (déjà renseignées)' : 'Étape 1 : Infos Client'"
+        >
+          <div class="header-step-circle">
+            <i v-if="currentStep > 1 || shouldSkipClientStep" class="fas fa-check"></i>
+            <span v-else>1</span>
+          </div>
+          <span class="header-step-text">Infos Client</span>
+        </div>
+
+        <div class="header-step-line"></div>
+
+        <!-- Étape 2: Contrat -->
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === 2, completed: currentStep > 2 }"
+          @click="goToStep(2)"
+          role="button"
+          tabindex="0"
+          title="Étape 2 : Contrat"
+        >
+          <div class="header-step-circle">
+            <i v-if="currentStep > 2" class="fas fa-check"></i>
+            <span v-else>2</span>
+          </div>
+          <span class="header-step-text">Contrat</span>
+        </div>
+
+        <div class="header-step-line"></div>
+
+        <!-- Étape 3: Récapitulatif -->
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === 3 }"
+          @click="goToStep(3)"
+          role="button"
+          tabindex="0"
+          title="Étape 3 : Récapitulatif"
+        >
+          <div class="header-step-circle">
+            <span>3</span>
+          </div>
+          <span class="header-step-text">Récapitulatif</span>
+        </div>
+      </div>
+    </template>
+
     <Form 
       ref="conversionFormRef" 
       :validation-schema="conversionSchema" 
@@ -58,14 +114,10 @@
 
       <!-- Étape 1: Informations complètes du client -->
       <div v-if="currentStep === 1 && !conversionSuccess" class="form-step">
-        <h5 class="mb-3 text-uppercase">
-          <i class="fas fa-user-circle me-2"></i>
-          Informations complètes de l'assuré
-        </h5>
         <div class="row">
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Nom <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-user text-secondary me-2"></i>Nom <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.nom"
@@ -87,9 +139,9 @@
               <ErrorMessage name="client.nom" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Prénoms <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-user text-secondary me-2"></i>Prénoms <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.prenoms"
@@ -111,38 +163,12 @@
               <ErrorMessage name="client.prenoms" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="form-group mb-3">
-              <label class="form-label">Numéro Client <span class="text-danger">*</span></label>
-              <Field
-                v-if="clientEditable"
-                name="client.numCustomer"
-                v-model="conversionForm.client.numCustomer"
-                type="text" 
-                class="form-control"
-                placeholder="Numéro du client"
-                maxlength="15"
-                required
-                @input="handleModalUppercaseInput($event, 'client.numCustomer')"
-              />
-              <input
-                v-else
-                v-model="conversionForm.client.numCustomer"
-                type="text" 
-                class="form-control bg-light"
-                maxlength="15"
-                readonly
-                disabled
-              />
-              <ErrorMessage name="client.numCustomer" class="text-danger" />
-            </div>
-          </div>
         </div>
 
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Lieu de naissance <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-map-marker-alt text-secondary me-2"></i>Lieu de naissance <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.lieuNaissance"
@@ -166,7 +192,7 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Email</label>
+              <label class="form-label"><i class="fas fa-envelope text-secondary me-2"></i>Email</label>
               <Field
                 v-if="clientEditable"
                 name="client.email"
@@ -188,7 +214,7 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Téléphone <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-phone text-secondary me-2"></i>Téléphone <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.telephone"
@@ -214,7 +240,7 @@
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Sexe <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-venus-mars text-secondary me-2"></i>Sexe <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.sexe"
@@ -243,7 +269,7 @@
 
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Type de client <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-user-tag text-secondary me-2"></i>Type de client <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.typeAss"
@@ -270,7 +296,7 @@
 
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Profession <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-briefcase text-secondary me-2"></i>Profession <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.profession"
@@ -297,7 +323,7 @@
         <div class="row">
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Adresse <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-home text-secondary me-2"></i>Adresse <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.adresse"
@@ -321,7 +347,7 @@
           </div>
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Date de naissance <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-calendar-alt text-secondary me-2"></i>Date de naissance <span class="text-danger">*</span></label>
               <Field
                 v-if="clientEditable"
                 name="client.dateNaissance"
@@ -351,17 +377,14 @@
 
       <!-- Étape 2: Informations du contrat -->
       <div v-if="currentStep === 2 && !conversionSuccess && !isLoadingContract" class="form-step">
-        <div class="d-flex align-items-center justify-content-between mb-4">
-          <h5 class="text-uppercase mb-0">
-            <i class="fa fa-file-contract me-2"></i>
-            Informations du contrat
-          </h5>
-        </div>
+        <!-- Champ Périodicité caché par défaut (Mensuelle = 1) -->
+        <Field name="contrat.idPeriodicite" type="hidden" :value="1" />
+
         <div class="row">
           <!-- Capital -->
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Capital <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-coins text-secondary me-2"></i>Capital <span class="text-danger">*</span></label>
               <Field
                 name="contrat.capital"
                 v-model="conversionForm.contrat.capital"
@@ -380,7 +403,7 @@
           <!-- Nature de crédit -->
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-credit-card text-secondary me-2"></i>Nature de crédit <span class="text-danger">*</span></label>
               <Field
                 v-if="!creditTypeLocked"
                 name="contrat.creditType"
@@ -406,60 +429,35 @@
             </div>
           </div>
         </div>
+
         <div class="row">
-          <!-- Périodicité -->
+          <!-- Durée (en mois) -->
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Périodicité <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-clock text-secondary me-2"></i>Durée (en mois) <span class="text-danger">*</span></label>
               <Field
-                name="contrat.idPeriodicite"
-                v-model="conversionForm.contrat.idPeriodicite"
-                as="select"
-                class="form-select"
-                :disabled="loadingPeriodicites"
+                name="contrat.duration"
+                v-model="conversionForm.contrat.duration"
+                type="number"
+                class="form-control"
+                placeholder="Durée en mois"
+                :min="minDuration"
+                :max="60"
+                @input="validateDuration"
+                @blur="validateDuration"
                 required
-              >
-                <option value="">
-                  {{ loadingPeriodicites ? 'Chargement...' : 'Sélectionner la périodicité' }}
-                </option>
-                <option
-                  v-for="periodicite in periodicites"
-                  :key="periodicite.id"
-                  :value="periodicite.id"
-                >
-                  {{ periodicite.libelle }}
-                </option>
-              </Field>
-              <ErrorMessage name="contrat.idPeriodicite" class="text-danger" />
+              />
+              <small v-if="maxDuration < 60" class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Durée maximale : {{ maxDuration }} mois (Âge: {{ currentAge }} ans)
+              </small>
+              <ErrorMessage name="contrat.duration" class="text-danger" />
             </div>
           </div>
-          <!-- Perte d'Emploi (Amortissable uniquement) -->
-          <div class="col-md-6" v-if="conversionForm.contrat.creditType === 'AMORT'">
-            <div class="form-group mb-4">
-              <label class="form-label">Perte d'Emploi <span class="text-danger">*</span></label>
-              <div class="d-flex gap-3">
-                <label class="d-flex align-items-center gap-2">
-                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
-                    <input type="radio" v-bind="field" value="OUI" />
-                  </Field>
-                  OUI
-                </label>
-                <label class="d-flex align-items-center gap-2">
-                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
-                    <input type="radio" v-bind="field" value="NON" />
-                  </Field>
-                  NON
-                </label>
-              </div>
-              <ErrorMessage name="contrat.perteEmploi" class="text-danger" />
-            </div>
-          </div>
-        </div>
-        <div class="row">
           <!-- Taux d'intérêt -->
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Taux d'intérêt <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-percentage text-secondary me-2"></i>Taux d'intérêt <span class="text-danger">*</span></label>
               <Field
                 name="contrat.tauxInteret"
                 v-model="conversionForm.contrat.tauxInteret"
@@ -480,27 +478,43 @@
               </div>
             </div>
           </div>
-          <!-- Durée (en mois) -->
-          <div class="col-md-6">
+        </div>
+
+        <div class="row">
+          <!-- Perte d'Emploi (Amortissable uniquement) -->
+          <div class="col-md-6" v-if="conversionForm.contrat.creditType === 'AMORT'">
             <div class="form-group mb-4">
-              <label class="form-label">Durée (en mois) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-shield-alt text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span></label>
+              <div class="d-flex gap-3">
+                <label class="d-flex align-items-center gap-2">
+                  <Field name="contrat.perteEmploi" type="radio" value="OUI" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
+                    <input type="radio" v-bind="field" value="OUI" />
+                  </Field>
+                  OUI
+                </label>
+                <label class="d-flex align-items-center gap-2">
+                  <Field name="contrat.perteEmploi" type="radio" value="NON" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
+                    <input type="radio" v-bind="field" value="NON" />
+                  </Field>
+                  NON
+                </label>
+              </div>
+              <ErrorMessage name="contrat.perteEmploi" class="text-danger" />
+            </div>
+          </div>
+          <!-- Établissement -->
+          <div :class="conversionForm.contrat.creditType === 'AMORT' ? 'col-md-6' : 'col-md-12'">
+            <div class="form-group mb-4">
+              <label class="form-label"><i class="fas fa-building text-secondary me-2"></i>Établissement</label>
               <Field
-                name="contrat.duration"
-                v-model="conversionForm.contrat.duration"
-                type="number"
+                name="contrat.etablissement"
+                v-model="conversionForm.contrat.etablissement"
+                type="text"
                 class="form-control"
-                placeholder="Durée en mois"
-                :min="minDuration"
-                :max="60"
-                @input="validateDuration"
-                @blur="validateDuration"
-                required
+                placeholder="Établissement"
+                @input="handleModalUppercaseInput($event, 'contrat.etablissement')"
               />
-              <small v-if="maxDuration < 60" class="text-muted">
-                <i class="fas fa-info-circle me-1"></i>
-                Durée maximale : {{ maxDuration }} mois (Âge: {{ currentAge }} ans)
-              </small>
-              <ErrorMessage name="contrat.duration" class="text-danger" />
+              <ErrorMessage name="contrat.etablissement" class="text-danger" />
             </div>
           </div>
         </div>
@@ -508,7 +522,7 @@
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-4">
-              <label class="form-label">Date d'effet <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-calendar-check text-secondary me-2"></i>Date d'effet <span class="text-danger">*</span></label>
               <Field
                 name="contrat.dateEffet"
                 v-model="conversionForm.contrat.dateEffet"
@@ -524,7 +538,7 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-4">
-              <label class="form-label">Date de la 1re échéance <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-calendar-alt text-secondary me-2"></i>Date de la 1re échéance <span class="text-danger">*</span></label>
               <Field
                 name="contrat.datePremiereEcheance"
                 v-model="conversionForm.contrat.datePremiereEcheance"
@@ -541,7 +555,7 @@
           <div class="col-md-4">
             <div class="form-group mb-4">
               <label class="form-label">
-                Date d'échéance <span class="text-danger">*</span>
+                <i class="fas fa-calendar-day text-secondary me-2"></i>Date d'échéance <span class="text-danger">*</span>
                 <button
                   v-if="dateEcheanceManuallyEdited"
                   type="button"
@@ -579,7 +593,7 @@
         <div class="row">
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Référence dossier</label>
+              <label class="form-label"><i class="fas fa-file-alt text-secondary me-2"></i>Référence dossier</label>
               <Field
                 name="contrat.reference"
                 v-model="conversionForm.contrat.reference"
@@ -593,16 +607,16 @@
           </div>
           <div class="col-md-6">
             <div class="form-group mb-4">
-              <label class="form-label">Établissement</label>
+              <label class="form-label"><i class="fas fa-user-friends text-secondary me-2"></i>Bénéficiaire</label>
               <Field
-                name="contrat.etablissement"
-                v-model="conversionForm.contrat.etablissement"
+                name="contrat.benef"
+                v-model="conversionForm.contrat.benef"
                 type="text"
                 class="form-control"
-                placeholder="Établissement"
-                @input="handleModalUppercaseInput($event, 'contrat.etablissement')"
+                placeholder="Nom et prénoms du bénéficiaire"
+                @input="handleModalUppercaseInput($event, 'contrat.benef')"
               />
-              <ErrorMessage name="contrat.etablissement" class="text-danger" />
+              <ErrorMessage name="contrat.benef" class="text-danger" />
             </div>
           </div>
         </div>
@@ -610,11 +624,6 @@
 
       <!-- Étape 3: Récapitulatif et validation -->
       <div v-if="currentStep === 3 && !conversionSuccess && !isLoadingContract" class="form-step recap-step">
-        <h5 class="mb-4 d-flex align-items-center gap-2">
-          <i class="fas fa-check-circle text-success fs-4"></i>
-          <span class="fw-bold text-dark">Récapitulatif et Validation</span>
-        </h5>
-
         <div class="row">
           <div class="col-md-7">
             <!-- Informations Client -->
@@ -705,6 +714,10 @@
                   <div class="recap-item">
                     <span class="recap-label">Établissement</span>
                     <span class="recap-value">{{ conversionForm.contrat.etablissement || 'N/A' }}</span>
+                  </div>
+                  <div class="recap-item" v-if="conversionForm.contrat.benef">
+                    <span class="recap-label">Bénéficiaire</span>
+                    <span class="recap-value">{{ conversionForm.contrat.benef }}</span>
                   </div>
                   <div class="recap-item" style="grid-column: span 2;">
                     <span class="recap-label">Référence dossier</span>
@@ -1032,6 +1045,7 @@ export default defineComponent({
           return nextMonth.toISOString().split('T')[0];
         })(),
         etablissement: '',
+        benef: '',
         reference: ''
       },
       primes: {
@@ -1049,10 +1063,7 @@ export default defineComponent({
       client: Yup.object().shape({
         nom: Yup.string().required('Le nom est obligatoire'),
         prenoms: Yup.string().required('Les prénoms sont obligatoires'),
-        numCustomer: Yup.string()
-          .required('Le numéro de client est obligatoire')
-          .min(1, 'Le numéro de client est obligatoire')
-          .max(15, 'Le numéro de client ne doit pas dépasser 15 caractères'),
+        numCustomer: Yup.string().nullable().optional(),
         telephone: Yup.string().required('Le téléphone est obligatoire'),
         lieuNaissance: Yup.string().required('Le lieu de naissance est obligatoire'),
         adresse: Yup.string().required('L\'adresse est obligatoire'),
@@ -1104,9 +1115,8 @@ export default defineComponent({
         creditType: Yup.string().required('Le type de crédit est obligatoire'),
         idPeriodicite: Yup.number()
           .nullable()
-          .transform((value, originalValue) => originalValue === '' || originalValue === null ? null : Number(originalValue))
-          .required('La périodicité est obligatoire')
-          .min(1, 'La périodicité est obligatoire'),
+          .optional()
+          .default(1),
         dateEffet: Yup.string()
           .required('La date d\'effet est obligatoire')
           .test('not-past', 'La date d\'effet ne peut pas être antérieure à aujourd\'hui', function(value) {
@@ -1236,7 +1246,6 @@ export default defineComponent({
       if (currentStep.value === 1) {
         if (!conversionForm.value.client.nom) missing.push('Nom');
         if (!conversionForm.value.client.prenoms) missing.push('Prénoms');
-        if (!conversionForm.value.client.numCustomer) missing.push('Numéro Client');
         if (!conversionForm.value.client.telephone) missing.push('Téléphone');
         if (!conversionForm.value.client.lieuNaissance) missing.push('Lieu de naissance');
         if (!conversionForm.value.client.adresse) missing.push('Adresse');
@@ -1475,6 +1484,36 @@ export default defineComponent({
     const prevStep = () => {
       if (currentStep.value > 1) {
         currentStep.value--;
+      }
+    };
+
+    const shouldSkipClientStep = computed(() => !clientEditable.value);
+
+    const goToStep = async (step: number) => {
+      if (step === currentStep.value) return;
+      if (step < currentStep.value) {
+        currentStep.value = step;
+        return;
+      }
+      if (step === 2) {
+        if (canProceedToNextStep.value || shouldSkipClientStep.value) {
+          currentStep.value = 2;
+          adjustValuesToLimits();
+          if (!dateEcheanceManuallyEdited.value) {
+            nextTick(() => {
+              calculateDateEcheanceAuto();
+            });
+          }
+        }
+      } else if (step === 3) {
+        if (currentStep.value === 1 && (canProceedToNextStep.value || shouldSkipClientStep.value)) {
+          currentStep.value = 2;
+          adjustValuesToLimits();
+        }
+        if (currentStep.value === 2 && canProceedToNextStep.value) {
+          currentStep.value = 3;
+          await recalculatePrimes();
+        }
       }
     };
 
@@ -2069,6 +2108,7 @@ export default defineComponent({
         }
         conversionForm.value.contrat.perteEmploi = contractData.garantieCompl === 'OUI' ? 'OUI' : 'NON';
         conversionForm.value.contrat.etablissement = contractData.etablissement || contractData.ets || '';
+        conversionForm.value.contrat.benef = contractData.benef || '';
         conversionForm.value.contrat.reference = contractData.reference || '';
         conversionForm.value.contrat.idPeriodicite = contractData.idPeriodicite || 1;
 
@@ -2146,11 +2186,12 @@ export default defineComponent({
             : (props.selectedCotation ? `Contrat créé depuis cotation` : `Contrat créé directement`),
           isActive: true,
           etablissement: conversionForm.value.contrat.etablissement,
+          benef: conversionForm.value.contrat.benef || undefined,
           reference: conversionForm.value.contrat.reference || undefined, // généré automatiquement si vide
           idPeriodicite: Number(conversionForm.value.contrat.idPeriodicite),
           perteEmploi: conversionForm.value.contrat.creditType === 'AMORT' && conversionForm.value.contrat.perteEmploi === 'OUI',
           tauxSurprime: 0,
-          beneficiaire: null
+          beneficiaire: conversionForm.value.contrat.benef || null
         };
 
         // Préparer les données du client
@@ -2381,6 +2422,7 @@ export default defineComponent({
           creditTypeLocked.value = true; // Cotation source : nature de crédit non modifiable
           conversionForm.value.contrat.reference = props.selectedCotation.reference || '';
           conversionForm.value.contrat.etablissement = props.selectedCotation.etablissement || '';
+          conversionForm.value.contrat.benef = props.selectedCotation.benef || '';
           conversionForm.value.contrat.perteEmploi = props.selectedCotation.garantieCompl === 'OUI' ? 'OUI' : 'NON';
           conversionForm.value.contrat.idPeriodicite = props.selectedCotation.idPeriodicite || 1;
 
@@ -2515,6 +2557,8 @@ export default defineComponent({
       validateCapital,
       nextStep,
       prevStep,
+      goToStep,
+      shouldSkipClientStep,
       handleModalUppercaseInput,
       updateDatePremiereEcheance,
       validateDateEffet,

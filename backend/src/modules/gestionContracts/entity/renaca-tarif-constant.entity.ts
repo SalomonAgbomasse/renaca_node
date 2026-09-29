@@ -7,7 +7,7 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
  * converti depuis le pourcentage source (ex. 0.720% -> 0.0072) : le calcul
  * se fait par simple multiplication (capital x taux x 1,25), sans division.
  */
-@Entity('renaca_tarif_constant')
+@Entity('tarif_constant')
 export class RenacaTarifConstant {
   @PrimaryGeneratedColumn()
   id: number;

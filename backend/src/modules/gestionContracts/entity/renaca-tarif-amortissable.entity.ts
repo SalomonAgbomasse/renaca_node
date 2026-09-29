@@ -6,7 +6,7 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
  * durée (mois1 à mois60) — reproduit exactement la forme du barème source
  * (Tarif_1.md) pour rester directement auditable.
  */
-@Entity('renaca_tarif_amortissable')
+@Entity('tarif_amortissable')
 export class RenacaTarifAmortissable {
   @PrimaryGeneratedColumn()
   id: number;

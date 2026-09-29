@@ -127,7 +127,7 @@ export class UserController {
 
   @Get(':id')
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('includeRole') includeRole?: string,
     @Query('includeAgency') includeAgency?: string,
     @Query('includePermissions') includePermissions?: string
@@ -189,7 +189,7 @@ export class UserController {
 
   @Put(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() userData: UpdateUserDto,
   ): Promise<{ message: string; user: User }> {
     const user = await this.userService.update(id, userData);
@@ -203,10 +203,38 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
     await this.userService.remove(id);
     return {
       message: 'Utilisateur supprimé avec succès'
+    };
+  }
+
+  @Get(':id/activities')
+  async getActivities(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<{ message: string; activities: any[]; total: number; totalPages: number }> {
+    const result = await this.userService.findActivities(
+      id,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 20,
+    );
+    return {
+      message: 'Activités récupérées avec succès',
+      ...result,
+    };
+  }
+
+  @Get(':id/permissions')
+  async getUserPermissions(
+    @Param('id') id: string,
+  ): Promise<{ message: string; permissions: any[] }> {
+    const permissions = await this.userService.getUserPermissions(id);
+    return {
+      message: 'Permissions de l\'utilisateur récupérées avec succès',
+      permissions,
     };
   }
 

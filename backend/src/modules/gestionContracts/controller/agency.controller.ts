@@ -154,7 +154,7 @@ export class AgencyController {
 
   @Put(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() agencyData: UpdateAgencyDto,
   ): Promise<{ message: string; agency: Agency }> {
     const agency = await this.agencyService.update(id, agencyData);
@@ -168,7 +168,7 @@ export class AgencyController {
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; agencyId: number }> {
+  async remove(@Param('id') id: string): Promise<{ message: string; agencyId: string }> {
     const agency = await this.agencyService.findOne(id);
     if (!agency) {
       throw new NotFoundException('Agence non trouvée');
@@ -208,7 +208,7 @@ export class AgencyController {
   // Obtenir les contrats d'une agence
   @Get(':id/contracts')
   async getAgencyContracts(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '7'
   ): Promise<{ message: string; contracts: any[]; total: number; page: number; limit: number; totalPages: number }> {
@@ -228,7 +228,7 @@ export class AgencyController {
 
   // Obtenir les utilisateurs d'une agence
   @Get(':id/users')
-  async getAgencyUsers(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; users: any[] }> {
+  async getAgencyUsers(@Param('id') id: string): Promise<{ message: string; users: any[] }> {
     const users = await this.agencyService.findUsersByAgency(id);
     
     return {
@@ -239,7 +239,7 @@ export class AgencyController {
 
   // Obtenir les statistiques d'une agence
   @Get(':id/stats')
-  async getAgencyStats(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; stats: any }> {
+  async getAgencyStats(@Param('id') id: string): Promise<{ message: string; stats: any }> {
     const stats = await this.agencyService.getAgencyStats(id);
     
     return {
@@ -250,7 +250,7 @@ export class AgencyController {
 
   // Obtenir les performances d'une agence
   @Get(':id/performance')
-  async getAgencyPerformance(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; performance: any }> {
+  async getAgencyPerformance(@Param('id') id: string): Promise<{ message: string; performance: any }> {
     const agency = await this.agencyService.findOne(id);
     if (!agency) {
       throw new NotFoundException('Agence non trouvée');
@@ -273,7 +273,7 @@ export class AgencyController {
 
   // Obtenir les bureaux d'une agence
   @Get(':id/offices')
-  async getAgencyOffices(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; offices: any[] }> {
+  async getAgencyOffices(@Param('id') id: string): Promise<{ message: string; offices: any[] }> {
     const offices = await this.agencyService.findOfficesByAgency(id);
     return {
       message: `Bureaux de l'agence récupérés avec succès`,

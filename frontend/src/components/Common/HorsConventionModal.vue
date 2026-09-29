@@ -8,6 +8,41 @@
     @close="closeModal"
     @update:is-visible="$emit('update:visible', $event)"
   >
+    <template #header-right>
+      <div v-if="!creationSuccess" class="modal-header-stepper">
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === 1, completed: currentStep > 1 }"
+          @click="currentStep = 1"
+          role="button"
+          tabindex="0"
+          title="Étape 1 : Informations Contrat"
+        >
+          <div class="header-step-circle">
+            <i v-if="currentStep > 1" class="fas fa-check"></i>
+            <span v-else>1</span>
+          </div>
+          <span class="header-step-text">Informations</span>
+        </div>
+
+        <div class="header-step-line"></div>
+
+        <div 
+          class="header-step-item" 
+          :class="{ active: currentStep === 2 }"
+          @click="isCurrentStepValid && nextStep()"
+          role="button"
+          tabindex="0"
+          title="Étape 2 : Récapitulatif"
+        >
+          <div class="header-step-circle">
+            <span>2</span>
+          </div>
+          <span class="header-step-text">Récapitulatif</span>
+        </div>
+      </div>
+    </template>
+
     <Form
       ref="formRef"
       :validation-schema="validationSchema"
@@ -23,14 +58,13 @@
 
       <!-- Étape 1 : Informations du contrat -->
       <div v-if="currentStep === 1 && !creationSuccess" class="form-step">
-        <h5 class="mb-3 text-uppercase">
-          <i class="fa fa-file-contract me-2"></i>
-          Informations du contrat
-        </h5>
+        <!-- Champ Périodicité caché par défaut (Mensuelle = 1) -->
+        <Field name="contrat.idPeriodicite" type="hidden" :value="1" />
+
         <div class="row">
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-credit-card text-secondary me-2"></i>Nature de crédit <span class="text-danger">*</span></label>
               <Field
                 name="contrat.idNatureCredit"
                 v-model="formModel.contrat.idNatureCredit"
@@ -51,7 +85,7 @@
           </div>
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Capital <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-coins text-secondary me-2"></i>Capital <span class="text-danger">*</span></label>
               <Field
                 name="contrat.capital"
                 v-model="formModel.contrat.capital"
@@ -65,34 +99,12 @@
               <ErrorMessage name="contrat.capital" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-4">
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Périodicité <span class="text-danger">*</span></label>
-              <Field
-                name="contrat.idPeriodicite"
-                v-model="formModel.contrat.idPeriodicite"
-                as="select"
-                class="form-control"
-                :disabled="loadingPeriodicites"
-                required
-              >
-                <option value="">
-                  {{ loadingPeriodicites ? 'Chargement...' : 'Sélectionner la périodicité' }}
-                </option>
-                <option
-                  v-for="periodicite in periodicites"
-                  :key="periodicite.id"
-                  :value="periodicite.id"
-                >
-                  {{ periodicite.libelle }}
-                </option>
-              </Field>
-              <ErrorMessage name="contrat.idPeriodicite" class="text-danger" />
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group mb-3">
-              <label class="form-label">Durée (en mois) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-clock text-secondary me-2"></i>Durée (en mois) <span class="text-danger">*</span></label>
               <Field
                 name="contrat.duration"
                 v-model="formModel.contrat.duration"
@@ -106,9 +118,9 @@
               <ErrorMessage name="contrat.duration" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Taux d'intérêt <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-percentage text-secondary me-2"></i>Taux d'intérêt <span class="text-danger">*</span></label>
               <Field
                 name="contrat.tauxInteret"
                 v-model="formModel.contrat.tauxInteret"
@@ -131,8 +143,11 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="row">
           <div class="col-md-6" v-if="formModel.contrat.idNatureCredit && natureCreditCode === 'AMORT'">
-            <label class="form-label fw-bold d-block">Perte d'Emploi <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold d-block"><i class="fas fa-shield-alt text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span></label>
             <div class="d-flex gap-3 mt-2">
               <label class="d-flex align-items-center gap-2">
                 <input type="radio" v-model="formModel.contrat.perteEmploi" value="OUI" />
@@ -144,12 +159,26 @@
               </label>
             </div>
           </div>
+          <div :class="(formModel.contrat.idNatureCredit && natureCreditCode === 'AMORT') ? 'col-md-6' : 'col-md-12'">
+            <div class="form-group mb-3">
+              <label class="form-label"><i class="fas fa-building text-secondary me-2"></i>Établissement</label>
+              <Field
+                name="contrat.etablissement"
+                v-model="formModel.contrat.etablissement"
+                type="text"
+                class="form-control"
+                placeholder="Établissement"
+                @input="handleUppercaseInput($event, 'contrat.etablissement')"
+              />
+              <ErrorMessage name="contrat.etablissement" class="text-danger" />
+            </div>
+          </div>
         </div>
 
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Date d'effet <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-calendar-check text-secondary me-2"></i>Date d'effet <span class="text-danger">*</span></label>
               <Field
                 name="contrat.dateEffet"
                 v-model="formModel.contrat.dateEffet"
@@ -165,7 +194,7 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Date de la 1re échéance <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-calendar-alt text-secondary me-2"></i>Date de la 1re échéance <span class="text-danger">*</span></label>
               <Field
                 name="contrat.datePremiereEcheance"
                 v-model="formModel.contrat.datePremiereEcheance"
@@ -181,7 +210,7 @@
           <div class="col-md-4">
             <div class="form-group">
               <label class="form-label">
-                Date d'échéance <span class="text-danger">*</span>
+                <i class="fas fa-calendar-day text-secondary me-2"></i>Date d'échéance <span class="text-danger">*</span>
                 <button
                   v-if="dateEcheanceManuallyEdited"
                   type="button"
@@ -218,7 +247,7 @@
         <div class="row">
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Référence dossier</label>
+              <label class="form-label"><i class="fas fa-file-alt text-secondary me-2"></i>Référence dossier</label>
               <Field
                 name="contrat.reference"
                 v-model="formModel.contrat.reference"
@@ -232,16 +261,16 @@
           </div>
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Établissement</label>
+              <label class="form-label"><i class="fas fa-user-friends text-secondary me-2"></i>Bénéficiaire</label>
               <Field
-                name="contrat.etablissement"
-                v-model="formModel.contrat.etablissement"
+                name="contrat.benef"
+                v-model="formModel.contrat.benef"
                 type="text"
                 class="form-control"
-                placeholder="Établissement"
-                @input="handleUppercaseInput($event, 'contrat.etablissement')"
+                placeholder="Nom et prénoms du bénéficiaire"
+                @input="handleUppercaseInput($event, 'contrat.benef')"
               />
-              <ErrorMessage name="contrat.etablissement" class="text-danger" />
+              <ErrorMessage name="contrat.benef" class="text-danger" />
             </div>
           </div>
         </div>
@@ -250,7 +279,7 @@
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Prime Décès (PD) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-heartbeat text-secondary me-2"></i>Prime Décès (PD) <span class="text-danger">*</span></label>
               <Field
                 name="primes.pd"
                 v-model="formModel.primes.pd"
@@ -268,7 +297,7 @@
 
           <div class="col-md-4" v-if="natureCreditCode === 'AMORT'">
             <div class="form-group mb-3">
-              <label class="form-label">Prime Complémentaire Perte d'Emploi (PC)</label>
+              <label class="form-label"><i class="fas fa-shield-alt text-secondary me-2"></i>Prime Complémentaire Perte d'Emploi (PC)</label>
               <Field
                 name="primes.pc"
                 v-model="formModel.primes.pc"
@@ -286,7 +315,7 @@
 
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Surprime (SURP) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-plus-circle text-secondary me-2"></i>Surprime (SURP) <span class="text-danger">*</span></label>
               <Field
                 name="primes.surp"
                 v-model="formModel.primes.surp"
@@ -307,7 +336,7 @@
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Accessoires (ACC) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-file-invoice-dollar text-secondary me-2"></i>Accessoires (ACC) <span class="text-danger">*</span></label>
               <Field
                 name="primes.acc"
                 v-model="formModel.primes.acc"
@@ -324,7 +353,7 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Frais Médicaux (FM) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-briefcase-medical text-secondary me-2"></i>Frais Médicaux (FM) <span class="text-danger">*</span></label>
               <Field
                 name="primes.fm"
                 v-model="formModel.primes.fm"
@@ -341,7 +370,7 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Prime Unique TTC (PUTTC) <span class="text-danger">*</span></label>
+              <label class="form-label"><i class="fas fa-calculator text-secondary me-2"></i>Prime Unique TTC (PUTTC) <span class="text-danger">*</span></label>
               <input
                 :value="formatNumber(formModel.primes.puttc)"
                 type="text"
@@ -360,11 +389,6 @@
 
       <!-- Étape 2 : Récapitulatif -->
       <div v-if="currentStep === 2 && !creationSuccess" class="form-step recap-step">
-        <h5 class="mb-4 d-flex align-items-center gap-2">
-          <i class="fas fa-check-circle text-success fs-4"></i>
-          <span class="fw-bold text-dark">Récapitulatif et Validation</span>
-        </h5>
-
         <div class="row">
           <div class="col-md-7">
             <!-- Informations Client (non modifiable, client déjà sélectionné) -->
@@ -462,6 +486,14 @@
                   <div class="recap-item" style="grid-column: span 2;">
                     <span class="recap-label">Référence dossier</span>
                     <span class="recap-value">{{ formModel.contrat.reference || 'Générée automatiquement' }}</span>
+                  </div>
+                  <div class="recap-item" v-if="formModel.contrat.etablissement">
+                    <span class="recap-label">Établissement</span>
+                    <span class="recap-value">{{ formModel.contrat.etablissement }}</span>
+                  </div>
+                  <div class="recap-item" v-if="formModel.contrat.benef">
+                    <span class="recap-label">Bénéficiaire</span>
+                    <span class="recap-value">{{ formModel.contrat.benef }}</span>
                   </div>
                   <div v-if="natureCreditCode === 'AMORT'" class="recap-item">
                     <span class="recap-label">Perte d'Emploi</span>
@@ -673,6 +705,7 @@ export default defineComponent({
         idPeriodicite: 1,
         reference: '',
         etablissement: '',
+        benef: '',
         perteEmploi: 'NON' as string
       },
       primes: {
@@ -696,8 +729,9 @@ export default defineComponent({
           .required('Le capital est obligatoire')
           .min(1, 'Le capital doit être supérieur à 0'),
         idPeriodicite: Yup.number()
-          .required('La périodicité est obligatoire')
-          .min(1, 'La périodicité est obligatoire'),
+          .nullable()
+          .optional()
+          .default(1),
         dateEffet: dateEffetSchema,
         datePremiereEcheance: datePremiereEcheanceSchema('contrat'),
         duration: Yup.number()
@@ -1020,7 +1054,7 @@ export default defineComponent({
       if (!contrat.idNatureCredit) missingFields.push('Nature de crédit');
       if (!contrat.capital || Number(contrat.capital) <= 0) missingFields.push('Capital');
       if (!contrat.duration || Number(contrat.duration) <= 0) missingFields.push('Durée');
-      if (!contrat.idPeriodicite) missingFields.push('Périodicité');
+      if (!contrat.idPeriodicite) contrat.idPeriodicite = 1;
       if (contrat.tauxInteret === null || contrat.tauxInteret === undefined || isNaN(Number(contrat.tauxInteret)) || Number(contrat.tauxInteret) < 0) {
         missingFields.push('Taux d\'intérêt');
       }
@@ -1239,6 +1273,8 @@ export default defineComponent({
           perteEmploi: natureCreditCode.value === 'AMORT' && formModel.value.contrat.perteEmploi === 'OUI',
           reference: formModel.value.contrat.reference || undefined,
           etablissement: formModel.value.contrat.etablissement || undefined,
+          benef: formModel.value.contrat.benef || undefined,
+          beneficiaire: formModel.value.contrat.benef || undefined,
           pd: validateNumericValue(formModel.value.primes.pd, 0),
           pc: validateNumericValue(formModel.value.primes.pc, 0),
           surp: validateNumericValue(formModel.value.primes.surp, 0),

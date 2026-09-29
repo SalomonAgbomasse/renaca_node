@@ -10,18 +10,16 @@
 @import './css/style.css';
 
 /* =====================================================
-   Police globale Futura pour tout le projet + Variables Dynamiques
+   Police globale Futura pour tout le projet
    ===================================================== */
 :root {
   --bs-font-sans-serif: 'Futura', sans-serif !important;
   --bs-body-font-family: 'Futura', sans-serif !important;
-  --app-font-size: 16px;
-  --bs-body-font-size: var(--app-font-size) !important;
+  --bs-body-font-size: 18.5px !important;
 }
 
 html, body, #app {
-  font-size: var(--app-font-size) !important;
-  line-height: 1.65;
+  font-size: 18px !important;
 }
 
 html, body, #app, button, input, select, textarea, optgroup,
@@ -29,69 +27,8 @@ h1, h2, h3, h4, h5, h6, p, a, span, label, td, th, div, table, .card, .btn, .dro
   font-family: 'Futura', 'Red Hat Display', sans-serif !important;
 }
 
-/* Base dynamique pour les éléments interactifs et formulaires */
-input, button, select, optgroup, textarea, .form-control, .form-select {
-  font-size: calc(var(--app-font-size) * 0.95) !important;
-}
-
-/* Tableaux et données */
-.table, table {
-  font-size: calc(var(--app-font-size) * 0.95) !important;
-
-  th {
-    font-size: calc(var(--app-font-size) * 0.9) !important;
-    letter-spacing: 0.04em;
-    padding-top: calc(var(--app-font-size) * 0.75) !important;
-    padding-bottom: calc(var(--app-font-size) * 0.75) !important;
-  }
-
-  td {
-    font-size: calc(var(--app-font-size) * 0.95) !important;
-    padding-top: calc(var(--app-font-size) * 0.75) !important;
-    padding-bottom: calc(var(--app-font-size) * 0.75) !important;
-  }
-}
-
-/* Classes utilitaires de taille de police dynamiques */
-.fs-10 { font-size: calc(var(--app-font-size) * 0.75) !important; }
-.fs-11 { font-size: calc(var(--app-font-size) * 0.8) !important; }
-.fs-12 { font-size: calc(var(--app-font-size) * 0.85) !important; }
-.fs-13 { font-size: calc(var(--app-font-size) * 0.9) !important; }
-.fs-14 { font-size: calc(var(--app-font-size) * 0.95) !important; }
-.fs-15 { font-size: calc(var(--app-font-size) * 1.05) !important; }
-.fs-16 { font-size: calc(var(--app-font-size) * 1.15) !important; }
-
-/* Sidebar & Navigation */
-.sidebar-area {
-  .sidebar-nav-link .title {
-    font-size: var(--app-font-size) !important;
-  }
-  .sidebar-sub-menu-link {
-    font-size: calc(var(--app-font-size) * 0.92) !important;
-  }
-  .sub-title span {
-    font-size: calc(var(--app-font-size) * 0.85) !important;
-  }
-  .accordion-button .title {
-    font-size: var(--app-font-size) !important;
-  }
-}
-
-/* Badges & Boutons */
-.badge {
-  font-size: calc(var(--app-font-size) * 0.85) !important;
-}
-
-.btn {
-  font-size: calc(var(--app-font-size) * 0.95) !important;
-}
-
-.btn-sm {
-  font-size: calc(var(--app-font-size) * 0.85) !important;
-}
-
 /* =====================================================
-   Styles des Modales et Champs de Formulaire (Bange Bank Design System + Futura)
+   Styles des Modales et Champs de Formulaire (CMMB Design System + Futura)
    ===================================================== */
 
 .modal-content {
@@ -169,7 +106,7 @@ input, button, select, optgroup, textarea, .form-control, .form-select {
   padding: 0.85rem 1.25rem !important;
 }
 
-/* Form Controls & Form Selects (Ref: simulateur_bange_bank) */
+/* Form Controls & Form Selects */
 .modal-body .form-control,
 .modal-body .form-select,
 .form-control.bange-input,

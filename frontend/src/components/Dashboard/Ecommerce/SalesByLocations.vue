@@ -229,8 +229,7 @@ export default defineComponent({
         }
       } catch (error) {
         console.error('❌ Erreur lors du chargement des contrats:', error);
-        // Charger des données de démonstration en cas d'erreur
-        loadDemoData(period);
+        contracts.value = [];
       } finally {
         loading.value = false;
       }
@@ -248,50 +247,6 @@ export default defineComponent({
       return labels[period] || 'Période inconnue';
     };
 
-    // Données de démonstration
-    const loadDemoData = (period: string) => {
-      const now = new Date();
-      const demoContracts = [
-        {
-          id: 1,
-          contractNumber: 'CT-2024-001',
-          customerName: 'Jean KOUAGOU',
-          agencyName: 'L\'Africaine Vie Bénin SA',
-          amount: 1500000,
-          expiryDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          daysUntilExpiry: 5
-        },
-        {
-          id: 2,
-          contractNumber: 'CT-2024-002',
-          customerName: 'Marie ADJOVI',
-          agencyName: 'L\'Africaine Vie Bénin SA',
-          amount: 2500000,
-          expiryDate: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          daysUntilExpiry: 15
-        },
-        {
-          id: 3,
-          contractNumber: 'CT-2024-003',
-          customerName: 'Paul DOSSOU',
-          agencyName: 'Parakou',
-          amount: 800000,
-          expiryDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-          daysUntilExpiry: 45
-        }
-      ];
-
-      // Filtrer selon la période
-      let filteredContracts = demoContracts;
-      if (period === '7days') {
-        filteredContracts = demoContracts.filter(c => c.daysUntilExpiry <= 7);
-      } else if (period === '30days') {
-        filteredContracts = demoContracts.filter(c => c.daysUntilExpiry <= 30);
-      }
-
-      contracts.value = filteredContracts;
-      currentPeriod.value = getPeriodLabel(period);
-    };
 
     onMounted(async () => {
       await loadContracts('30days'); // Charger par défaut les 30 prochains jours

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, ParseIntPipe, Query, UseGuards, UseInterceptors, NotFoundException, Req } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, ParseIntPipe, Query, UseGuards, UseInterceptors, NotFoundException, BadRequestException, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from '../service/user.service';
 import { AuthService } from '../service/auth.service';
@@ -26,7 +26,7 @@ export class UserManagementController {
 
   // Désactiver un utilisateur
   @Put('deactivate/:id')
-  async deactivateUser(@Param('id', ParseIntPipe) id: number) {
+  async deactivateUser(@Param('id') id: string) {
     const user = await this.userService.deactivateUser(id);
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
@@ -39,7 +39,7 @@ export class UserManagementController {
 
   // Activer un utilisateur
   @Put('activate/:id')
-  async activateUser(@Param('id', ParseIntPipe) id: number) {
+  async activateUser(@Param('id') id: string) {
     const user = await this.userService.activateUser(id);
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
@@ -53,7 +53,7 @@ export class UserManagementController {
   // Suppression logique
   @Delete('soft-delete/:id')
   async softDeleteUser(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: { deletedBy: number }
   ) {
     await this.userService.softDeleteUser(id, body.deletedBy);
@@ -65,7 +65,7 @@ export class UserManagementController {
 
   // Restaurer un utilisateur
   @Put('restore/:id')
-  async restoreUser(@Param('id', ParseIntPipe) id: number) {
+  async restoreUser(@Param('id') id: string) {
     const user = await this.userService.restoreUser(id);
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
@@ -80,21 +80,28 @@ export class UserManagementController {
   @Put('reset-password/:id')
   @UseGuards(UserStatusGuard)
   async resetPassword(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: { newPassword: string }
   ) {
-    await this.userService.resetPassword(id, body.newPassword);
-    return {
-      message: 'Mot de passe réinitialisé avec succès',
-      userId: id
-    };
+    try {
+      await this.userService.resetPassword(id, body.newPassword);
+      return {
+        message: 'Mot de passe réinitialisé avec succès',
+        userId: id
+      };
+    } catch (error: any) {
+      if (error.message === 'Utilisateur non trouvé') {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(error.message || 'Impossible de réinitialiser le mot de passe');
+    }
   }
 
   // Changer le mot de passe
   @Put('change-password/:id')
   @UseGuards(UserStatusGuard)
   async changePassword(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: { oldPassword: string; newPassword: string }
   ) {
     const success = await this.userService.changePassword(id, body.oldPassword, body.newPassword);
@@ -110,7 +117,7 @@ export class UserManagementController {
   // Vérifier le mot de passe
   @Post('verify-password/:id')
   async verifyPassword(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: { password: string }
   ) {
     const isValid = await this.userService.verifyPassword(id, body.password);
@@ -175,7 +182,7 @@ export class UserManagementController {
 
   // Obtenir l'historique des connexions d'un utilisateur
   @Get(':id/login-history')
-  async getUserLoginHistory(@Param('id', ParseIntPipe) id: number) {
+  async getUserLoginHistory(@Param('id') id: string) {
     const user = await this.userService.findOne(id);
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
@@ -201,7 +208,7 @@ export class UserManagementController {
 
   // Obtenir les tentatives de connexion d'un utilisateur
   @Get(':id/login-attempts')
-  async getUserLoginAttempts(@Param('id', ParseIntPipe) id: number) {
+  async getUserLoginAttempts(@Param('id') id: string) {
     const user = await this.userService.findOne(id);
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
@@ -219,35 +226,44 @@ export class UserManagementController {
     };
   }
 
-  // Déverrouiller un utilisateur
-  @Put('unlock/:id')
-  async unlockUser(@Param('id', ParseIntPipe) id: number) {
-    await this.userService.update(id, {
-      loginAttempts: 0,
-      lockedUntil: undefined
-    });
-    
-    const user = await this.userService.findOne(id);
+  // Verrouiller un utilisateur
+  @Put('lock/:id')
+  async lockUser(
+    @Param('id') id: string,
+    @Body() body?: { minutes?: number }
+  ) {
+    const minutes = body?.minutes || 1440; // 24 heures par défaut
+    const user = await this.userService.lockUser(id, minutes);
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
     }
     return {
-      message: 'Utilisateur déverrouillé avec succès',
+      message: 'Compte utilisateur verrouillé avec succès',
+      user: this.filterSensitiveFields(user)
+    };
+  }
+
+  // Déverrouiller un utilisateur
+  @Put('unlock/:id')
+  async unlockUser(@Param('id') id: string) {
+    const user = await this.userService.unlockUser(id);
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    return {
+      message: 'Compte utilisateur déverrouillé avec succès',
       user: this.filterSensitiveFields(user)
     };
   }
 
   // Réinitialiser les tentatives de connexion
   @Put('reset-login-attempts/:id')
-  async resetLoginAttempts(@Param('id', ParseIntPipe) id: number) {
-    await this.userService.update(id, {
-      loginAttempts: 0,
-      lockedUntil: undefined
-    });
-    
+  async resetLoginAttempts(@Param('id') id: string) {
+    await this.userService.resetLoginAttempts(id);
     return {
       message: 'Tentatives de connexion réinitialisées avec succès',
       userId: id
     };
   }
 }
+

@@ -19,7 +19,7 @@
               <div class="col-md-12">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Nom de l'agence <span class="text-danger">*</span>
+                    <i class="fas fa-building text-secondary me-2"></i>Nom de l'agence <span class="text-danger">*</span>
                   </label>
                   <Field name="name" type="text" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer le nom de l'agence"/>
@@ -29,7 +29,7 @@
               <div class="col-md-12">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Adresse de l'agence  <span class="text-danger">*</span>
+                    <i class="fas fa-map-marker-alt text-secondary me-2"></i>Adresse de l'agence <span class="text-danger">*</span>
                   </label>
                   <Field name="location" type="text" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer l'adresse"/>
@@ -39,7 +39,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Téléphone
+                    <i class="fas fa-phone text-secondary me-2"></i>Téléphone
                   </label>
                   <Field name="phone" type="tel" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer le numéro de téléphone"/>
@@ -49,7 +49,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Email
+                    <i class="fas fa-envelope text-secondary me-2"></i>Email
                   </label>
                   <Field name="email" type="email" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer l'adresse email"/>

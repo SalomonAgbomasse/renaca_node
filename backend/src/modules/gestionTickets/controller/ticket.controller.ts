@@ -69,15 +69,13 @@ export class TicketController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() request: Request): Promise<{ message: string; data: any }> {
     if (id === 'my-tickets') return this.findMyTickets(request) as any;
-    const numericId = parseInt(id, 10);
-    if (isNaN(numericId)) throw new BadRequestException(`ID invalide : ${id}`);
-    const ticket = await this.ticketService.findOne(numericId);
+    const ticket = await this.ticketService.findOne(id);
     return { message: 'Ticket récupéré avec succès', data: ticket };
   }
 
   @Patch(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() updateTicketDto: UpdateTicketDto,
     @Req() request: Request
   ): Promise<{ message: string; data: any }> {
@@ -87,7 +85,7 @@ export class TicketController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number): Promise<{ message: string }> {
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
     await this.ticketService.remove(id);
     return { message: 'Ticket supprimé avec succès' };
   }
@@ -108,7 +106,7 @@ export class TicketController {
     })
   )
   async uploadFiles(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @UploadedFiles() files: File[]
   ): Promise<{ message: string; data: any }> {
     if (!files || files.length === 0) throw new BadRequestException('Aucun fichier fourni');

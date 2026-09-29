@@ -7,6 +7,43 @@
     @close="closeModal"
     @update:is-visible="$emit('update:visible', $event)"
   >
+    <template #header-right>
+      <div class="modal-header-stepper">
+        <div 
+          class="step-item" 
+          :class="{ active: currentStep === 1, completed: currentStep > 1 }"
+          @click="goToStep(1)"
+        >
+          <span class="step-num">
+            <i v-if="currentStep > 1" class="fas fa-check"></i>
+            <span v-else>1</span>
+          </span>
+          <span class="step-label">Client</span>
+        </div>
+        <div class="step-separator"></div>
+        <div 
+          class="step-item" 
+          :class="{ active: currentStep === 2, completed: currentStep > 2 }"
+          @click="goToStep(2)"
+        >
+          <span class="step-num">
+            <i v-if="currentStep > 2" class="fas fa-check"></i>
+            <span v-else>2</span>
+          </span>
+          <span class="step-label">Contrat</span>
+        </div>
+        <div class="step-separator"></div>
+        <div 
+          class="step-item" 
+          :class="{ active: currentStep === 3 }"
+          @click="goToStep(3)"
+        >
+          <span class="step-num">3</span>
+          <span class="step-label">Récapitulatif</span>
+        </div>
+      </div>
+    </template>
+
     <Form
       ref="formRef"
       :validation-schema="validationSchema"
@@ -21,38 +58,40 @@
       </div>
 
       <div v-if="currentStep === 1 && !creationSuccess" class="form-step">
-        <h5 class="mb-3 text-uppercase">
-          <i class="fa fa-file-contract me-2"></i>
-          Informations du client
-        </h5>
+        <Field name="client.numCustomer" type="hidden" v-model="formModel.client.numCustomer" />
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-bold">Prénom <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-user text-secondary me-2"></i>Prénom <span class="text-danger">*</span>
+            </label>
             <Field name="client.firstname" v-model="formModel.client.firstname" class="form-control" placeholder="Prénom du client" />
             <ErrorMessage name="client.firstname" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Nom <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-user text-secondary me-2"></i>Nom <span class="text-danger">*</span>
+            </label>
             <Field name="client.lastname" v-model="formModel.client.lastname" class="form-control" placeholder="Nom du client" />
             <ErrorMessage name="client.lastname" class="text-danger small" />
           </div>
-          <div class="col-md-12">
-            <label class="form-label fw-bold">Numéro de client <span class="text-danger">*</span></label>
-            <Field name="client.numCustomer" v-model="formModel.client.numCustomer" class="form-control" placeholder="Numéro de client" />
-            <ErrorMessage name="client.numCustomer" class="text-danger small" />
-          </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Téléphone <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-phone text-secondary me-2"></i>Téléphone <span class="text-danger">*</span>
+            </label>
             <Field name="client.phone" v-model="formModel.client.phone" class="form-control" placeholder="Numéro de téléphone" />
             <ErrorMessage name="client.phone" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Email</label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-envelope text-secondary me-2"></i>Email
+            </label>
             <Field name="client.email" v-model="formModel.client.email" type="email" class="form-control" placeholder="Adresse email" />
             <ErrorMessage name="client.email" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Genre <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-venus-mars text-secondary me-2"></i>Genre <span class="text-danger">*</span>
+            </label>
             <Field name="client.gender" as="select" v-model="formModel.client.gender" class="form-select">
               <option value="">Sélectionner</option>
               <option value="M">Masculin</option>
@@ -61,12 +100,16 @@
             <ErrorMessage name="client.gender" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Date de naissance <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-calendar-alt text-secondary me-2"></i>Date de naissance <span class="text-danger">*</span>
+            </label>
             <Field name="client.birthdate" v-model="formModel.client.birthdate" type="date" class="form-control" />
             <ErrorMessage name="client.birthdate" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Type de client <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-id-badge text-secondary me-2"></i>Type de client <span class="text-danger">*</span>
+            </label>
             <Field name="client.idTypeCustomer" as="select" v-model="formModel.client.idTypeCustomer" class="form-select">
               <option value="">Sélectionner</option>
               <option v-for="tc in typeCustomers" :key="tc.id" :value="String(tc.id)">{{ tc.libelle }}</option>
@@ -74,17 +117,23 @@
             <ErrorMessage name="client.idTypeCustomer" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Lieu de naissance <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-map-marker-alt text-secondary me-2"></i>Lieu de naissance <span class="text-danger">*</span>
+            </label>
             <Field name="client.placeOfBirth" v-model="formModel.client.placeOfBirth" class="form-control" placeholder="Lieu de naissance" />
             <ErrorMessage name="client.placeOfBirth" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Profession <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-briefcase text-secondary me-2"></i>Profession <span class="text-danger">*</span>
+            </label>
             <Field name="client.occupation" v-model="formModel.client.occupation" class="form-control" placeholder="Profession" />
             <ErrorMessage name="client.occupation" class="text-danger small" />
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Adresse <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold">
+              <i class="fas fa-home text-secondary me-2"></i>Adresse <span class="text-danger">*</span>
+            </label>
             <Field name="client.address" as="textarea" v-model="formModel.client.address" class="form-control" rows="2" placeholder="Adresse complète" />
             <ErrorMessage name="client.address" class="text-danger small" />
           </div>
@@ -92,14 +141,13 @@
       </div>
 
       <div v-if="currentStep === 2 && !creationSuccess" class="form-step">
-        <h5 class="mb-3 text-uppercase">
-          <i class="fa fa-file-contract me-2"></i>
-          Informations du contrat
-        </h5>
+        <Field name="contrat.idPeriodicite" type="hidden" :value="1" />
         <div class="row">
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Nature de crédit <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-tag text-secondary me-2"></i>Nature de crédit <span class="text-danger">*</span>
+              </label>
               <Field
                 name="contrat.idNatureCredit"
                 v-model="formModel.contrat.idNatureCredit"
@@ -120,7 +168,9 @@
           </div>
           <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Capital <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-coins text-secondary me-2"></i>Capital <span class="text-danger">*</span>
+              </label>
               <Field
                 name="contrat.capital"
                 v-model="formModel.contrat.capital"
@@ -134,34 +184,11 @@
               <ErrorMessage name="contrat.capital" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Périodicité <span class="text-danger">*</span></label>
-              <Field
-                name="contrat.idPeriodicite"
-                v-model="formModel.contrat.idPeriodicite"
-                as="select"
-                class="form-control"
-                :disabled="loadingPeriodicites"
-                required
-              >
-                <option value="">
-                  {{ loadingPeriodicites ? 'Chargement...' : 'Sélectionner la périodicité' }}
-                </option>
-                <option
-                  v-for="periodicite in periodicites"
-                  :key="periodicite.id"
-                  :value="periodicite.id"
-                >
-                  {{ periodicite.libelle }}
-                </option>
-              </Field>
-              <ErrorMessage name="contrat.idPeriodicite" class="text-danger" />
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group mb-3">
-              <label class="form-label">Durée (en mois) <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-clock text-secondary me-2"></i>Durée (en mois) <span class="text-danger">*</span>
+              </label>
               <Field
                 name="contrat.duration"
                 v-model="formModel.contrat.duration"
@@ -175,9 +202,11 @@
               <ErrorMessage name="contrat.duration" class="text-danger" />
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="form-group mb-3">
-              <label class="form-label">Taux d'intérêt <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-percentage text-secondary me-2"></i>Taux d'intérêt <span class="text-danger">*</span>
+              </label>
               <Field
                 name="contrat.tauxInteret"
                 v-model="formModel.contrat.tauxInteret"
@@ -201,7 +230,9 @@
             </div>
           </div>
           <div class="col-md-6" v-if="formModel.contrat.idNatureCredit && natureCreditCode === 'AMORT'">
-            <label class="form-label fw-bold d-block">Perte d'Emploi <span class="text-danger">*</span></label>
+            <label class="form-label fw-bold d-block">
+              <i class="fas fa-briefcase text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span>
+            </label>
             <div class="d-flex gap-3 mt-2">
               <label class="d-flex align-items-center gap-2">
                 <input type="radio" v-model="formModel.contrat.perteEmploi" value="OUI" />
@@ -218,7 +249,9 @@
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Date d'effet <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-calendar-check text-secondary me-2"></i>Date d'effet <span class="text-danger">*</span>
+              </label>
               <Field
                 name="contrat.dateEffet"
                 v-model="formModel.contrat.dateEffet"
@@ -234,7 +267,9 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Date de la 1re échéance <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-calendar-day text-secondary me-2"></i>Date de la 1re échéance <span class="text-danger">*</span>
+              </label>
               <Field
                 name="contrat.datePremiereEcheance"
                 v-model="formModel.contrat.datePremiereEcheance"
@@ -250,7 +285,7 @@
           <div class="col-md-4">
             <div class="form-group">
               <label class="form-label">
-                Date d'échéance <span class="text-danger">*</span>
+                <i class="fas fa-calendar-times text-secondary me-2"></i>Date d'échéance <span class="text-danger">*</span>
                 <button
                   v-if="dateEcheanceManuallyEdited"
                   type="button"
@@ -285,9 +320,11 @@
         </div>
 
         <div class="row">
-          <div class="col-md-12">
+          <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Référence dossier</label>
+              <label class="form-label">
+                <i class="fas fa-file-invoice text-secondary me-2"></i>Référence dossier
+              </label>
               <Field
                 name="contrat.reference"
                 v-model="formModel.contrat.reference"
@@ -299,13 +336,47 @@
               <ErrorMessage name="contrat.reference" class="text-danger" />
             </div>
           </div>
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="fas fa-building text-secondary me-2"></i>Établissement
+              </label>
+              <Field
+                name="contrat.etablissement"
+                v-model="formModel.contrat.etablissement"
+                type="text"
+                class="form-control"
+                placeholder="Nom de l'établissement"
+                @input="handleUppercaseInput($event, 'contrat.etablissement')"
+              />
+              <ErrorMessage name="contrat.etablissement" class="text-danger" />
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="fas fa-user-shield text-secondary me-2"></i>Bénéficiaire
+              </label>
+              <Field
+                name="contrat.benef"
+                v-model="formModel.contrat.benef"
+                type="text"
+                class="form-control"
+                placeholder="Nom et prénoms du bénéficiaire"
+                @input="handleUppercaseInput($event, 'contrat.benef')"
+              />
+              <ErrorMessage name="contrat.benef" class="text-danger" />
+            </div>
+          </div>
         </div>
 
         <!-- Première ligne des primes : PD, PC, SURP -->
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Prime Décès (PD) <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-shield-alt text-secondary me-2"></i>Prime Décès (PD) <span class="text-danger">*</span>
+              </label>
               <Field
                 name="primes.pd"
                 v-model="formModel.primes.pd"
@@ -323,7 +394,9 @@
 
           <div class="col-md-4" v-if="natureCreditCode === 'AMORT'">
             <div class="form-group mb-3">
-              <label class="form-label">Prime Complémentaire Perte d'Emploi (PC)</label>
+              <label class="form-label">
+                <i class="fas fa-briefcase text-secondary me-2"></i>Prime Complémentaire Perte d'Emploi (PC)
+              </label>
               <Field
                 name="primes.pc"
                 v-model="formModel.primes.pc"
@@ -341,7 +414,9 @@
 
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Surprime (SURP) <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-plus-circle text-secondary me-2"></i>Surprime (SURP) <span class="text-danger">*</span>
+              </label>
               <Field
                 name="primes.surp"
                 v-model="formModel.primes.surp"
@@ -362,7 +437,9 @@
         <div class="row">
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Accessoires (ACC) <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-cogs text-secondary me-2"></i>Accessoires (ACC) <span class="text-danger">*</span>
+              </label>
               <Field
                 name="primes.acc"
                 v-model="formModel.primes.acc"
@@ -379,7 +456,9 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Frais Médicaux (FM) <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-stethoscope text-secondary me-2"></i>Frais Médicaux (FM) <span class="text-danger">*</span>
+              </label>
               <Field
                 name="primes.fm"
                 v-model="formModel.primes.fm"
@@ -396,7 +475,9 @@
           </div>
           <div class="col-md-4">
             <div class="form-group mb-3">
-              <label class="form-label">Prime Unique TTC (PUTTC) <span class="text-danger">*</span></label>
+              <label class="form-label">
+                <i class="fas fa-calculator text-secondary me-2"></i>Prime Unique TTC (PUTTC) <span class="text-danger">*</span>
+              </label>
               <input
                 :value="formatNumber(formModel.primes.puttc)"
                 type="text" 
@@ -415,15 +496,14 @@
       </div>
 
       <div v-if="currentStep === 3 && !creationSuccess" class="form-step">
-        <h5>Étape 3 — Récapitulatif</h5>
         <div class="card mb-3">
           <div class="card-body">
-            <h6 class="mb-3">Informations Client</h6>
+            <h6 class="mb-3 text-primary"><i class="fas fa-user me-2"></i>Informations Client</h6>
             <div class="row">
               <div class="col-md-6">
                 <p><strong>Prénom:</strong> {{ formModel.client.firstname || '-' }}</p>
                 <p><strong>Nom:</strong> {{ formModel.client.lastname || '-' }}</p>
-                <p><strong>Numéro de client:</strong> {{ formModel.client.numCustomer || '-' }}</p>
+                <p v-if="formModel.client.numCustomer"><strong>Numéro de client:</strong> {{ formModel.client.numCustomer }}</p>
                 <p><strong>Téléphone:</strong> {{ formModel.client.phone || '-' }}</p>
                 <p><strong>Email:</strong> {{ formModel.client.email || '-' }}</p>
               </div>
@@ -432,21 +512,20 @@
                 <p><strong>Date de naissance:</strong> {{ formatDate(formModel.client.birthdate) }}</p>
                 <p><strong>Lieu de naissance:</strong> {{ formModel.client.placeOfBirth || '-' }}</p>
                 <p><strong>Profession:</strong> {{ formModel.client.occupation || '-' }}</p>
-                <p><strong>Type de client:</strong> {{ formModel.client.idTypeCustomer === '1' ? 'Particulier' : formModel.client.idTypeCustomer === '2' ? 'Personnel PADME' : '-' }}</p>
+                <p><strong>Type de client:</strong> {{ formModel.client.idTypeCustomer === '1' ? 'Particulier' : formModel.client.idTypeCustomer === '2' ? 'Personnel RENACA' : '-' }}</p>
               </div>
               <div class="col-md-12">
                 <p><strong>Adresse:</strong> {{ formModel.client.address || '-' }}</p>
               </div>
             </div>
             <hr>
-            <h6 class="mb-3">Informations Contrat</h6>
+            <h6 class="mb-3 text-primary"><i class="fas fa-file-contract me-2"></i>Informations Contrat</h6>
             <div class="row">
               <div class="col-md-6">
                 <p><strong>Nature de crédit:</strong> {{ natureCredits.find(nc => nc.id === formModel.contrat.idNatureCredit)?.libelle || '-' }}</p>
                 <p><strong>Capital:</strong> {{ formatNumber(formModel.contrat.capital) }} FCFA</p>
                 <p><strong>Durée:</strong> {{ formModel.contrat.duration }} mois</p>
                 <p><strong>Taux d'intérêt:</strong> {{ formModel.contrat.tauxInteret }}%</p>
-                <p><strong>Périodicité:</strong> {{ periodicites.find(p => p.id === formModel.contrat.idPeriodicite)?.libelle || '-' }}</p>
                 <p v-if="natureCreditCode === 'AMORT'"><strong>Perte d'Emploi:</strong> {{ formModel.contrat.perteEmploi }}</p>
               </div>
               <div class="col-md-6">
@@ -454,10 +533,12 @@
                 <p><strong>Date 1re échéance:</strong> {{ formatDate(formModel.contrat.datePremiereEcheance) }}</p>
                 <p><strong>Date d'échéance:</strong> {{ formatDate(formModel.contrat.dateEch1) }}</p>
                 <p><strong>Référence:</strong> {{ formModel.contrat.reference || '-' }}</p>
+                <p v-if="formModel.contrat.etablissement"><strong>Établissement:</strong> {{ formModel.contrat.etablissement }}</p>
+                <p v-if="formModel.contrat.benef"><strong>Bénéficiaire:</strong> {{ formModel.contrat.benef }}</p>
               </div>
             </div>
             <hr>
-            <h6 class="mb-3">Primes d'assurance</h6>
+            <h6 class="mb-3 text-primary"><i class="fas fa-calculator me-2"></i>Primes d'assurance</h6>
             <div class="row">
               <div class="col-md-6">
                 <p><strong>Prime Décès (PD):</strong> {{ formatNumber(formModel.primes.pd) }} FCFA</p>
@@ -628,6 +709,7 @@ export default defineComponent({
         idPeriodicite: 1,
         reference: '',
         etablissement: '',
+        benef: '',
         perteEmploi: 'NON' as string
       },
       primes: {
@@ -644,7 +726,7 @@ export default defineComponent({
       client: Yup.object({
         firstname: Yup.string().required('Le prénom est obligatoire').min(2, 'Le prénom doit contenir au moins 2 caractères'),
         lastname: Yup.string().required('Le nom est obligatoire').min(2, 'Le nom doit contenir au moins 2 caractères'),
-        numCustomer: Yup.string().required('Le numéro de client est obligatoire'),
+        numCustomer: Yup.string().nullable().optional(),
         phone: Yup.string().required('Le téléphone est obligatoire').matches(/^[0-9+\-\s()]+$/, 'Format de téléphone invalide'),
         email: Yup.string().email('Format d\'email invalide').nullable(),
         gender: Yup.string().required('Le genre est obligatoire').oneOf(['M', 'F'], 'Genre invalide'),
@@ -669,8 +751,8 @@ export default defineComponent({
           .required('Le capital est obligatoire')
           .min(1, 'Le capital doit être supérieur à 0'),
         idPeriodicite: Yup.number()
-          .required('La périodicité est obligatoire')
-          .min(1, 'La périodicité est obligatoire'),
+          .nullable()
+          .optional(),
         dateEffet: dateEffetSchema,
         datePremiereEcheance: datePremiereEcheanceSchema('contrat'),
         duration: Yup.number()
@@ -1017,7 +1099,6 @@ export default defineComponent({
         
         if (!client.firstname?.trim()) missingFields.push('Prénom');
         if (!client.lastname?.trim()) missingFields.push('Nom');
-        if (!client.numCustomer?.trim()) missingFields.push('Numéro de client');
         if (!client.phone?.trim()) missingFields.push('Téléphone');
         if (!client.gender) missingFields.push('Genre');
         if (!client.birthdate) missingFields.push('Date de naissance');
@@ -1034,11 +1115,11 @@ export default defineComponent({
         // Validation étape 2: Informations contrat
         const contrat = formModel.value.contrat;
         const primes = formModel.value.primes;
+        contrat.idPeriodicite = contrat.idPeriodicite || 1;
         
         if (!contrat.idNatureCredit) missingFields.push('Nature de crédit');
         if (!contrat.capital || Number(contrat.capital) <= 0) missingFields.push('Capital');
         if (!contrat.duration || Number(contrat.duration) <= 0) missingFields.push('Durée');
-        if (!contrat.idPeriodicite) missingFields.push('Périodicité');
         if (contrat.tauxInteret === null || contrat.tauxInteret === undefined || isNaN(Number(contrat.tauxInteret)) || Number(contrat.tauxInteret) < 0) {
           missingFields.push('Taux d\'intérêt');
         }
@@ -1072,7 +1153,6 @@ export default defineComponent({
         const client = formModel.value.client;
         return !!(client.firstname?.trim() && 
                   client.lastname?.trim() && 
-                  client.numCustomer?.trim() && 
                   client.phone?.trim() && 
                   client.gender && 
                   client.birthdate && 
@@ -1086,7 +1166,6 @@ export default defineComponent({
         return !!(contrat.idNatureCredit &&
                   contrat.capital && Number(contrat.capital) > 0 &&
                   contrat.duration && Number(contrat.duration) > 0 &&
-                  contrat.idPeriodicite &&
                   contrat.tauxInteret !== null && contrat.tauxInteret !== undefined &&
                     !isNaN(Number(contrat.tauxInteret)) && Number(contrat.tauxInteret) >= 0 &&
                   contrat.dateEffet &&
@@ -1101,6 +1180,25 @@ export default defineComponent({
       }
       return true;
     });
+
+    const goToStep = async (step: number) => {
+      if (step === currentStep.value) return;
+      if (step < currentStep.value) {
+        stepValidationError.value = '';
+        currentStep.value = step;
+        return;
+      }
+      if (step === 2 && currentStep.value === 1) {
+        await nextStep();
+      } else if (step === 3) {
+        if (currentStep.value === 1) {
+          if (!validateCurrentStep()) return;
+          currentStep.value = 2;
+        }
+        if (!validateCurrentStep()) return;
+        currentStep.value = 3;
+      }
+    };
 
     const nextStep = async () => { 
       // Valider les champs requis avant de passer à l'étape suivante
@@ -1295,7 +1393,7 @@ export default defineComponent({
         const clientData = {
           firstname: formModel.value.client.firstname.trim().toUpperCase(),
           lastname: formModel.value.client.lastname.trim().toUpperCase(),
-          numCustomer: formModel.value.client.numCustomer.trim(),
+          numCustomer: formModel.value.client.numCustomer ? formModel.value.client.numCustomer.trim() : null,
           phone: formModel.value.client.phone.trim(),
           email: formModel.value.client.email?.trim().toLowerCase() || null,
           gender: formModel.value.client.gender,
@@ -1315,10 +1413,12 @@ export default defineComponent({
           dateEch1: formModel.value.contrat.datePremiereEcheance || formModel.value.contrat.dateEch1,
           dateEch: formModel.value.contrat.dateEcheance || formModel.value.contrat.dateEch1,
           idNatureCredit: Number(formModel.value.contrat.idNatureCredit),
-          idPeriodicite: Number(formModel.value.contrat.idPeriodicite),
+          idPeriodicite: Number(formModel.value.contrat.idPeriodicite) || 1,
           perteEmploi: natureCreditCode.value === 'AMORT' && formModel.value.contrat.perteEmploi === 'OUI',
           reference: formModel.value.contrat.reference || undefined,
           etablissement: formModel.value.contrat.etablissement || undefined,
+          benef: formModel.value.contrat.benef || undefined,
+          beneficiaire: formModel.value.contrat.benef || undefined,
           // Primes d'assurance
           pd: validateNumericValue(formModel.value.primes.pd, 0),
           pc: validateNumericValue(formModel.value.primes.pc, 0),
@@ -1504,6 +1604,7 @@ export default defineComponent({
     return { 
       formRef,
       currentStep, 
+      goToStep,
       nextStep, 
       prevStep,
       validateCurrentStep,

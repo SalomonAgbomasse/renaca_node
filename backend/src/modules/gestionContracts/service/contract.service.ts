@@ -605,7 +605,7 @@ export class ContractService {
     return queryBuilder.getMany();
   }
 
-  async findByUserWithPagination(idUser: number, options?: {
+  async findByUserWithPagination(idUser: number | string, options?: {
     page?: number;
     limit?: number;
     includeCustomer?: boolean;
@@ -644,7 +644,13 @@ export class ContractService {
     }
 
     // Filtrer par utilisateur
-    queryBuilder.where('contract.idUser = :idUser', { idUser });
+    const isUuid = typeof idUser === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idUser.trim());
+    if (isUuid) {
+      queryBuilder.innerJoin('contract.user', 'contractUser', 'contractUser.uuid = :userUuid', { userUuid: idUser.trim() });
+    } else {
+      const numUserId = typeof idUser === 'number' ? idUser : parseInt(idUser, 10);
+      queryBuilder.where('contract.idUser = :idUser', { idUser: numUserId || 0 });
+    }
     queryBuilder.leftJoinAndSelect('contract.natureCredit', 'natureCredit');
 
     // Compter le total
@@ -799,6 +805,8 @@ export class ContractService {
       contractData.duration || 0,
       contractData.garantieCompl
     );
+
+    contractData.benef = contractData.benef || (contractData as any).beneficiaire || contractData.clientData?.benef || null;
 
     const { beneficiaries, ...rest } = contractData;
     const contract = this.contractRepository.create(rest);
@@ -1395,7 +1403,7 @@ export class ContractService {
         const fieldsToCheck = [
           'capital', 'duration', 'taux', 'dateEff', 'dateEch', 'dateEch1',
           'idNatureCredit', 'idPeriodicite', 'differe', 'garantieCompl',
-          'etablissement', 'reference', 'description', 'isActive',
+          'etablissement', 'benef', 'reference', 'description', 'isActive',
           'pd', 'pc', 'surp', 'acc', 'fm', 'puttc'
         ];
         
@@ -1440,7 +1448,7 @@ export class ContractService {
           'id', 'idCustomer', 'idUser', 'updatedBy', 'deletedBy',
           'idProduct', 'idContractState', 'idAgency', 'idNatureCredit',
           'capital', 'duration', 'taux', 'dateEff', 'dateEch', 'dateEch1',
-          'idPeriodicite', 'differe', 'garantieCompl', 'etablissement',
+          'idPeriodicite', 'differe', 'garantieCompl', 'etablissement', 'benef',
           'reference', 'police', 'description', 'isActive', 'pd', 'pc',
           'surp', 'acc', 'fm', 'puttc', 'keyCont', 'contractType'
         ];
@@ -1497,6 +1505,7 @@ export class ContractService {
           differe: 'Différé',
           garantieCompl: 'Garantie complémentaire',
           etablissement: 'Établissement',
+          benef: 'Bénéficiaire',
           reference: 'Référence',
           description: 'Description',
           isActive: 'Statut',
@@ -1851,7 +1860,7 @@ export class ContractService {
   async findByPeriodAndFilters(
     startDate: Date,
     endDate: Date,
-    idAgency?: number,
+    idAgency?: number | number[],
     idUser?: number,
     idNatureCredits?: number | number[]
   ): Promise<Contract[]> {
@@ -1875,7 +1884,16 @@ export class ContractService {
       .orderBy('contract.created_at', 'DESC');
 
     if (idAgency) {
-      queryBuilder.andWhere('contract.idAgency = :idAgency', { idAgency });
+      if (Array.isArray(idAgency)) {
+        const agencyIds = idAgency.map(id => Number(id)).filter(id => !isNaN(id) && id > 0);
+        if (agencyIds.length === 1) {
+          queryBuilder.andWhere('contract.idAgency = :idAgency', { idAgency: agencyIds[0] });
+        } else if (agencyIds.length > 1) {
+          queryBuilder.andWhere('contract.idAgency IN (:...agencyIds)', { agencyIds });
+        }
+      } else {
+        queryBuilder.andWhere('contract.idAgency = :idAgency', { idAgency });
+      }
     }
 
     if (idUser) {

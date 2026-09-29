@@ -25,6 +25,7 @@ export interface ApiResponse {
 
 export interface User {
   id: number;
+  uuid?: string;
   firstname: string;
   lastname: string;
   email: string;
@@ -57,6 +58,7 @@ export interface Role {
 
 export interface Agency {
   id: number;
+  uuid?: string;
   name: string;
   location?: string;
   phone?: string;

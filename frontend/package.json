@@ -1,7 +1,7 @@
 {
-  "name": "padme-sa_frontend",
+  "name": "renaca-frontend",
   "author": "Salomon_AGBOMASSE",
-  "description": "Frontend_for_FNDA",
+  "description": "Frontend_for_RENACA",
   "version": "1.0.0",
   "private": true,
   "scripts": {

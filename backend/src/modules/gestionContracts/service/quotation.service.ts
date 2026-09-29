@@ -129,7 +129,8 @@ export class QuotationService {
 
   /**
    * Prime RENACA — Capital Amortissable.
-   * Prime Unique TTC = Prime Décès (barème Tarif_1) + Surprime + Perte d'Emploi + Accessoires.
+   * Prime Unique TTC = (Prime Décès barème Tarif_1 brut x 1,25) + Surprime + Perte d'Emploi + Accessoires.
+   * Le coefficient commercial 1,25 (+25% commission RENACA) est celui appliqué dans le simulateur Excel officiel.
    */
   public async primeRenacaAmortissable(
     capital: number,
@@ -144,10 +145,13 @@ export class QuotationService {
       return eligibiliteError;
     }
 
-    const pd = await this.findPrimeAmortissable(capital, dureeMois);
-    if (pd === null) {
+    const rawPrime = await this.findPrimeAmortissable(capital, dureeMois);
+    if (rawPrime === null) {
       return { error: true, message: `Aucune prime de barème RENACA Tarif_1 ne correspond au capital ${capital} FCFA et à la durée ${dureeMois} mois.` };
     }
+
+    // Majoration commerciale RENACA de 25% conforme à l'Excel officiel
+    const pd = Math.round(rawPrime * 1.25);
 
     const accessoires = QuotationService.ACCESSOIRES_RENACA;
     const primePE = perteEmploiDemandee && age <= 59
@@ -171,7 +175,8 @@ export class QuotationService {
 
   /**
    * Prime RENACA — Capital Constant.
-   * Prime Unique TTC = (Capital x Taux Tarif_PE x 1,25) + Accessoires.
+   * Prime Unique TTC = (Capital x Taux Tarif_PE) + Accessoires.
+   * Formule directe sans coefficient 1,25, conforme à l'Excel officiel.
    * La Perte d'Emploi est interdite pour ce produit — demande refusée, pas ignorée.
    */
   public async primeRenacaConstant(
@@ -196,7 +201,8 @@ export class QuotationService {
     }
 
     const accessoires = QuotationService.ACCESSOIRES_RENACA;
-    const pd = Math.round(capital * taux * 1.25);
+    // Formule conforme à l'Excel : Capital x Taux direct
+    const pd = Math.round(capital * taux);
     const puttc = pd + accessoires;
 
     return {

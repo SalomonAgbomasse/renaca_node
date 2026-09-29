@@ -187,6 +187,7 @@ const routes = [
 
       {
         path: "/detail-utilisateur/:id",
+        alias: ["/detail-user/:id", "/detail-user/:uuid", "/detail-utilisateur/:uuid"],
         name: "UserDetailPage",
         component: UserDetailPage,
         meta: {
@@ -239,6 +240,7 @@ const routes = [
 
       {
         path: "/detail-agence/:id",
+        alias: ["/details-agence/:id", "/details-agence/:uuid", "/detail-agency/:id"],
         name: "AgencyDetailPage",
         component: AgencyDetailPage,
         meta: {

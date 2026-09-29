@@ -247,6 +247,12 @@
                     <span class="label-modern">Établissement / Employeur</span>
                     <span class="value-modern">{{ contratDetails.etablissement }}</span>
                   </div>
+
+                  <!-- Bénéficiaire -->
+                  <div class="data-item" v-if="contratDetails.benef">
+                    <span class="label-modern">Bénéficiaire</span>
+                    <span class="value-modern fw-bold text-dark">{{ contratDetails.benef }}</span>
+                  </div>
                 </div>
               </div>
             </div>

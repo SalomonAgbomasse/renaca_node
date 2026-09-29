@@ -10,17 +10,34 @@ export class SmsService {
   private readonly dlrUrl = process.env.SMS_DLR_URL || 'https://lafricaineviebenin.com:4444/dlr';
   private readonly customData = process.env.SMS_CUSTOM_DATA || 'LeSensDeLEngagement';
 
+  private readonly appName = process.env.APP_NAME || 'RENACA Simulateur';
+
+  // Normaliser le numéro de téléphone au format LeTexto (229XXXXXXXX)
+  private normalizePhoneNumber(phone: string): string {
+    if (!phone) return '';
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('00')) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+    if (!cleanPhone.startsWith('229')) {
+      if (cleanPhone.startsWith('0') && cleanPhone.length !== 10) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      cleanPhone = '229' + cleanPhone;
+    }
+    return cleanPhone;
+  }
+
   // Envoyer un SMS via LeTexto API
   async sendSMS(to: string, content: string): Promise<{ success: boolean; message: string; response?: any }> {
     try {
       const sendAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
-      const phoneNumber = '229' + to;
+      const phoneNumber = this.normalizePhoneNumber(to);
       
       const url = `${this.prodUrl}/v1/messages/send?from=${encodeURIComponent(this.from)}&to=${phoneNumber}&content=${encodeURIComponent(content)}&token=${this.token}&dlrUrl=${encodeURIComponent(this.dlrUrl)}&dlrMethod=GET&customData=${this.customData}&sendAt=${encodeURIComponent(sendAt)}`;
       
-      console.log('📱 Envoi SMS via LeTexto vers:', phoneNumber);
+      console.log(`📱 Envoi SMS (${this.appName}) vers:`, phoneNumber);
       console.log('📱 Message:', content);
-      console.log('📱 URL:', url);
       
       const headers = {
         'Authorization': `Bearer ${this.token}`,
@@ -45,10 +62,7 @@ export class SmsService {
 
   // Envoyer un code OTP par SMS
   async sendOTPCode(phone: string, code: string, firstName: string = 'Utilisateur'): Promise<{ success: boolean; message: string; response?: any }> {
-    // Format optimisé pour la copie automatique - le code est isolé
-    const message = `Code de verification: ${code}\nExpire dans 5 minutes.`;
-    
-    // Utiliser la méthode LeTexto par défaut
+    const message = `[${this.appName}]\nCode de verification: ${code}\nExpire dans 10 minutes.`;
     return await this.sendSMS(phone, message);
   }
 

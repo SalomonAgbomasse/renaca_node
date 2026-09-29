@@ -169,6 +169,17 @@
                     {{ clientDetails.address || 'Non renseignée' }}
                   </div>
                 </div>
+                <div class="info-card">
+                  <label class="info-label">Créé par</label>
+                  <div class="info-value">
+                    <i class="flaticon-user me-2"></i>
+                    <span v-if="clientDetails.user">
+                      {{ clientDetails.user.lastname }} {{ clientDetails.user.firstname }}
+                      <small v-if="clientDetails.user.email" class="text-muted ms-1">({{ clientDetails.user.email }})</small>
+                    </span>
+                    <span v-else class="text-muted">-</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -439,6 +450,12 @@ interface Client {
   typeCustomer?: {
     id: number;
     libelle: string;
+  };
+  user?: {
+    id?: number;
+    firstname?: string;
+    lastname?: string;
+    email?: string;
   };
   code?: string;
   profession?: string;

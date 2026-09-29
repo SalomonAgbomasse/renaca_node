@@ -1,7 +1,8 @@
 import { Agency } from 'src/modules/gestionContracts/entity/agency.entity';
 import { Customer } from 'src/modules/gestionContracts/entity/customer.entity';
 import { Office } from 'src/modules/gestionContracts/entity/office.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { Role } from './role.entity';
 import { UserActivity } from './user-activity.entity';
 import { UserSession } from './user-session.entity';
@@ -13,6 +14,13 @@ export class User {
 
   @Column({ name: 'uuid', type: 'varchar', length: 36, nullable: true, unique: true })
   uuid: string;
+
+  @BeforeInsert()
+  generateUuid() {
+    if (!this.uuid) {
+      this.uuid = randomUUID();
+    }
+  }
 
   @Column({ name: 'idRole', type: 'int', nullable: false })
   idRole: number;
@@ -67,6 +75,12 @@ export class User {
 
   @Column({ name: 'deletedBy', type: 'int', nullable: true })
   deletedBy?: number;
+
+  @Column({ name: 'suspension_reason', type: 'varchar', length: 500, nullable: true })
+  suspensionReason?: string;
+
+  @Column({ name: 'deletion_reason', type: 'varchar', length: 500, nullable: true })
+  deletionReason?: string;
 
   @Column({ name: 'version', type: 'int', nullable: true, default: 0 })
   version: number;

@@ -23,7 +23,7 @@
               <div class="col-md-12">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Nom du souscripteur <span class="text-danger">*</span>
+                    <i class="fas fa-building text-secondary me-2"></i>Nom du souscripteur <span class="text-danger">*</span>
                   </label>
                   <Field name="name" type="text" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer le nom du souscripteur"/>
@@ -33,7 +33,7 @@
               <div class="col-md-12">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Adresse <span class="text-danger">*</span>
+                    <i class="fas fa-map-marker-alt text-secondary me-2"></i>Adresse <span class="text-danger">*</span>
                   </label>
                   <Field name="address" type="text" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer l'adresse"/>
@@ -43,7 +43,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Téléphone <span class="text-danger">*</span>
+                    <i class="fas fa-phone text-secondary me-2"></i>Téléphone <span class="text-danger">*</span>
                   </label>
                   <Field name="phone" type="tel" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer le numéro de téléphone"/>
@@ -53,7 +53,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Téléphone 2
+                    <i class="fas fa-phone-alt text-secondary me-2"></i>Téléphone 2
                   </label>
                   <Field name="phone2" type="tel" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer un deuxième numéro (optionnel)"/>
@@ -63,7 +63,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Email <span class="text-danger">*</span>
+                    <i class="fas fa-envelope text-secondary me-2"></i>Email <span class="text-danger">*</span>
                   </label>
                   <Field name="email" type="email" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer l'adresse email"/>
@@ -73,7 +73,7 @@
               <div class="col-md-6">
                 <div class="form-group mb-15 mb-sm-20 mb-md-25">
                   <label class="d-block text-black fw-semibold mb-10">
-                    Fax <span class="text-danger">*</span>
+                    <i class="fas fa-fax text-secondary me-2"></i>Fax <span class="text-danger">*</span>
                   </label>
                   <Field name="fax" type="text" 
                   class="form-control shadow-none fs-md-15 text-black" placeholder="Entrer le numéro de fax"/>

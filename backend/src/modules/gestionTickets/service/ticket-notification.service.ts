@@ -25,11 +25,12 @@ export class TicketNotificationService {
       const userEmail = ticket.email || ticket.user?.email || 'Non renseigné';
       const userPhone = ticket.telephone || ticket.user?.phone || 'Non renseigné';
 
-      const emailSubject = `Nouveau ticket de support — ${ticket.sujet}`;
+      const appName = process.env.APP_NAME || 'RENACA Simulateur';
+      const emailSubject = `[${appName}] Nouveau ticket de support — ${ticket.sujet}`;
       const emailMessage = `
-        <h2>Nouveau ticket de support</h2>
+        <h2>[${appName}] Nouveau ticket de support</h2>
         <p>Bonjour,</p>
-        <p>Un nouveau ticket de support a été créé dans le système FNDA.</p>
+        <p>Un nouveau ticket de support a été créé dans le système ${appName}.</p>
         <p><strong>Ticket #${ticket.id}</strong></p>
         <p><strong>Sujet:</strong> ${ticket.sujet}</p>
         <p><strong>Description:</strong></p>
@@ -41,7 +42,7 @@ export class TicketNotificationService {
         <p><strong>Date:</strong> ${new Date(ticket.createdAt).toLocaleString('fr-FR')}</p>
         ${ticket.fichiers ? `<p><strong>Fichiers joints:</strong> ${this.parseFiles(ticket.fichiers).length} fichier(s)</p>` : ''}
         <p>Veuillez vous connecter au système pour traiter ce ticket.</p>
-        <p>Cordialement,<br>L'Africaine Vie Bénin SA</p>
+        <p>Cordialement,<br>L'équipe ${appName} (L'Africaine Vie Bénin SA)</p>
       `;
 
       // Préparer les pièces jointes
@@ -77,7 +78,7 @@ export class TicketNotificationService {
         const adminUsers = await this.ticketService.getAdminUsers();
         console.log(`👥 ${adminUsers.length} administrateurs à notifier`);
 
-        const smsMessage = `Nouveau ticket #${ticket.id}: ${ticket.sujet}. Créé par ${userName}. Priorité: ${ticket.priority}.`;
+        const smsMessage = `[${appName}] Nouveau ticket #${ticket.id}: ${ticket.sujet}. Créé par ${userName}. Priorité: ${ticket.priority}.`;
 
         for (const admin of adminUsers) {
           try {
