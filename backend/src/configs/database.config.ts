@@ -10,14 +10,12 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
  * Valide que toutes les variables d'environnement requises sont présentes
  */
 function validateDatabaseConfig(): void {
-  const requiredVars = ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD'];
   const missingVars: string[] = [];
 
-  for (const varName of requiredVars) {
-    if (!process.env[varName]) {
-      missingVars.push(varName);
-    }
-  }
+  if (!process.env.DB_HOST) missingVars.push('DB_HOST');
+  if (!process.env.DB_PORT) missingVars.push('DB_PORT');
+  if (!process.env.DB_USERNAME && !process.env.DB_USER) missingVars.push('DB_USERNAME / DB_USER');
+  if (!process.env.DB_DATABASE && !process.env.DB_NAME) missingVars.push('DB_DATABASE / DB_NAME');
 
   if (missingVars.length > 0) {
     console.error(
@@ -41,8 +39,8 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     type: 'mysql',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
-    username: process.env.DB_USERNAME || 'root',
-    password: process.env.DB_PASSWORD || '',
+    username: process.env.DB_USERNAME || process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : (process.env.DB_PASS || ''),
     database: process.env.DB_DATABASE || process.env.DB_NAME || 'renaca_db',
     entities: [__dirname + '/../modules/**/entity/*.entity{.ts,.js}'],
     autoLoadEntities: true,

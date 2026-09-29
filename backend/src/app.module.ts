@@ -12,6 +12,7 @@ import { AppService } from './app.service';
 import { GestionContractsModule } from './modules/gestionContracts/gestion-contracts.module';
 import { GestionUsersModule } from './modules/gestionUsers/gestion-users.module';
 import { GestionTicketsModule } from './modules/gestionTickets/gestion-tickets.module';
+import { AiModule } from './modules/ai/ai.module';
 import { PdfService } from './services/pdf.service';
 import { EmailService } from './services/email.service';
 import { SmsService } from './services/sms.service';
@@ -46,6 +47,7 @@ import { getDatabaseConfig } from './configs/database.config';
     GestionContractsModule,
     GestionUsersModule,
     GestionTicketsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService, PdfService, EmailService, SmsService, DailyProductionReportService, ExcelService],
