@@ -166,22 +166,41 @@ export class CotationService {
     }
   }
 
+  private async getNextId(): Promise<number> {
+    const last = await this.cotationRepository.findOne({
+      where: {},
+      order: { id: 'DESC' }
+    });
+    return last ? last.id + 1 : 1;
+  }
+
   /**
-   * Génère une référence unique COT-{4 caractères alphanumériques aléatoires}{AMORT|CONST}.
-   * Régénère en cas de collision (référence unique en base).
+   * Génération référence Cotation parlante
+   * Format: COT{idCotation}U{idUser}C{idCustomer}{natureCode}
+   * - COT : Préfixe Cotation
+   * - {idCotation} : ID séquentiel de la cotation
+   * - U{idUser} : ID de l'utilisateur ayant créé la cotation
+   * - C{idCustomer} : ID du client (ou 0 si non encore associé)
+   * - {natureCode} : A pour AMORT, C pour CONST
+   * Exemples: COT1U1C1A, COT15U2C8C
    */
-  async generateReference(typeCredit: 'AMORT' | 'CONST'): Promise<string> {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let reference: string;
-    let alreadyExists: boolean;
-    do {
-      let random = '';
-      for (let i = 0; i < 4; i++) {
-        random += chars[Math.floor(Math.random() * chars.length)];
-      }
-      reference = `COT-${random}${typeCredit}`;
-      alreadyExists = !!(await this.cotationRepository.findOne({ where: { reference } }));
-    } while (alreadyExists);
+  async generateReference(
+    typeCredit: 'AMORT' | 'CONST' | string,
+    idUser: number = 0,
+    idCustomer: number = 0,
+    idCotation?: number
+  ): Promise<string> {
+    const rawType = (typeCredit || '').toUpperCase();
+    const natureCode = rawType.startsWith('C') || rawType === 'CONST' || rawType === 'CONSTANT' ? 'C' : 'A';
+
+    let nextId = idCotation || (await this.getNextId());
+    let reference = `COT${nextId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
+
+    while (await this.cotationRepository.findOne({ where: { reference } })) {
+      nextId++;
+      reference = `COT${nextId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
+    }
+
     return reference;
   }
 
@@ -227,7 +246,8 @@ export class CotationService {
       throw new BadRequestException(primeData.message || 'Erreur lors du calcul de la prime RENACA');
     }
 
-    const reference = await this.generateReference(typeCapital);
+    const idCust = Number(cotationData.idCustomer) || 0;
+    const reference = await this.generateReference(typeCapital, userId, idCust);
 
     const cotationDataWithPrimes: any = {
       ...cotationData,
