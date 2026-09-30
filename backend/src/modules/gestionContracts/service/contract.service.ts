@@ -759,7 +759,11 @@ export class ContractService {
     await this.checkContractLimits(contractData, contractData.dateEff);
 
     contractData.police = contractData.police || await this.policyNumberService.generateRenacaPolice(contractData.idAgency || 0);
-    contractData.reference = contractData.reference || await this.policyNumberService.generateRenacaReference(contractData.idUser || 0, typeCapital);
+    contractData.reference = contractData.reference || await this.policyNumberService.generateRenacaReference(
+      contractData.idUser || 0,
+      contractData.idCustomer || 0,
+      typeCapital
+    );
 
     const existingContractReference = await this.findByReference(contractData.reference || '');
     if (existingContractReference.length > 0) {
@@ -909,7 +913,11 @@ export class ContractService {
     await this.checkContractLimits(contractData, contractData.dateEff);
 
     contractData.police = contractData.police || await this.policyNumberService.generateRenacaPolice(idAgency);
-    contractData.reference = contractData.reference || await this.policyNumberService.generateRenacaReference(idUser, typeCapital);
+    contractData.reference = contractData.reference || await this.policyNumberService.generateRenacaReference(
+      idUser,
+      contractData.idCustomer || 0,
+      typeCapital
+    );
 
     const existingContractReference = await this.findByReference(contractData.reference || '');
     if (existingContractReference.length > 0) {

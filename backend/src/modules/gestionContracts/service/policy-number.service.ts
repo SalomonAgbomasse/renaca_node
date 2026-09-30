@@ -109,29 +109,32 @@ export class PolicyNumberService {
     return reference;
   }
 
-  /** Génération référence RENACA - Format: RE{5 caractères aléatoires}{creditType} avec garantie d'unicité */
-  async generateRenacaReference(idUser: number, creditType: string = 'AMORT'): Promise<string> {
-    let reference: string = '';
-    let exists = true;
-    let attempts = 0;
+  /**
+   * Génération référence RENACA parlante
+   * Format: RN{idContrat}U{idUser}C{idCustomer}{natureCode}
+   * - RN : Préfixe RENACA
+   * - {idContrat} : ID séquentiel du contrat
+   * - U{idUser} : ID de l'utilisateur ayant créé le contrat
+   * - C{idCustomer} : ID du client assuré
+   * - {natureCode} : A pour AMORT, C pour CONSTANT
+   * Exemples: RN1U1C1A, RN15U2C8C
+   */
+  async generateRenacaReference(
+    idUser: number,
+    idCustomer: number = 0,
+    creditType: string = 'AMORT',
+    idContrat?: number
+  ): Promise<string> {
+    const rawType = (creditType || '').toUpperCase();
+    const natureCode = rawType.startsWith('C') || rawType === 'CONSTANT' ? 'C' : 'A';
 
-    // Générer une référence unique (éviter les doublons aléatoires)
-    while (exists && attempts < 100) {
-      attempts++;
-      const randomCode = this.generateRandomCode(5);
-      reference = `RE${randomCode}${creditType}`;
+    let nextContractId = idContrat || (await this.getNextId());
+    let reference = `RN${nextContractId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
 
-      // Vérifier si cette référence existe déjà
-      const existing = await this.contractRepository.findOne({
-        where: { reference },
-        withDeleted: true
-      });
-      exists = !!existing;
-    }
-
-    if (exists) {
-      // Fallback au cas où 100 tentatives échouent (statistiquement impossible)
-      reference = `RE${Date.now().toString(36).toUpperCase()}${creditType}`;
+    // S'assurer de l'unicité
+    while (await this.contractRepository.findOne({ where: { reference }, withDeleted: true })) {
+      nextContractId++;
+      reference = `RN${nextContractId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
     }
 
     return reference;
