@@ -486,15 +486,15 @@
             <div class="form-group mb-4">
               <label class="form-label"><i class="fas fa-shield-alt text-secondary me-2"></i>Perte d'Emploi <span class="text-danger">*</span></label>
               <div class="d-flex gap-3">
-                <label class="d-flex align-items-center gap-2">
+                <label class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light" style="cursor: pointer;">
                   <Field name="contrat.perteEmploi" type="radio" value="OUI" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
-                    <input type="radio" v-bind="field" value="OUI" />
+                    <input type="radio" v-bind="field" value="OUI" class="form-check-input mt-0" />
                   </Field>
                   OUI
                 </label>
-                <label class="d-flex align-items-center gap-2">
+                <label class="d-flex align-items-center gap-2 cursor-pointer border rounded px-3 py-2 bg-light" style="cursor: pointer;">
                   <Field name="contrat.perteEmploi" type="radio" value="NON" v-model="conversionForm.contrat.perteEmploi" v-slot="{ field }">
-                    <input type="radio" v-bind="field" value="NON" />
+                    <input type="radio" v-bind="field" value="NON" class="form-check-input mt-0" />
                   </Field>
                   NON
                 </label>
@@ -2369,6 +2369,9 @@ export default defineComponent({
     // Watcher pour ajuster automatiquement les valeurs quand le type de crédit change
     watch(() => conversionForm.value.contrat.creditType, (newCreditType, oldCreditType) => {
       if (newCreditType && newCreditType !== oldCreditType && currentStep.value >= 2) {
+        if (newCreditType === 'CONST') {
+          conversionForm.value.contrat.perteEmploi = 'NON';
+        }
         adjustValuesToLimits();
       }
     });
@@ -2419,7 +2422,7 @@ export default defineComponent({
           const codeNC = props.selectedCotation.natureCredit?.code || natureCredits.value.find(nc => nc.id === idNC)?.code;
           const mappedCreditType = props.selectedCotation.creditType || codeNC;
           conversionForm.value.contrat.creditType = mappedCreditType || props.defaultCreditType || 'AMORT';
-          creditTypeLocked.value = true; // Cotation source : nature de crédit non modifiable
+          creditTypeLocked.value = false; // Cotation source : nature de crédit modifiable lors de la conversion
           conversionForm.value.contrat.reference = props.selectedCotation.reference || '';
           conversionForm.value.contrat.etablissement = props.selectedCotation.etablissement || '';
           conversionForm.value.contrat.benef = props.selectedCotation.benef || '';
