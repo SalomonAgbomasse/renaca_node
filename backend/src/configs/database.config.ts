@@ -29,19 +29,29 @@ function validateDatabaseConfig(): void {
  * Configuration TypeORM pour la base de données
  * Toutes les valeurs proviennent des variables d'environnement
  */
+function stripQuotes(val?: string): string | undefined {
+  if (val === undefined || val === null) return val;
+  const trimmed = val.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
 export function getDatabaseConfig(): TypeOrmModuleOptions {
   // Valider que toutes les variables requises sont présentes
   validateDatabaseConfig();
 
   const isProduction = process.env.NODE_ENV === 'production';
+  const rawPass = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : (process.env.DB_PASS || '');
 
   return {
     type: 'mysql',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '3306', 10),
-    username: process.env.DB_USERNAME || process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : (process.env.DB_PASS || ''),
-    database: process.env.DB_DATABASE || process.env.DB_NAME || 'renaca_db',
+    host: stripQuotes(process.env.DB_HOST) || 'localhost',
+    port: parseInt(stripQuotes(process.env.DB_PORT) || '3306', 10),
+    username: stripQuotes(process.env.DB_USERNAME || process.env.DB_USER) || 'root',
+    password: stripQuotes(rawPass) || '',
+    database: stripQuotes(process.env.DB_DATABASE || process.env.DB_NAME) || 'renaca_db',
     entities: [__dirname + '/../modules/**/entity/*.entity{.ts,.js}'],
     autoLoadEntities: true,
     synchronize: process.env.DB_SYNCHRONIZE === 'true',
