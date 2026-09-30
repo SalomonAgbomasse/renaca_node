@@ -87,6 +87,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { applyGlobalFontSize, getSavedFontSize } from "../../utils/fontSize";
 
 export default defineComponent({
   name: "FontSizeSelector",
@@ -129,19 +130,12 @@ export default defineComponent({
     },
 
     applyFontSize(size: number) {
-      document.documentElement.style.setProperty("--app-font-size", `${size}px`);
-      localStorage.setItem("app_font_size", size.toString());
+      applyGlobalFontSize(size);
     },
   },
 
   mounted() {
-    const savedSize = localStorage.getItem("app_font_size");
-    if (savedSize) {
-      const parsed = parseInt(savedSize, 10);
-      if (!isNaN(parsed) && parsed >= this.minFontSize && parsed <= this.maxFontSize) {
-        this.currentFontSize = parsed;
-      }
-    }
+    this.currentFontSize = getSavedFontSize(this.defaultFontSize);
     this.applyFontSize(this.currentFontSize);
   },
 });

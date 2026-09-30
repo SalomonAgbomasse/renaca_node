@@ -19,11 +19,10 @@ import "@vueform/multiselect/themes/default.css";
 import "./assets/custom.scss";
 import "sweetalert2/dist/sweetalert2.min.css";
 
+import { applyGlobalFontSize, getSavedFontSize } from "./utils/fontSize";
+
 // Initialiser la taille de police personnalisée sauvegardée
-const savedFontSize = localStorage.getItem("app_font_size");
-if (savedFontSize) {
-  document.documentElement.style.setProperty("--app-font-size", `${savedFontSize}px`);
-}
+applyGlobalFontSize(getSavedFontSize(16));
 
 import { initVeeValidate } from "./utils/vee-validate";
 import { createPinia } from "pinia";
