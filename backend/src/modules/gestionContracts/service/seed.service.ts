@@ -28,6 +28,10 @@ export class SeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    if (process.env.SEED_DISABLED === 'true') {
+      console.log('🌱 Seed contrats/référentiels désactivé (SEED_DISABLED=true)');
+      return;
+    }
     await this.seedTypeCustomers();
     await this.seedContractStates();
     await this.seedCreditTypes();

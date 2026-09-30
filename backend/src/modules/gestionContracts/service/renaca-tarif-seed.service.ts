@@ -16,6 +16,10 @@ export class RenacaTarifSeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    if (process.env.SEED_DISABLED === 'true') {
+      console.log('🌱 Seed barèmes RENACA désactivé (SEED_DISABLED=true)');
+      return;
+    }
     await this.seedTarifAmortissable();
     await this.seedTarifConstant();
   }

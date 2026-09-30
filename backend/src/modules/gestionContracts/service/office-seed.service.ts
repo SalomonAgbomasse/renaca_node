@@ -11,6 +11,9 @@ export class OfficeSeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    if (process.env.SEED_DISABLED === 'true') {
+      return;
+    }
     await this.seed();
   }
 

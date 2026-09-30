@@ -26,6 +26,10 @@ export class UserSeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    if (process.env.SEED_DISABLED === 'true') {
+      console.log('🌱 Seed utilisateurs/rôles/agences désactivé (SEED_DISABLED=true)');
+      return;
+    }
     // Ordre important : d'abord les rôles et agences, puis les utilisateurs
     await this.seedRoles();
     await this.seedSubscribers();
