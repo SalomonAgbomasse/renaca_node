@@ -152,6 +152,7 @@
     var cOccup    = (customer && customer.occupation) || '-';
     var cPob      = (customer && customer.placeOfBirth) || '-';
     var cNum      = (customer && customer.numCustomer) || null;
+    var cTypeCustomer = (customer && customer.typeCustomer && customer.typeCustomer.libelle) || (cotation.typeCustomer && cotation.typeCustomer.libelle) || cotation.typeAss || 'Client Ordinaire';
 
     /* ---------- agency / user ---------- */
     var agName    = (agency && agency.name)    || '-';
@@ -183,11 +184,7 @@
 
   <div class="data-row">
     <span>Agence : <strong><%= agName %></strong></span>
-    <span>Gestionnaire : <strong><%= gestName %></strong></span>
-  </div>
-  <div class="data-row">
     <span>Type de crédit : <strong><%= creditTypeLabel %></strong></span>
-    <span>Type d'assurance : <strong><%= cotation.typeAss || '-' %></strong></span>
   </div>
   <% if (agPhone) { %>
   <div class="data-row">
@@ -205,6 +202,7 @@
 
   <div class="data-row">
     <span>Assuré(e) : <strong><%= cNom %> <%= cPrenom %></strong></span>
+    <span>Type de client : <strong><%= cTypeCustomer %></strong></span>
   </div>
   <div class="data-row">
     <span>Date de naissance : <strong><%= fmtDate(cBirth) %><% if (cAge !== null) { %> (<%= cAge %> ans)<% } %></strong></span>
@@ -259,39 +257,31 @@
       </tr>
     </thead>
     <tbody>
-      <% if (cotation.pd) { %>
       <tr>
-        <td class="label-col">Prime Décès / Invalidité</td>
-        <td><%= fmt(cotation.pd) %></td>
+        <td class="label-col">Prime Décès / Invalidité (PD)</td>
+        <td><%= fmt(cotation.pd || 0) %></td>
+      </tr>
+      <% if ((cotation.garantieCompl && (cotation.garantieCompl.toUpperCase() === 'OUI')) || (cotation.pc != null && cotation.pc > 0)) { %>
+      <tr>
+        <td class="label-col">Prime Complémentaire (Perte d'Emploi - PC)</td>
+        <td><%= fmt(cotation.pc || 0) %></td>
       </tr>
       <% } %>
-      <% if (cotation.pc) { %>
-      <tr>
-        <td class="label-col">Prime Capital</td>
-        <td><%= fmt(cotation.pc) %></td>
-      </tr>
-      <% } %>
-      <% if (cotation.acc) { %>
-      <tr>
-        <td class="label-col">Accessoires</td>
-        <td><%= fmt(cotation.acc) %></td>
-      </tr>
-      <% } %>
-      <% if (cotation.surp) { %>
       <tr>
         <td class="label-col">Surprime</td>
-        <td><%= fmt(cotation.surp) %></td>
+        <td><%= fmt(cotation.surp || 0) %></td>
       </tr>
-      <% } %>
-      <% if (cotation.fm) { %>
       <tr>
         <td class="label-col">Frais Médicaux</td>
-        <td><%= fmt(cotation.fm) %></td>
+        <td><%= fmt(cotation.fm || 0) %></td>
       </tr>
-      <% } %>
+      <tr>
+        <td class="label-col">Accessoires</td>
+        <td><%= fmt(cotation.acc || 0) %></td>
+      </tr>
       <tr class="total-row">
         <td class="label-col"><strong>PRIME TOTALE TTC</strong></td>
-        <td><strong><%= fmt(cotation.puttc) %></strong></td>
+        <td><strong><%= fmt(cotation.puttc || 0) %></strong></td>
       </tr>
     </tbody>
   </table>

@@ -190,6 +190,28 @@ export class PdfService {
     const generatedAt = data.generatedAt || new Date().toLocaleDateString('fr-FR');
     const generatedTime = data.generatedTime || new Date().toLocaleTimeString('fr-FR');
     
+    // Cas d'une cotation / simulation
+    if (data.cotation) {
+      let cotationDate = data.dateSimulation;
+      if (!cotationDate) {
+        const rawDate = data.cotation.dateSaisie || data.cotation.createdAt;
+        if (rawDate) {
+          const dt = new Date(rawDate);
+          const dateStr = dt.toLocaleDateString('fr-FR');
+          const timeStr = dt.toLocaleTimeString('fr-FR');
+          cotationDate = (timeStr && timeStr !== '00:00:00') ? `${dateStr} à ${timeStr}` : dateStr;
+        } else {
+          cotationDate = generatedAt;
+        }
+      }
+      const regex = /<span id="generated-date"[^>]*>.*?<\/span>/g;
+      result = result.replace(
+        regex,
+        `<span id="generated-date" style="font-size: 10px; text-align: center; width: 100%; color: #000; display: block; margin-top: 14px; margin-bottom: 2px;">Simulation effectuée le ${cotationDate} - PDF généré le ${generatedAt} à ${generatedTime}</span>`
+      );
+      return result;
+    }
+
     // Date et Heure de création du contrat
     let contractCreatedAt = 'N/A';
     if (data.contract?.createdAt) {
@@ -383,7 +405,7 @@ export class PdfService {
       <table border="0" width="100%" style="font-size: 9pt; border-collapse: collapse;">
         <tr>
           <td width="100%" style="text-align: center; padding-top: 10px; padding-bottom: 2px;">
-            <span id="generated-date" style="font-size: 10px; text-align: center; color: #000; display: block; margin-top: 14px; margin-bottom: 2px;">Simulation du ${dateSimulation} - PDF généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}</span>
+            <span id="generated-date" style="font-size: 10px; text-align: center; color: #000; display: block; margin-top: 14px; margin-bottom: 2px;">Simulation effectuée le ${dateSimulation} - PDF généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}</span>
           </td>
         </tr>
         <tr style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #000; font-size: 9px;">
