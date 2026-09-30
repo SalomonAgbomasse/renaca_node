@@ -89,13 +89,16 @@
       text-transform: uppercase;
       border-left: 4px solid #33b04a;
       padding-left: 8px;
+      page-break-after: avoid;
+      break-after: avoid;
     }
 
     .history-card {
       border: 1px solid #e0e0e0;
       border-radius: 6px;
       margin-bottom: 15px;
-      page-break-inside: avoid;
+      page-break-inside: auto;
+      break-inside: auto;
       background: #ffffff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
@@ -106,6 +109,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-after: avoid;
+      break-after: avoid;
     }
     .badge-action {
       display: inline-block;
@@ -128,6 +135,8 @@
       font-size: 11px;
       color: #333;
       margin-bottom: 8px;
+      page-break-after: avoid;
+      break-after: avoid;
     }
 
     .changes-table {
@@ -135,6 +144,15 @@
       border-collapse: collapse;
       margin-top: 8px;
       font-size: 10.5px;
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+    .changes-table thead {
+      display: table-header-group;
+    }
+    .changes-table tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .changes-table th {
       background: #e8f5e9;
@@ -143,10 +161,14 @@
       text-align: left;
       border: 1px solid #c8e6c9;
       font-weight: bold;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .changes-table td {
       padding: 6px 10px;
       border: 1px solid #e0e0e0;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .val-old {
       color: #c62828;
