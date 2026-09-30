@@ -111,13 +111,14 @@ export class PolicyNumberService {
 
   /**
    * Génération référence RENACA parlante
-   * Format: RN{idContrat}U{idUser}C{idCustomer}{natureCode}
+   * Format: RN{idContrat}U{idUser}C{idCustomer}{natureCode}{year2}
    * - RN : Préfixe RENACA
    * - {idContrat} : ID séquentiel du contrat
    * - U{idUser} : ID de l'utilisateur ayant créé le contrat
    * - C{idCustomer} : ID du client assuré
    * - {natureCode} : A pour AMORT, C pour CONSTANT
-   * Exemples: RN1U1C1A, RN15U2C8C
+   * - {year2} : 2 derniers chiffres de l'année courante (ex: 26 pour 2026)
+   * Exemples: RN1U1C1A26, RN15U2C8C26
    */
   async generateRenacaReference(
     idUser: number,
@@ -127,14 +128,15 @@ export class PolicyNumberService {
   ): Promise<string> {
     const rawType = (creditType || '').toUpperCase();
     const natureCode = rawType.startsWith('C') || rawType === 'CONSTANT' ? 'C' : 'A';
+    const year2 = new Date().getFullYear().toString().slice(-2);
 
     let nextContractId = idContrat || (await this.getNextId());
-    let reference = `RN${nextContractId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
+    let reference = `RN${nextContractId}U${idUser || 0}C${idCustomer || 0}${natureCode}${year2}`;
 
     // S'assurer de l'unicité
     while (await this.contractRepository.findOne({ where: { reference }, withDeleted: true })) {
       nextContractId++;
-      reference = `RN${nextContractId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
+      reference = `RN${nextContractId}U${idUser || 0}C${idCustomer || 0}${natureCode}${year2}`;
     }
 
     return reference;

@@ -176,13 +176,14 @@ export class CotationService {
 
   /**
    * Génération référence Cotation parlante
-   * Format: COT{idCotation}U{idUser}C{idCustomer}{natureCode}
+   * Format: COT{idCotation}U{idUser}C{idCustomer}{natureCode}{year2}
    * - COT : Préfixe Cotation
    * - {idCotation} : ID séquentiel de la cotation
    * - U{idUser} : ID de l'utilisateur ayant créé la cotation
    * - C{idCustomer} : ID du client (ou 0 si non encore associé)
    * - {natureCode} : A pour AMORT, C pour CONST
-   * Exemples: COT1U1C1A, COT15U2C8C
+   * - {year2} : 2 derniers chiffres de l'année courante (ex: 26 pour 2026)
+   * Exemples: COT1U1C1A26, COT15U2C8C26
    */
   async generateReference(
     typeCredit: 'AMORT' | 'CONST' | string,
@@ -192,13 +193,14 @@ export class CotationService {
   ): Promise<string> {
     const rawType = (typeCredit || '').toUpperCase();
     const natureCode = rawType.startsWith('C') || rawType === 'CONST' || rawType === 'CONSTANT' ? 'C' : 'A';
+    const year2 = new Date().getFullYear().toString().slice(-2);
 
     let nextId = idCotation || (await this.getNextId());
-    let reference = `COT${nextId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
+    let reference = `COT${nextId}U${idUser || 0}C${idCustomer || 0}${natureCode}${year2}`;
 
     while (await this.cotationRepository.findOne({ where: { reference } })) {
       nextId++;
-      reference = `COT${nextId}U${idUser || 0}C${idCustomer || 0}${natureCode}`;
+      reference = `COT${nextId}U${idUser || 0}C${idCustomer || 0}${natureCode}${year2}`;
     }
 
     return reference;
