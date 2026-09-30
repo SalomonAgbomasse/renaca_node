@@ -126,7 +126,12 @@
                   <!-- Date of birth -->
                   <div class="data-item">
                     <span class="label-modern">Date de Naissance</span>
-                    <span class="value-modern">{{ formatDate(cotationDetails.customer?.birthdate || cotationDetails.birthdate) }}</span>
+                    <span class="value-modern">
+                      {{ formatDate(cotationDetails.customer?.birthdate || cotationDetails.birthdate) }}
+                      <span v-if="clientAge !== null" class="badge bg-light text-dark border ms-1 py-1 px-2 fs-12">
+                        {{ clientAge }} ans
+                      </span>
+                    </span>
                   </div>
 
                   <!-- Phone -->
@@ -366,6 +371,23 @@ export default defineComponent({
       return name.charAt(0).toUpperCase();
     });
 
+    const clientAge = computed(() => {
+      const birthdate = cotationDetails.value?.customer?.birthdate || cotationDetails.value?.birthdate;
+      if (!birthdate) return null;
+      const refDate = cotationDetails.value?.dateSaisie || cotationDetails.value?.createdAt;
+      try {
+        const birth = new Date(birthdate);
+        const ref = refDate ? new Date(refDate) : new Date();
+        if (isNaN(birth.getTime()) || isNaN(ref.getTime())) return null;
+        let age = ref.getFullYear() - birth.getFullYear();
+        const monthDiff = ref.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && ref.getDate() < birth.getDate())) age--;
+        return (age >= 0 && age <= 125) ? age : null;
+      } catch {
+        return null;
+      }
+    });
+
     const typeClientLabel = computed(() => {
       if (!cotationDetails.value) return 'Client Ordinaire';
       const tc = cotationDetails.value.typeCustomer?.libelle || cotationDetails.value.customer?.typeCustomer?.libelle;
@@ -576,7 +598,8 @@ export default defineComponent({
       isGeneratingPDF,
       formatMontant,
       formatDate,
-      formatDateTime
+      formatDateTime,
+      clientAge
     };
   }
 });

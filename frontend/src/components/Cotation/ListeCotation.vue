@@ -115,21 +115,22 @@
               </td>
 
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
-                <div v-if="contrat.customer">
-                  <strong>{{ contrat.customer.lastname }} {{ contrat.customer.firstname }}</strong>
-                  <br v-if="contrat.customer.birthdate">
-                  <small v-if="contrat.customer.birthdate" class="text-muted">
-                    <i class="flaticon-calendar me-1"></i>Né(e) le {{ formatBirthdate(contrat.customer.birthdate) }}
-                  </small>
+                <div>
+                  <strong v-if="getClientFullName(contrat)">
+                    {{ getClientFullName(contrat) }}
+                  </strong>
+                  <span v-else class="text-muted fst-italic">
+                    Client non défini
+                  </span>
                 </div>
-                <div v-else-if="contrat.lastname || contrat.firstname">
-                  <strong>{{ contrat.lastname }} {{ contrat.firstname }}</strong>
-                  <br v-if="contrat.birthdate">
-                  <small v-if="contrat.birthdate" class="text-muted">
-                    <i class="flaticon-calendar me-1"></i>Né(e) le {{ formatBirthdate(contrat.birthdate) }}
+                <div v-if="getClientBirthdate(contrat)" class="mt-1 d-flex align-items-center gap-1 flex-wrap">
+                  <small class="text-muted">
+                    <i class="flaticon-calendar me-1"></i>Né(e) le {{ formatBirthdate(getClientBirthdate(contrat)) }}
                   </small>
+                  <span v-if="getAgeAtCotation(contrat) !== null" class="badge bg-light text-dark border ms-1 fw-bold fs-11" style="padding: 2px 6px;">
+                    {{ getAgeAtCotation(contrat) }} ans
+                  </span>
                 </div>
-                <span v-else class="text-muted">Client non défini</span>
               </td>
 
               <td class="shadow-none lh-1 fw-medium text-black-emphasis">
@@ -606,16 +607,121 @@ export default defineComponent({
       }).format(montant);
     }
 
+    function parseAnyDate(dateStr: any): Date | null {
+      if (!dateStr) return null;
+      if (dateStr instanceof Date) {
+        return isNaN(dateStr.getTime()) ? null : dateStr;
+      }
+      if (typeof dateStr !== 'string') {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      const str = dateStr.trim();
+      if (!str) return null;
+
+      if (str.includes('/')) {
+        const [datePart] = str.split(' ');
+        const parts = datePart.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime())) return d;
+          }
+        }
+      }
+
+      if (str.includes('-') && !str.includes('T')) {
+        const parts = str.split(' ')[0].split('-');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime())) return d;
+          } else if (parts[2].length === 4) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime())) return d;
+          }
+        }
+      }
+
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function calculateAgeBetweenDates(birthDateInput: any, referenceDateInput: any): number | null {
+      const birth = parseAnyDate(birthDateInput);
+      if (!birth) return null;
+
+      const ref = parseAnyDate(referenceDateInput) || new Date();
+
+      let age = ref.getFullYear() - birth.getFullYear();
+      const monthDiff = ref.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && ref.getDate() < birth.getDate())) {
+        age--;
+      }
+
+      return (age >= 0 && age <= 125) ? age : null;
+    }
+
+    function getClientBirthdate(contrat: any): string | null {
+      if (!contrat) return null;
+      return (
+        contrat.customer?.birthdate ||
+        contrat.birthdate ||
+        contrat.customer?.dateNaissance ||
+        contrat.dateNaissance ||
+        null
+      );
+    }
+
+    function getCotationDate(contrat: any): string | null {
+      if (!contrat) return null;
+      return (
+        contrat.dateSaisie ||
+        contrat.createdAt ||
+        contrat.dateCreation ||
+        contrat.created_at ||
+        null
+      );
+    }
+
+    function getClientFullName(contrat: any): string | null {
+      if (!contrat) return null;
+      if (contrat.customer) {
+        const last = (contrat.customer.lastname || contrat.customer.nom || '').trim();
+        const first = (contrat.customer.firstname || contrat.customer.prenom || '').trim();
+        if (last || first) {
+          return `${last.toUpperCase()} ${first}`.trim();
+        }
+      }
+      const last = (contrat.lastname || contrat.nom || '').trim();
+      const first = (contrat.firstname || contrat.prenom || '').trim();
+      if (last || first) {
+        return `${last.toUpperCase()} ${first}`.trim();
+      }
+      return null;
+    }
+
+    function getAgeAtCotation(contrat: any): number | null {
+      const birthdate = getClientBirthdate(contrat);
+      const cotationDate = getCotationDate(contrat);
+      return calculateAgeBetweenDates(birthdate, cotationDate);
+    }
+
     function formatBirthdate(dateString: string | null | undefined): string {
       if (!dateString) return '';
       try {
-        if (dateString.includes('/')) return dateString;
-        const parts = dateString.split('-');
-        if (parts.length === 3) {
-          return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return dateString;
+        const d = parseAnyDate(dateString);
+        if (!d) return dateString;
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
@@ -734,6 +840,9 @@ export default defineComponent({
       formatMontant,
       formatBirthdate,
       genererPDFCotation,
+      getClientFullName,
+      getClientBirthdate,
+      getAgeAtCotation,
     };
   },
 });

@@ -158,6 +158,21 @@
     var agPhone   = (agency && agency.phone)   || '';
     var agAddress = (agency && agency.address) || '-';
     var gestName  = (userLastname && userFirstname) ? userLastname + ' ' + userFirstname : '-';
+
+    /* ---------- age calculé ---------- */
+    function calcAge(bDate, refDate) {
+      if (!bDate) return null;
+      try {
+        var b = new Date(bDate);
+        var r = refDate ? new Date(refDate) : new Date();
+        if (isNaN(b.getTime()) || isNaN(r.getTime())) return null;
+        var age = r.getFullYear() - b.getFullYear();
+        var m = refDate ? r.getMonth() - b.getMonth() : (new Date().getMonth() - b.getMonth());
+        if (m < 0 || (m === 0 && r.getDate() < b.getDate())) age--;
+        return (age >= 0 && age <= 125) ? age : null;
+      } catch(e) { return null; }
+    }
+    var cAge = calcAge(cBirth, cotation.dateSaisie || cotation.createdAt);
   %>
 
   <!-- === REFERENCE / AGENCY BANNER === -->
@@ -192,7 +207,7 @@
     <span>Assuré(e) : <strong><%= cNom %> <%= cPrenom %></strong></span>
   </div>
   <div class="data-row">
-    <span>Date de naissance : <strong><%= fmtDate(cBirth) %></strong></span>
+    <span>Date de naissance : <strong><%= fmtDate(cBirth) %><% if (cAge !== null) { %> (<%= cAge %> ans)<% } %></strong></span>
     <span>Lieu de naissance : <strong><%= cPob %></strong></span>
   </div>
   <div class="data-row">
