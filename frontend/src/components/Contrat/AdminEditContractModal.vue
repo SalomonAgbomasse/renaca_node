@@ -965,8 +965,18 @@ export default defineComponent({
   font-size: 11px;
 }
 
-/* Force clean, modern typography for all elements in this modal */
-:deep(*), .step-content, .card, input, select, button, table {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+/* Force clean, modern typography for text elements, preserving font icons */
+.step-content, .card, input, select, button, table {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:deep(i.fa), :deep(i.fas), :deep(i.far), :deep(i.fab), :deep([class*="fa-"]) {
+  font-family: "Font Awesome 6 Free", "FontAwesome" !important;
+  font-style: normal;
+}
+
+:deep([class*="flaticon-"]) {
+  font-family: flaticon !important;
+  font-style: normal;
 }
 </style>

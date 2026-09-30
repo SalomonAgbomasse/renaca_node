@@ -436,10 +436,7 @@ export default defineComponent({
     const totalSteps = computed(() => 2);
 
     const modalTitle = computed(() => {
-      if (currentStep.value === 1) {
-        return `Modifier le contrat (Étape 1/${totalSteps.value} : Paramètres)`;
-      }
-      return `Modifier le contrat (Étape ${totalSteps.value}/${totalSteps.value} : Récapitulatif & Primes)`;
+      return 'Modifier le contrat';
     });
 
     const form = ref({
@@ -940,8 +937,18 @@ export default defineComponent({
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Force clean, modern typography for all elements in this modal */
-:deep(*), .step-content, .card, input, select, button, table {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+/* Force clean, modern typography for text elements, preserving font icons */
+.step-content, .card, input, select, button, table {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:deep(i.fa), :deep(i.fas), :deep(i.far), :deep(i.fab), :deep([class*="fa-"]) {
+  font-family: "Font Awesome 6 Free", "FontAwesome" !important;
+  font-style: normal;
+}
+
+:deep([class*="flaticon-"]) {
+  font-family: flaticon !important;
+  font-style: normal;
 }
 </style>
