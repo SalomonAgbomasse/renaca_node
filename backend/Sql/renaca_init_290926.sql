@@ -1,5 +1,5 @@
 -- Dump complet de la base renaca_db pour renaca_290926
--- Généré le 2026-09-30T08:03:20.570Z
+-- Généré le 2026-09-30T08:16:34.512Z
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -29,11 +29,10 @@ CREATE TABLE `agency` (
   CONSTRAINT `FK_9128cdbd03b457adb443923e348` FOREIGN KEY (`idSubscriber`) REFERENCES `subscriber` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Records of agency (3 rows)
+-- Records of agency (2 rows)
 INSERT INTO `agency` VALUES 
   (1, '2742d9d9-bc0a-11f1-9870-7e7878c3fc28', 1, 1, NULL, NULL, 'L\'AFRICAINE VIE', '01 BP 2040 Cotonou-Bénin', 'africainevie@lafricaineviebenin.com', '21 30 39 93', '21334218', '2026-09-29 12:32:00', '2026-09-29 12:32:01', NULL),
-  (2, '2742edb4-bc0a-11f1-9870-7e7878c3fc28', 1, 1, NULL, NULL, 'BOHICON', 'BOHICON', 'africainevie@lafricaineviebenin.com', '94 02 47 31', '21334218', '2026-09-29 12:32:00', '2026-09-29 12:32:01', NULL),
-  (3, '2742f79a-bc0a-11f1-9870-7e7878c3fc28', 1, 1, NULL, NULL, 'PARAKOU', 'PARAKOU', 'africainevie@lafricaineviebenin.com', '66 00 13 28', '21334218', '2026-09-29 12:32:00', '2026-09-29 12:32:01', NULL);
+  (2, '2742edb4-bc0a-11f1-9870-7e7878c3fc28', 1, 1, NULL, NULL, 'Direction Renaca', 'Cotonou-Bénin', 'contact@renaca-benin.org', '94 02 47 31', '21334218', '2026-09-29 12:32:00', '2026-09-30 07:16:27', NULL);
 
 -- ----------------------------
 -- Table structure for audit_logs
@@ -1107,7 +1106,7 @@ CREATE TABLE `office` (
 INSERT INTO `office` VALUES 
   (1, '50161908-bc0a-11f1-9870-7e7878c3fc28', 1, 'L\'Africaine Vie Bénin', '01 BP 2040 Cotonou-Bénin', ' 21 30 39 93 – 21 30 02 91', '2026-09-29 12:33:09', '2026-09-29 12:33:10', NULL),
   (2, '50163f45-bc0a-11f1-9870-7e7878c3fc28', 2, 'AAVIE-BOHICON', 'Immeuble AHEHEHINNOU en face de Ecoprice', '94 02 47 31', '2026-09-29 12:33:09', '2026-09-29 12:33:10', NULL),
-  (3, '50164155-bc0a-11f1-9870-7e7878c3fc28', 3, 'AAVIE-PARAKOU', 'Quartier ZONGO II,\nImmeuble LNB en face de la buvette locale le Patronal', '66 00 13 28', '2026-09-29 12:33:09', '2026-09-29 12:33:10', NULL);
+  (3, '50164155-bc0a-11f1-9870-7e7878c3fc28', 2, 'AAVIE-PARAKOU', 'Quartier ZONGO II,\nImmeuble LNB en face de la buvette locale le Patronal', '66 00 13 28', '2026-09-29 12:33:09', '2026-09-30 07:16:27', NULL);
 
 -- ----------------------------
 -- Table structure for periodicite

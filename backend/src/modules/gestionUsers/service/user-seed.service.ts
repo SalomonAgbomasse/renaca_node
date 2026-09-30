@@ -301,23 +301,36 @@ export class UserSeedService implements OnModuleInit {
           id: 2,
           idSubscriber: 1,
           createdBy: 1,
-          name: 'BOHICON',
-          address: 'BOHICON',
-          email: 'africainevie@lafricaineviebenin.com',
-          phone: '94 02 47 31',
-          fax: '21334218'
-        },
-        {
-          id: 3,
-          idSubscriber: 1,
-          createdBy: 1,
-          name: 'PARAKOU',
-          address: 'PARAKOU',
-          email: 'africainevie@lafricaineviebenin.com',
-          phone: '66 00 13 28',
-          fax: '21334218'
+          name: 'Direction Renaca',
+          address: 'Cotonou-Bénin',
+          email: 'contact@renaca-benin.org',
+          phone: '21 30 00 00',
+          fax: ''
         }
       ];
+
+      // Nettoyage / mise à niveau des agences existantes (BOHICON -> Direction Renaca, PARAKOU -> suppression)
+      const bohicon = await this.agencyRepository.findOne({ where: { name: 'BOHICON' } });
+      if (bohicon) {
+        bohicon.name = 'Direction Renaca';
+        bohicon.address = 'Cotonou-Bénin';
+        bohicon.email = 'contact@renaca-benin.org';
+        await this.agencyRepository.save(bohicon);
+        console.log('🔄 Agence BOHICON renommée en "Direction Renaca"');
+      }
+
+      const parakou = await this.agencyRepository.findOne({ where: { name: 'PARAKOU' } });
+      if (parakou) {
+        try {
+          await this.agencyRepository.manager.query('UPDATE users SET idAgency = 2 WHERE idAgency = ?', [parakou.id]);
+          await this.agencyRepository.manager.query('UPDATE contracts SET idAgency = 2 WHERE idAgency = ?', [parakou.id]);
+          await this.agencyRepository.manager.query('UPDATE office SET idAgency = 2 WHERE idAgency = ?', [parakou.id]);
+          await this.agencyRepository.delete(parakou.id);
+          console.log('🗑️ Agence PARAKOU supprimée et ses liaisons réassignées à Direction Renaca');
+        } catch (err) {
+          console.warn('Note sur la suppression de PARAKOU:', err.message);
+        }
+      }
 
       for (const agencyData of defaultAgencies) {
         const existingAgency = await this.agencyRepository.findOne({
@@ -337,11 +350,18 @@ export class UserSeedService implements OnModuleInit {
             
           console.log(`✅ Agence "${agencyData.name}" créée avec l'ID ${agencyData.id}`);
         } else {
-          console.log(`ℹ️ Agence "${agencyData.name}" (ID: ${agencyData.id}) existe déjà`);
+          // S'assurer que le nom est à jour
+          if (existingAgency.name !== agencyData.name) {
+            existingAgency.name = agencyData.name;
+            await this.agencyRepository.save(existingAgency);
+            console.log(`🔄 Agence ID ${agencyData.id} mise à jour vers "${agencyData.name}"`);
+          } else {
+            console.log(`ℹ️ Agence "${agencyData.name}" (ID: ${agencyData.id}) existe déjà`);
+          }
         }
       }
 
-      console.log('✅ Seed: Vérification des agences terminée');
+      console.log('✅ Seed: Vérification des agences terminée (uniquement L\'AFRICAINE VIE et Direction Renaca)');
     } catch (error) {
       console.error('❌ Erreur lors du seed des agences:', error);
     }
