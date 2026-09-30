@@ -15,16 +15,58 @@
           <span class="d-sm-none">Ajouter</span>
         </router-link>
         
-        <!-- Bouton import en masse -->
-        <button 
-          v-if="canManageUsers"
-          class="default-btn position-relative transition border-0 fw-medium pt-11 pb-11 ps-15 pe-15 ps-md-25 pe-md-25 pt-md-12 pb-md-12 ps-md-30 pe-md-30 rounded-1 fs-14 fs-md-15 fs-lg-16 d-none d-md-inline-block me-10 mb-0"
-          style="background-color: #17a2b8; color: #ffffff; border-color: #17a2b8;"
-          @click="showImportModal = true">
-          <i class="fas fa-upload position-relative ms-2 ms-md-5 fs-12"></i>
-          <span class="d-none d-lg-inline">Importer</span>
-          <span class="d-lg-none">Importer</span>
-        </button>
+        <!-- Dropdown Actions (Importer / Exporter) -->
+        <div v-if="canManageUsers" class="dropdown d-none d-md-inline-block me-10 mb-0 position-relative">
+          <button 
+            class="default-btn dropdown-toggle position-relative transition border-0 fw-medium pt-11 pb-11 ps-15 pe-15 ps-md-25 pe-md-25 pt-md-12 pb-md-12 ps-md-30 pe-md-30 rounded-1 fs-14 fs-md-15 fs-lg-16 d-inline-flex align-items-center gap-2"
+            style="background-color: #17a2b8; color: #ffffff; border-color: #17a2b8;"
+            type="button"
+            id="userActionsDropdown"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            @click="showActionsDropdown = !showActionsDropdown"
+            :disabled="isExportingForIntegration"
+          >
+            <i v-if="!isExportingForIntegration" class="fas fa-cog fs-14"></i>
+            <div v-else class="spinner-border spinner-border-sm me-1" role="status"></div>
+            <span>Actions</span>
+          </button>
+          <ul 
+            id="userActionsDropdownMenu"
+            class="dropdown-menu dropdown-menu-start shadow border-0 rounded-2 py-2 mt-1" 
+            :class="{ 'show': showActionsDropdown }"
+            aria-labelledby="userActionsDropdown" 
+            style="min-width: 250px; z-index: 1050;"
+          >
+            <li>
+              <a 
+                class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-dark transition" 
+                href="#" 
+                @click.prevent="showImportModal = true; showActionsDropdown = false"
+              >
+                <i class="fas fa-file-import text-info fs-15" style="width: 20px;"></i>
+                <div>
+                  <span class="fw-semibold d-block">Importer</span>
+                  <small class="text-muted" style="font-size: 0.75rem;">Import en masse depuis Excel</small>
+                </div>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <a 
+                class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-dark transition" 
+                href="#" 
+                @click.prevent="exporterUtilisateursPourIntegration(); showActionsDropdown = false"
+              >
+                <i class="fas fa-file-export text-success fs-15" style="width: 20px;"></i>
+                <div>
+                  <span class="fw-semibold d-block">Exporter</span>
+                  <small class="text-muted" style="font-size: 0.75rem;">Format d'intégration / autre base (.xlsx)</small>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
       <div class="d-flex align-items-center gap-2 flex-wrap">
         <!-- Filtre Agence (Inline sur grand écran) -->
@@ -954,16 +996,28 @@
 
         <div class="d-md-none mt-4">
           <hr class="text-black-50">
-          <label class="form-label fw-semibold text-muted fs-12 mb-1">Actions</label>
-          <button 
-            v-if="canManageUsers"
-            class="btn btn-info w-100 text-white d-flex align-items-center justify-content-center gap-2 py-2 fs-14 rounded-1"
-            @click="showImportModal = true; showFiltersOffcanvas = false"
-            type="button"
-          >
-            <i class="fas fa-upload fs-12"></i>
-            Importer des utilisateurs
-          </button>
+          <label class="form-label fw-semibold text-muted fs-12 mb-2">Actions en masse</label>
+          <div class="d-flex flex-column gap-2">
+            <button 
+              v-if="canManageUsers"
+              class="btn btn-info w-100 text-white d-flex align-items-center justify-content-center gap-2 py-2 fs-14 rounded-1"
+              @click="showImportModal = true; showFiltersOffcanvas = false"
+              type="button"
+            >
+              <i class="fas fa-file-import fs-12"></i>
+              Importer des utilisateurs
+            </button>
+            <button 
+              v-if="canManageUsers"
+              class="btn btn-outline-success w-100 d-flex align-items-center justify-content-center gap-2 py-2 fs-14 rounded-1"
+              @click="exporterUtilisateursPourIntegration(); showFiltersOffcanvas = false"
+              :disabled="isExportingForIntegration"
+              type="button"
+            >
+              <i class="fas fa-file-export fs-12"></i>
+              Exporter (Format intégration)
+            </button>
+          </div>
         </div>
 
         <!-- Reset Button -->
@@ -982,7 +1036,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, computed } from "vue";
+import { defineComponent, onMounted, onBeforeUnmount, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import ApiService from "../../services/ApiService";
@@ -993,6 +1047,7 @@ import Modal from '../Common/Modal.vue';
 import ImportUsersModal from './ImportUsersModal.vue';
 import { nextTick } from 'vue';
 import { useAuthStore } from "../../services/auth";
+import * as XLSX from 'xlsx';
 import { ExcelExporter, ExcelFormatters, type ExcelData } from '../../utils/excelUtils';
 import { XlsxExporter, XlsxFormatters, type XlsxSheet } from '../../utils/xlsxUtils';
 
@@ -2117,6 +2172,139 @@ function gererPermissions(user: User) {
       return firstInitial + lastInitial;
     }
 
+    // Export prêt pour intégration directe dans une autre base
+    const isExportingForIntegration = ref(false);
+    const showActionsDropdown = ref(false);
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('#userActionsDropdown') && !target.closest('#userActionsDropdownMenu')) {
+        showActionsDropdown.value = false;
+      }
+    };
+
+    async function exporterUtilisateursPourIntegration() {
+      if (isExportingForIntegration.value) return;
+      try {
+        isExportingForIntegration.value = true;
+        // Récupérer tous les utilisateurs avec leurs rôles et agences
+        const { data } = await ApiService.get('/users?limit=10000&includeRole=true&includeAgency=true');
+
+        let allUsers: User[] = [];
+        if (data && data.data) {
+          if (data.data.users && Array.isArray(data.data.users)) {
+            allUsers = data.data.users;
+          } else if (Array.isArray(data.data)) {
+            allUsers = data.data;
+          } else if (data.data.data && Array.isArray(data.data.data)) {
+            allUsers = data.data.data;
+          }
+        }
+
+        if (allUsers.length === 0) {
+          error('Aucun utilisateur à exporter.');
+          return;
+        }
+
+        // S'assurer que les listes de rôles et agences sont chargées
+        if (roles.value.length === 0 || agences.value.length === 0) {
+          await Promise.all([loadRoles(), loadAgences()]);
+        }
+
+        // Formater les données selon le format strict d'importation en masse
+        const templateData = allUsers.map(user => {
+          let genderStr = 'M';
+          if (user.gender) {
+            const g = String(user.gender).toUpperCase();
+            genderStr = (g === 'F' || g === 'FEMME' || g === 'FEMININ') ? 'F' : 'M';
+          }
+
+          let birthdateStr = '';
+          if (user.birthdate) {
+            try {
+              const d = new Date(user.birthdate);
+              if (!isNaN(d.getTime())) {
+                birthdateStr = d.toISOString().split('T')[0];
+              }
+            } catch {
+              birthdateStr = '';
+            }
+          }
+
+          const roleName = user.role?.libelle || user.role?.name || (user.idRole ? (roles.value.find(r => r.id === user.idRole)?.libelle || '') : '');
+          const agencyName = user.agency?.name || user.agency?.libelle || (user.idAgency ? (agences.value.find(a => a.id === user.idAgency)?.name || '') : '');
+
+          return {
+            'Nom*': (user.lastname || '').toUpperCase().trim(),
+            'Prénom*': (user.firstname || '').trim(),
+            'Email*': (user.email || '').toLowerCase().trim(),
+            'Téléphone*': (user.phone || '').trim(),
+            'Sexe*': genderStr,
+            'Date de naissance': birthdateStr,
+            'Adresse*': (user.address || '').trim(),
+            'Fonction': (user.fonction || '').trim(),
+            'Rôle*': roleName,
+            'Agence*': agencyName,
+            'Statut*': user.status || 'ACTIVE',
+            'Mot de passe*': 'P@55word2026'
+          };
+        });
+
+        const wb = XLSX.utils.book_new();
+
+        // Feuille 1 : Utilisateurs au format d'importation
+        const wsUsers = XLSX.utils.json_to_sheet(templateData);
+        wsUsers['!cols'] = [
+          { wch: 16 }, // Nom*
+          { wch: 18 }, // Prénom*
+          { wch: 28 }, // Email*
+          { wch: 16 }, // Téléphone*
+          { wch: 8 },  // Sexe*
+          { wch: 16 }, // Date de naissance
+          { wch: 25 }, // Adresse*
+          { wch: 22 }, // Fonction
+          { wch: 20 }, // Rôle*
+          { wch: 28 }, // Agence*
+          { wch: 12 }, // Statut*
+          { wch: 16 }  // Mot de passe*
+        ];
+        XLSX.utils.book_append_sheet(wb, wsUsers, 'Utilisateurs');
+
+        // Feuille 2 : Rôles autorisés
+        if (roles.value.length > 0) {
+          const rolesData = roles.value.map(r => ({
+            'Libellé du Rôle (à copier)': r.libelle,
+            'Description': r.desc || ''
+          }));
+          const wsRoles = XLSX.utils.json_to_sheet(rolesData);
+          wsRoles['!cols'] = [{ wch: 25 }, { wch: 45 }];
+          XLSX.utils.book_append_sheet(wb, wsRoles, 'Rôles autorisés');
+        }
+
+        // Feuille 3 : Agences disponibles
+        if (agences.value.length > 0) {
+          const agenciesData = agences.value.map(a => ({
+            'Nom de l\'Agence (à copier)': a.name || a.libelle || '',
+            'Adresse / Ville': a.address || a.location || ''
+          }));
+          const wsAgencies = XLSX.utils.json_to_sheet(agenciesData);
+          wsAgencies['!cols'] = [{ wch: 30 }, { wch: 40 }];
+          XLSX.utils.book_append_sheet(wb, wsAgencies, 'Agences disponibles');
+        }
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        const fileName = `utilisateurs_migration_integration_${dateStr}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        success(`${allUsers.length} utilisateur(s) exporté(s) au format d'intégration.`);
+      } catch (err: any) {
+        console.error('❌ Erreur lors de l\'export pour intégration:', err);
+        error('Erreur lors de l\'export des utilisateurs: ' + (err.message || ''));
+      } finally {
+        isExportingForIntegration.value = false;
+      }
+    }
+
     async function exporterUtilisateurs() {
       try {
         
@@ -2790,11 +2978,16 @@ function gererPermissions(user: User) {
     // Lifecycle
     onMounted(async () => {
       try {
+        document.addEventListener('click', handleClickOutside);
         await Promise.all([loadAgences(), loadRoles()]);
         await getAllUsers();
       } catch (err) {
         console.error('❌ Erreur dans onMounted:', err);
       }
+    });
+
+    onBeforeUnmount(() => {
+      document.removeEventListener('click', handleClickOutside);
     });
 
     return {
@@ -2878,6 +3071,9 @@ function gererPermissions(user: User) {
       exporterUtilisateursXlsx,
       exporterUtilisateursCsv,
       exporterUtilisateursJson,
+      exporterUtilisateursPourIntegration,
+      isExportingForIntegration,
+      showActionsDropdown,
       
       // Méthodes modal permissions
       ouvrirModalPermissions,
