@@ -101,20 +101,8 @@ export class AuthLoginController {
   @Post('check-2fa-status')
   async check2FAStatus(@Body() body: { login: string }) {
     try {
-      const user = await this.authExtendedService.verifyCredentials(body.login, 'dummy');
-      
-      if (!user.success) {
-        return {
-          success: false,
-          message: 'Email ou téléphone incorrect'
-        };
-      }
-
-      return {
-        success: true,
-        twoFactorEnabled: user.user?.twoFactorEnabled || false,
-        message: user.user?.twoFactorEnabled ? '2FA activée' : '2FA non activée'
-      };
+      const result = await this.authExtendedService.check2FAStatus(body.login);
+      return result;
     } catch (error) {
       console.error('Erreur check-2fa-status:', error);
       return {
@@ -122,53 +110,5 @@ export class AuthLoginController {
         message: 'Erreur interne du serveur'
       };
     }
-  }
-
-  // Debug: Vérifier les informations utilisateur
-  @Post('debug-user')
-  async debugUser(@Body() body: { login: string }) {
-    try {
-      const result = await this.authExtendedService.debugUser(body.login);
-      return result;
-    } catch (error) {
-      console.error('Erreur debug-user:', error);
-      return {
-        success: false,
-        message: 'Erreur interne du serveur'
-      };
-    }
-  }
-
-  @Get('debug-phone/:phone')
-  async debugPhone(@Param('phone') phone: string) {
-    try {
-      const result = await this.authExtendedService.debugPhone(phone);
-      return result;
-    } catch (error) {
-      console.error('Erreur debug-phone:', error);
-      return {
-        success: false,
-        message: 'Erreur interne du serveur'
-      };
-    }
-  }
-
-  @Get('debug-otp/:login')
-  async debugOTP(@Param('login') login: string) {
-    try {
-      const result = await this.authExtendedService.debugOTP(login);
-      return result;
-    } catch (error) {
-      console.error('Erreur debug-otp:', error);
-      return {
-        success: false,
-        message: 'Erreur interne du serveur'
-      };
-    }
-  }
-
-  @Post('test-status')
-  async testStatus(@Body() body: { login: string; status: string }) {
-    return await this.authExtendedService.testStatus(body.login, body.status);
   }
 }

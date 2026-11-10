@@ -1,7 +1,11 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../gestionUsers/guards/jwt-auth.guard';
+import { ContractAuthGuard, RequirePermissions, ContractPermission } from '../guards/contract-auth.guard';
 import { DashboardService } from '../service/dashboard.service';
 
 @Controller('dashboard-test')
+@UseGuards(JwtAuthGuard, ContractAuthGuard)
+@RequirePermissions(ContractPermission.READ)
 export class DashboardTestController {
   constructor(private readonly dashboardService: DashboardService) {}
 

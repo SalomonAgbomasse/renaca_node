@@ -28,10 +28,10 @@ export class PasswordResetService {
         relations: ['role']
       });
 
-      if (!user) {
+      if (!user || user.status !== 'ACTIVE') {
         return {
-          success: false,
-          message: 'Aucun compte trouvé avec cette adresse email ou ce numéro de téléphone'
+          success: true,
+          message: 'Si cet identifiant correspond à un compte actif, des instructions avec un code de vérification lui ont été transmises.'
         };
       }
 
@@ -69,7 +69,7 @@ export class PasswordResetService {
           return {
             success: true,
             message: 'Code de réinitialisation envoyé par email',
-            code: resetCode // Pour les tests, on retourne le code
+            // code retiré pour la sécurité
           };
         } else {
           return {
@@ -89,7 +89,7 @@ export class PasswordResetService {
           return {
             success: true,
             message: 'Code de réinitialisation envoyé par SMS',
-            code: resetCode // Pour les tests, on retourne le code
+            // code retiré pour la sécurité
           };
         } else {
           return {
@@ -119,10 +119,10 @@ export class PasswordResetService {
         relations: ['role']
       });
 
-      if (!user) {
+      if (!user || user.status !== 'ACTIVE') {
         return {
-          success: false,
-          message: 'Aucun compte trouvé avec cette adresse email ou ce numéro de téléphone'
+          success: true,
+          message: 'Si cet identifiant correspond à un compte actif, des instructions avec un code de vérification lui ont été transmises.'
         };
       }
 
@@ -135,17 +135,10 @@ export class PasswordResetService {
       }
 
       // Vérifier le code et l'expiration
-      if (!user.smsToken || user.smsToken !== code) {
+      if (!user.smsToken || user.smsToken !== code || !user.smsTokenExpires || new Date() > user.smsTokenExpires) {
         return {
           success: false,
-          message: 'Code de réinitialisation invalide'
-        };
-      }
-
-      if (!user.smsTokenExpires || new Date() > user.smsTokenExpires) {
-        return {
-          success: false,
-          message: 'Code de réinitialisation expiré'
+          message: 'Identifiant ou code de réinitialisation invalide.'
         };
       }
 

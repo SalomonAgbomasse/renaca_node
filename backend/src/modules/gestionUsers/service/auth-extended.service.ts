@@ -20,6 +20,25 @@ export class AuthExtendedService {
     private smsService: SmsService,
   ) {}
 
+  async check2FAStatus(login: string): Promise<{ success: boolean; twoFactorEnabled: boolean; message: string }> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: [{ email: login }, { phone: login }],
+      });
+      return {
+        success: true,
+        twoFactorEnabled: user ? (user.twoFactorEnabled || false) : false,
+        message: user && user.twoFactorEnabled ? '2FA activée' : '2FA non activée',
+      };
+    } catch (error) {
+      return {
+        success: true,
+        twoFactorEnabled: false,
+        message: '2FA non activée',
+      };
+    }
+  }
+
   // Vérifier les identifiants (email ou téléphone + mot de passe)
   async verifyCredentials(login: string, password: string): Promise<{ success: boolean; user?: User; message: string }> {
     try {
@@ -61,13 +80,13 @@ export class AuthExtendedService {
 
       // Vérifier le mot de passe (comparaison avec hash bcrypt + salt)
       const passwordWithSalt = password + (user.salt || '');
-      console.log('🔍 verifyCredentials - Mot de passe fourni:', password);
-      console.log('🔍 verifyCredentials - Salt utilisateur:', user.salt);
-      console.log('🔍 verifyCredentials - Mot de passe + salt:', passwordWithSalt);
-      console.log('🔍 verifyCredentials - Hash stocké:', user.password);
+      
+      
+      
+      
       
       const isPasswordValid = await bcrypt.compare(passwordWithSalt, user.password);
-      console.log('🔍 verifyCredentials - Mot de passe valide:', isPasswordValid);
+      
       
       if (!isPasswordValid) {
         return {
@@ -251,7 +270,7 @@ export class AuthExtendedService {
       });
       
       if (!user.smsToken || user.smsToken !== otpCode) {
-        console.log('❌ Code OTP invalide:', { expected: user.smsToken, received: otpCode });
+        
         return {
           success: false,
           message: 'Code de vérification invalide'

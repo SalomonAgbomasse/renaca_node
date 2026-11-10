@@ -30,7 +30,7 @@ export class AuthSecurityController {
       return {
         success: result.success,
         message: result.message,
-        code: result.code // Pour les tests
+        // code retiré pour la sécurité
       };
     } catch (error) {
       console.error('Erreur forgot-password:', error);
